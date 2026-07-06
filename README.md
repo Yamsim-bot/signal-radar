@@ -4,6 +4,8 @@ Scans 39 trading instruments combining **Technical Analysis (50%) + Fundamental 
 
 **Live demo:** https://signal-radar.onrender.com *(after deploying)*
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Yamsim-bot/signal-radar)
+
 ---
 
 ## Quick Start
