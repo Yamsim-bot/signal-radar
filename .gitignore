@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.env
+*.json
+!requirements.txt
+!package.json
+.cache/
+signal_radar/cache/
+signal_radar/trading_journal.json

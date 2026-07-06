@@ -1,0 +1,144 @@
+"""Data fetching — MT5 price data + CSV cache layer."""
+
+import csv, json, os
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+import numpy as np
+
+from .config import Config, CACHE_DIR
+from .instruments import INSTRUMENTS, get_symbols
+
+HAS_MT5 = False
+try:
+    import MetaTrader5 as mt5
+    HAS_MT5 = True
+except ImportError:
+    pass
+
+
+def resolve_symbol_mt5(base: str) -> Optional[str]:
+    """Try common MT5 symbol suffixes."""
+    if not HAS_MT5:
+        return None
+    candidates = [base, base + "+", base + "-", base + ".c", base + "c",
+                  base + ".C", base + "_"]
+    for c in candidates:
+        info = mt5.symbol_info(c)
+        if info:
+            tick = mt5.symbol_info_tick(c)
+            if tick and tick.bid > 0:
+                return c
+    return None
+
+
+def fetch_bars(symbol: str, bars: int = 200, timeframe: str = "M5") -> Optional[pd.DataFrame]:
+    """Fetch bars from MT5, with CSV cache fallback."""
+    from .config import Config
+    mt5_tf = 5  # default M5
+    try:
+        mt5_mod = __import__("MetaTrader5", fromlist=["TIMEFRAME_M5"])
+        mt5_tf = getattr(mt5_mod, f"TIMEFRAME_{timeframe}", 5)
+    except Exception:
+        pass
+
+    mt5_ok = False
+    if HAS_MT5:
+        try:
+            mt5_ok = mt5.initialize()
+        except Exception:
+            mt5_ok = False
+
+    if mt5_ok:
+        try:
+            resolved = resolve_symbol_mt5(symbol)
+            if resolved:
+                mt5.symbol_select(resolved, True)
+                rates = mt5.copy_rates_from_pos(resolved, mt5_tf, 0, bars)
+                mt5.shutdown()
+                if rates is not None and len(rates) > 0:
+                    df = pd.DataFrame(rates)
+                    df['time'] = pd.to_datetime(df['time'], unit='s')
+                    df.set_index('time', inplace=True)
+                    df.rename(columns={
+                        'open': 'open', 'high': 'high', 'low': 'low',
+                        'close': 'close', 'tick_volume': 'volume',
+                    }, inplace=True)
+                    df = df[['open', 'high', 'low', 'close', 'volume']].copy()
+                    return df
+        except Exception:
+            try: mt5.shutdown()
+            except Exception: pass
+
+    # Try cache
+    return _load_cache(symbol, timeframe)
+
+
+def _cache_path(symbol: str, timeframe: str) -> Path:
+    return CACHE_DIR / f"{symbol}_{timeframe}.csv"
+
+
+def _load_cache(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
+    path = _cache_path(symbol, timeframe)
+    if not path.exists():
+        return None
+    age = datetime.now() - datetime.fromtimestamp(path.stat().st_mtime)
+    if age.total_seconds() > 7200:  # 2h expiry
+        return None
+    df = pd.read_csv(path, index_col=0, parse_dates=True)
+    return df if len(df) > 0 else None
+
+
+def _save_cache(df: pd.DataFrame, symbol: str, timeframe: str):
+    df.to_csv(_cache_path(symbol, timeframe))
+
+
+def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
+                   symbols: Optional[list[str]] = None) -> dict[str, pd.DataFrame]:
+    """Fetch bars for all instruments. Returns dict of symbol -> DataFrame."""
+    if symbols is None:
+        symbols = get_symbols()
+    result = {}
+    for sym in symbols:
+        df = fetch_bars(sym, bar_count, timeframe)
+        if df is not None and len(df) > 50:
+            result[sym] = df
+    return result
+
+
+def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
+    """Generate synthetic OHLC data for development/testing when MT5 is down."""
+    spec = INSTRUMENTS.get(symbol, {})
+    base_price = {
+        'EURUSD': 1.08, 'GBPUSD': 1.28, 'USDJPY': 150.0, 'USDCHF': 0.88,
+        'USDCAD': 1.36, 'AUDUSD': 0.67, 'NZDUSD': 0.61,
+        'GBPJPY': 192.0, 'EURJPY': 162.0, 'EURGBP': 0.84, 'EURCHF': 0.95,
+        'AUDJPY': 100.0, 'CHFJPY': 170.0, 'NZDJPY': 91.0, 'GBPAUD': 1.91, 'EURAUD': 1.61,
+        'XAUUSD': 2350.0, 'XAGUSD': 29.5, 'XTIUSD': 78.0, 'XBRUSD': 82.0,
+        'US30': 39000, 'SP500': 5400, 'NAS100': 19500, 'DAX40': 18200, 'FTSE100': 8200, 'JP225': 39500,
+        'AAPL': 210, 'TSLA': 250, 'GOOG': 175, 'AMZN': 185, 'MSFT': 430,
+    }.get(symbol, 100.0)
+
+    pip = spec.get('pip_factor', 0.01) if spec else 0.01
+    vol = base_price * 0.002
+
+    np.random.seed(hash(symbol) % 2**31)
+    now = datetime.now().replace(minute=0, second=0, microsecond=0)
+    times = [now - timedelta(minutes=5 * i) for i in range(bars)]
+    times.reverse()
+
+    data = []
+    for t in times:
+        o = base_price + np.random.randn() * vol * 0.5
+        h = o + abs(np.random.randn() * vol)
+        l = o - abs(np.random.randn() * vol)
+        c = (o + h + l) / 3 + np.random.randn() * vol * 0.2
+        c = max(l, min(h, c))
+        data.append({'open': round(o, 5), 'high': round(h, 5),
+                     'low': round(l, 5), 'close': round(c, 5),
+                     'volume': int(np.random.exponential(50) + 10)})
+
+    df = pd.DataFrame(data, index=pd.DatetimeIndex(times))
+    return df

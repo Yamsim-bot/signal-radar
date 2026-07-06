@@ -1,0 +1,308 @@
+//@version=5
+strategy(
+  title="GBPJPY Cent Raw ECN — Realistic v2",
+  shorttitle="GBPJPY Cent v2",
+  overlay=true,
+  default_qty_type=strategy.percent_of_equity,
+  default_qty_value=2.0,
+  commission_type=strategy.commission_per_lot,
+  commission_value=0.06,
+  pyramiding=0,
+  slippage=3,
+  initial_capital=500,
+  currency=currency.USD
+)
+
+// ══════════════════════════════════════════════
+//  STRATEGY INPUTS
+// ══════════════════════════════════════════════
+
+// — Risk —
+riskPct         = input.float(1.0,   "Risk per trade (%)",       minval=0.5,  maxval=3.0,  step=0.25)
+atrMult         = input.float(1.5,   "ATR mult for SL",          minval=0.5,  maxval=3.0,  step=0.1)
+atrLen          = input.int(14,      "ATR length",               minval=7,    maxval=30)
+rrTarget        = input.float(2.0,   "Full RR target",           minval=1.5,  maxval=4.0,  step=0.5)
+
+// — Partial TP & Trail —
+partialPct      = input.int(50,      "Partial TP % at 1:1",      minval=25,   maxval=75,   step=5)
+trailMult       = input.float(0.75,  "Trail offset (× ATR)",     minval=0.3,  maxval=2.0,  step=0.05)
+useTrail        = input.bool(true,   "Enable trailing stop")
+
+// — Circuit breakers —
+maxConsecLoss   = input.int(2,       "Max consecutive losses",   minval=1,    maxval=5)
+dailyLossPct    = input.float(5.0,   "Max daily loss (%)",       minval=2.0,  maxval=15.0)
+maxDDpct        = input.float(20.0,  "Max total drawdown (%)",   minval=10.0, maxval=40.0)
+
+// — Strategy —
+fastLen         = input.int(20,      "Fast EMA",                 minval=5,    maxval=50)
+slowLen         = input.int(50,      "Slow EMA",                 minval=20,   maxval=100)
+rsiLen          = input.int(7,       "RSI length",               minval=3,    maxval=14)
+rsiThresh       = input.int(30,      "RSI oversold threshold",   minval=20,   maxval=45)
+tradeDirection  = input.string("Both", "Direction",              options=["Long only", "Short only", "Both"])
+
+// ══════════════════════════════════════════════
+//  SESSION — GBPJPY peak volatility hours (GMT)
+//  London: 08:00–15:00 GMT (covers London open
+//  through London/NY overlap at 12:00–15:00)
+// ══════════════════════════════════════════════
+sStart   = input.int(8,  "Session start (GMT)", minval=0, maxval=23)
+sEnd     = input.int(15, "Session end (GMT)",   minval=1, maxval=23)
+inSession = time(timeframe.period, str.tostring(sStart) + ":00-" + str.tostring(sEnd) + ":00:12345")
+
+// ══════════════════════════════════════════════
+//  NEWS FILTER
+//  Blocks trading before high-impact economic
+//  events and looks for momentum AFTER they land.
+//
+//  Default times (GMT) for the most common
+//  GBPJPY-affecting events:
+//    UK CPI / GDP / Employment  → 07:00
+//    US NFP / CPI / PPI         → 13:30
+//    BOE Rate Decision          → 12:00
+//    US GDP / Durable Goods     → 13:30
+//    UK Retail Sales            → 07:00
+// ══════════════════════════════════════════════
+useNewsFilter   = input.bool(true,  "Enable news filter")
+blockWinMin     = input.int(45,     "Block X min before news",   minval=15,  maxval=120, step=5)
+postNewsMin     = input.int(15,     "Wait X min after news",     minval=5,   maxval=60,  step=5)
+
+// High-impact event hours (GMT) — one per line
+newsUK730       = input.bool(true,  "UK data 07:00 GMT")
+newsUK12        = input.bool(true,  "BOE / UK data 12:00 GMT")
+newsUS1330      = input.bool(true,  "US data 13:30 GMT")
+newsUS14        = input.bool(false, "US data 14:00 GMT")
+newsCustomH     = input.int(0,      "Custom news hour (GMT, 0=off)", minval=0, maxval=23)
+newsCustomM     = input.int(0,      "Custom news minute",            minval=0, maxval=59)
+
+// ─── Build news-event time window list ───
+// Returns true if we are inside a news blackout zone
+inNewsBlackout() =>
+    currentHour   = hour
+    currentMinute = minute
+    newsBlocked   = false
+
+    // Helper: check if current time is inside [eventHour:eventMin-blockWinMin, eventHour:eventMin+postNewsMin]
+    checkWindow(evtH, evtM) =>
+        // Blackout start = event time - blockWinMin (in minutes from midnight)
+        blackoutStart = (evtH * 60 + evtM - blockWinMin + 1440) % 1440
+        // Blackout end = event time + postNewsMin
+        blackoutEnd   = (evtH * 60 + evtM + postNewsMin + 1440) % 1440
+        currentMin    = currentHour * 60 + currentMinute
+
+        if blackoutStart < blackoutEnd
+            currentMin >= blackoutStart and currentMin <= blackoutEnd
+        else
+            // Wraps past midnight (e.g. blackout starts 23:30, ends 00:15)
+            currentMin >= blackoutStart or currentMin <= blackoutEnd
+
+    if useNewsFilter
+        if newsUK730  and checkWindow(7,  0)  => newsBlocked := true
+        if newsUK12   and checkWindow(12, 0)  => newsBlocked := true
+        if newsUS1330 and checkWindow(13, 30) => newsBlocked := true
+        if newsUS14   and checkWindow(14, 0)  => newsBlocked := true
+        if newsCustomH > 0 and checkWindow(newsCustomH, newsCustomM) => newsBlocked := true
+
+    newsBlocked
+
+newsActive = inNewsBlackout()
+
+// Also: a "momentum mode" activates right after the news blackout ends
+// so we can catch the post-news trend
+postNewsActive = false
+if useNewsFilter
+    currentMin = hour * 60 + minute
+    for [evtH, evtM] in [[7, 0], [12, 0], [13, 30], [14, 0]]
+        evtEnd = evtH * 60 + evtM + postNewsMin
+        evtWindowEnd = evtH * 60 + evtM + postNewsMin + 30  // 30 min momentum window after news settles
+        if currentMin >= evtEnd and currentMin <= evtWindowEnd
+            postNewsActive := true
+    // Custom event
+    if newsCustomH > 0
+        cEnd = newsCustomH * 60 + newsCustomM + postNewsMin
+        cWinEnd = newsCustomH * 60 + newsCustomM + postNewsMin + 30
+        if currentMin >= cEnd and currentMin <= cWinEnd
+            postNewsActive := true
+
+// ══════════════════════════════════════════════
+//  INDICATORS
+// ══════════════════════════════════════════════
+fastMA = ta.ema(close, fastLen)
+slowMA = ta.ema(close, slowLen)
+rsi    = ta.rsi(close, rsiLen)
+atr    = ta.atr(atrLen)
+
+pipSize = 0.01  // GBPJPY pip
+
+// Trend / signal
+uptrend    = fastMA > slowMA
+downtrend  = fastMA < slowMA
+
+// Base entry conditions
+longCond   = inSession and uptrend and ta.crossover(rsi, rsiThresh)
+shortCond  = inSession and downtrend and ta.crossunder(rsi, 100 - rsiThresh)
+
+// Momentum boost: after news settles, relax RSI entry slightly to catch post-news runs
+longMomentum  = inSession and uptrend and ta.crossunder(rsi, rsiThresh + 10)  // enter sooner in momentum window
+shortMomentum = inSession and downtrend and ta.crossunder(rsi, 90 - rsiThresh)
+
+// Final entry
+goLong  = (longCond or (postNewsActive and longMomentum)) and (tradeDirection == "Long only" or tradeDirection == "Both") and not newsActive
+goShort = (shortCond or (postNewsActive and shortMomentum)) and (tradeDirection == "Short only" or tradeDirection == "Both") and not newsActive
+
+// ══════════════════════════════════════════════
+//  CIRCUIT BREAKERS
+// ══════════════════════════════════════════════
+var int   consecLosses     = 0
+var int   lastTradeCount   = 0
+var int   currentDay       = -1
+var float dayStartEquity   = na
+
+if strategy.closedtrades > lastTradeCount
+    lastTradeCount := strategy.closedtrades
+    if strategy.closedtrades.profit(strategy.closedtrades - 1) < 0
+        consecLosses += 1
+    else
+        consecLosses := 0   // win breaks the streak
+
+// Daily reset for equity tracker
+if dayofmonth != currentDay
+    currentDay     := dayofmonth
+    dayStartEquity := strategy.equity + strategy.openprofit
+
+dailyPnl    = strategy.equity + strategy.openprofit - dayStartEquity
+dailyLossPctActual = -dailyPnl / dayStartEquity * 100
+totalDDpct  = (strategy.initial_capital - strategy.equity) / strategy.initial_capital * 100
+
+// Circuit breaker status
+allowed = true
+reason  = ""
+if consecLosses >= maxConsecLoss
+    allowed := false
+    reason  := str.tostring(maxConsecLoss) + " SL hits — locked for day"
+if dailyLossPctActual >= dailyLossPct
+    allowed := false
+    reason  := "Daily loss limit (" + str.tostring(dailyLossPct) + "%)"
+if totalDDpct >= maxDDpct
+    allowed := false
+    reason  := "Max drawdown (" + str.tostring(maxDDpct) + "%)"
+if newsActive
+    allowed := false
+    reason  := "News blackout window"
+
+// ══════════════════════════════════════════════
+//  POSITION SIZING
+// ══════════════════════════════════════════════
+eq      = strategy.equity
+riskUSD = eq * riskPct / 100.0
+slPips  = math.max(atr * atrMult / pipSize, 20)
+slPips  := math.round(slPips, 1)
+tpPips  = slPips * rrTarget
+
+pipValCent = 0.01 * (1000 / close)
+sizeLots   = math.floor(riskUSD / (slPips * pipValCent * 1000) * 1000)
+sizeLots   = math.max(sizeLots, 1)
+sizeLots   = math.min(sizeLots, 100)
+
+// ══════════════════════════════════════════════
+//  ENTRY / EXIT
+// ══════════════════════════════════════════════
+var float entryPrice   = na
+var float initialSize  = 0.0
+var bool  partialFired = false
+
+if goLong and allowed and strategy.position_size == 0
+    strategy.entry("Long",  strategy.long,  qty=sizeLots)
+    entryPrice   := close
+    initialSize  := strategy.position_size
+    partialFired := false
+
+if goShort and allowed and strategy.position_size == 0
+    strategy.entry("Short", strategy.short, qty=sizeLots)
+    entryPrice   := close
+    initialSize  := strategy.position_size
+    partialFired := false
+
+// —— Exit management ——
+if strategy.position_size != 0
+    slPrice  = entryPrice - slPips * pipSize
+    tp1Price = entryPrice + slPips * pipSize
+    if strategy.position_size < 0   // Short
+        slPrice  := entryPrice + slPips * pipSize
+        tp1Price := entryPrice - slPips * pipSize
+
+    remainingPct = math.abs(strategy.position_size) / math.abs(initialSize)
+    partialFired := partialFired or remainingPct < 0.75
+
+    if not partialFired
+        // ── Phase 1: initial SL + partial TP ──
+        strategy.exit("SL",  from_entry="Long",  stop=slPrice)
+        strategy.exit("SL",  from_entry="Short", stop=slPrice)
+        strategy.exit("TP1", from_entry="Long",  limit=tp1Price)
+        strategy.exit("TP1", from_entry="Short", limit=tp1Price)
+    else
+        // ── Phase 2: trailing / breakeven ──
+        if useTrail
+            trailPrice = atr * trailMult
+            if strategy.position_size > 0
+                newStop = high - trailPrice
+                var float trailStopL = na
+                trailStopL := na(trailStopL) ? newStop : math.max(trailStopL, newStop)
+                trailStopL := math.max(trailStopL, entryPrice)
+                strategy.exit("Trail", from_entry="Long", stop=trailStopL)
+            else
+                newStop = low + trailPrice
+                var float trailStopS = na
+                trailStopS := na(trailStopS) ? newStop : math.min(trailStopS, newStop)
+                trailStopS := math.min(trailStopS, entryPrice)
+                strategy.exit("Trail", from_entry="Short", stop=trailStopS)
+        else
+            strategy.exit("BE", from_entry="Long",  stop=entryPrice)
+            strategy.exit("BE", from_entry="Short", stop=entryPrice)
+
+// ══════════════════════════════════════════════
+//  PLOTS & LABELS
+// ══════════════════════════════════════════════
+plot(fastMA, "Fast EMA", color.blue,   1)
+plot(slowMA, "Slow EMA", color.orange, 1)
+
+plotshape(goLong and allowed,  "Buy",  shape.triangleup,   location.belowbar, color.green, size=size.small)
+plotshape(goShort and allowed, "Sell", shape.triangledown, location.abovebar, color.red,   size=size.small)
+
+// News zones on chart
+bgcolor(newsActive ? color.new(color.magenta, 85) : na, title="News blackout")
+bgcolor(postNewsActive ? color.new(color.lime, 88) : na, title="Post-news momentum")
+
+// Status label — bottom right
+var label statusLabel = na
+if barstate.islast
+    if not allowed
+        statusLabel := label.new(bar_index, low - atr * 2.5,
+             "⛔ " + reason + "  [Streak: " + str.tostring(consecLosses) + "]" +
+             (newsActive ? "  📰 News in progress" : ""),
+             color=color.new(color.red, 70), textcolor=color.white,
+             style=label.style_label_lower_left, size=size.normal)
+    else
+        statusLabel := label.new(bar_index, low - atr * 2.5,
+             "✓ Active  |  Risk: $" + str.tostring(riskUSD, "#.##") +
+             "  Size: " + str.tostring(sizeLots) + " lots" +
+             "  Streak: " + str.tostring(consecLosses) +
+             (postNewsActive ? "  📰 Post-news" : ""),
+             color=color.new(color.green, 60), textcolor=color.white,
+             style=label.style_label_lower_left, size=size.normal)
+
+// P&L bar — top right
+if barstate.islast
+    label.new(bar_index, high + atr * 3.5,
+         "Daily: " + str.tostring(dailyPnl, "+#.#;-#.#") + "$  |  DD: " + str.tostring(totalDDpct, "#.#") + "%",
+         color=color.new(color.gray, 80), textcolor=color.white,
+         style=label.style_label_upper_left, size=size.small)
+
+// ══════════════════════════════════════════════
+//  ALERTS
+// ══════════════════════════════════════════════
+alertcondition(goLong  and allowed, "GBPJPY Buy Signal",
+     "GBPJPY BUY @ {{close}}  SL: {{strategy.position_avg_price - " + str.tostring(slPips) + " * 0.01}}  TP1: {{strategy.position_avg_price + " + str.tostring(slPips) + " * 0.01}}")
+alertcondition(goShort and allowed, "GBPJPY Sell Signal",
+     "GBPJPY SELL @ {{close}}")
+alertcondition(not allowed, "Circuit Breaker",
+     "GBPJPY — Trading halted: " + reason)
