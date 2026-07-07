@@ -201,28 +201,51 @@ def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
 
 def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
                    symbols: Optional[list[str]] = None) -> dict[str, pd.DataFrame]:
-    """Fetch bars for all instruments concurrently. Returns dict of symbol -> DataFrame."""
+    """Fetch bars for all instruments — INSTANT, never blocks on network.
+
+    Returns whatever is available (cache + sample data) immediately.
+    Warms Yahoo cache in a background thread so subsequent scans load live data.
+    """
     if symbols is None:
         symbols = get_symbols()
     result = {}
     lock = __import__('threading').Lock()
 
-    def _fetch_one(sym):
-        df = fetch_bars(sym, bar_count, timeframe)
-        if df is not None and len(df) > 50:
+    # Phase 1: collect cache + sample data (INSTANT — no network calls)
+    for sym in symbols:
+        spec = INSTRUMENTS.get(sym, {})
+        cached = _load_cache(sym, timeframe)
+        if cached is not None and len(cached) > 50:
             with lock:
-                result[sym] = df
+                result[sym] = cached
+        elif spec.get('crypto'):
+            # Crypto: try Binance fast, fall back to sample
+            df = fetch_crypto_bars(sym, bar_count)
+            if df is not None and len(df) > 10:
+                _save_cache(df, sym, timeframe)
+                with lock:
+                    result[sym] = df
+            else:
+                with lock:
+                    result[sym] = generate_sample_data(sym, bar_count)
+        else:
+            # Non-crypto: sample data instantly
+            with lock:
+                result[sym] = generate_sample_data(sym, bar_count)
 
-    # Use thread pool for parallel fetching (max 15 concurrent workers)
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    with ThreadPoolExecutor(max_workers=15) as pool:
-        futures = [pool.submit(_fetch_one, sym) for sym in symbols]
-        # Wait for all to complete (with overall timeout)
-        for f in as_completed(futures, timeout=60):
-            try:
-                f.result()
-            except Exception:
-                pass
+    # Phase 2: warm Yahoo cache in background (don't block the caller)
+    def _warm_cache():
+        for sym in symbols:
+            spec = INSTRUMENTS.get(sym, {})
+            if spec.get('crypto') or _load_cache(sym, timeframe) is not None:
+                continue  # already cached or crypto
+            live = fetch_yahoo_bars(sym, bar_count)
+            if live is not None and len(live) > 10:
+                _save_cache(live, sym, timeframe)
+
+    import threading
+    warmer = threading.Thread(target=_warm_cache, daemon=True)
+    warmer.start()
 
     return result
 
