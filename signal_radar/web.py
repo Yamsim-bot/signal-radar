@@ -83,6 +83,28 @@ def api_news():
             'impact': e.impact,
         })
 
+    # Cross-reference data for source comparison
+    cross_refs = []
+    for cr in result.sentiment.cross_references[:10]:
+        cross_refs.append({
+            'topic': cr.topic,
+            'source_sentiments': cr.source_sentiments,
+            'consensus': cr.consensus,
+            'agreement_level': cr.agreement_level,
+            'discrepancy_flag': cr.discrepancy_flag,
+        })
+
+    # Source accuracy / credibility
+    src_accuracy = []
+    for sa in result.sentiment.source_accuracy:
+        src_accuracy.append({
+            'source': sa.source,
+            'articles_scraped': sa.articles_scraped,
+            'avg_relevance': sa.avg_relevance,
+            'unique_topics': sa.unique_topics,
+            'credibility_score': sa.credibility_score,
+        })
+
     return jsonify({
         'headlines': headlines,
         'calendar_events': events,
@@ -95,6 +117,8 @@ def api_news():
         'risk_on_count': result.sentiment.risk_on_count,
         'risk_off_count': result.sentiment.risk_off_count,
         'high_impact_count': result.calendar.high_impact_count,
+        'cross_references': cross_refs,
+        'source_accuracy': src_accuracy,
     })
 
 

@@ -169,7 +169,14 @@ def fetch_yahoo_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
 
     try:
         import yfinance as yf
-        df = yf.download(yahoo_sym, period=period, interval='15m', progress=False, auto_adjust=False)
+        # Short timeout: if Yahoo is slow, skip and fall back to cache
+        import socket
+        orig_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(8)
+        try:
+            df = yf.download(yahoo_sym, period=period, interval='15m', progress=False, auto_adjust=False)
+        finally:
+            socket.setdefaulttimeout(orig_timeout)
         if df is None or len(df) < 5:
             return None
 
@@ -232,14 +239,29 @@ def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
 
 def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
                    symbols: Optional[list[str]] = None) -> dict[str, pd.DataFrame]:
-    """Fetch bars for all instruments. Returns dict of symbol -> DataFrame."""
+    """Fetch bars for all instruments concurrently. Returns dict of symbol -> DataFrame."""
     if symbols is None:
         symbols = get_symbols()
     result = {}
-    for sym in symbols:
+    lock = __import__('threading').Lock()
+
+    def _fetch_one(sym):
         df = fetch_bars(sym, bar_count, timeframe)
         if df is not None and len(df) > 50:
-            result[sym] = df
+            with lock:
+                result[sym] = df
+
+    # Use thread pool for parallel fetching (max 8 concurrent workers)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(_fetch_one, sym) for sym in symbols]
+        # Wait for all to complete (with overall timeout)
+        for f in as_completed(futures, timeout=120):
+            try:
+                f.result()
+            except Exception:
+                pass
+
     return result
 
 

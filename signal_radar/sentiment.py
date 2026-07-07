@@ -1,4 +1,5 @@
-"""Sentiment Analysis — multi-source news via RSS, Finviz, VADER scoring."""
+"""Sentiment Analysis — multi-source news via RSS, Finviz, FXStreet, TradingView,
+CME, ForexFactory, OPEC, myFXbook with VADER scoring and cross-reference accuracy."""
 
 from datetime import datetime, timezone, timedelta
 from dataclasses import dataclass
@@ -19,32 +20,79 @@ class NewsHeadline:
 
 
 @dataclass
+class SourceAccuracy:
+    """Tracks how reliable a source's sentiment signals have been."""
+    source: str
+    articles_scraped: int
+    avg_relevance: float
+    unique_topics: int
+    credibility_score: float    # 0-1 based on specificity & relevance
+
+
+@dataclass
+class CrossReferenceEntry:
+    topic: str
+    source_sentiments: dict[str, float]   # source_name -> sentiment_score
+    consensus: str                       # 'bullish', 'bearish', 'neutral', 'mixed'
+    agreement_level: float               # 0.0 (total disagreement) to 1.0 (total agreement)
+    discrepancy_flag: bool               # True when sources strongly disagree
+
+
 class SentimentResult:
-    overall_score: float                 # -100 (extremely bearish) to +100 (extremely bullish)
-    headlines: list[NewsHeadline]
-    trending_topics: list[str]
-    dovish_count: int
-    hawkish_count: int
-    risk_on_count: int
-    risk_off_count: int
-    source_breakdown: dict[str, float]   # per-source average sentiment
+    """Result of multi-source sentiment analysis."""
+    def __init__(self,
+                 overall_score: float = 0.0,
+                 headlines: list[NewsHeadline] = None,
+                 trending_topics: list[str] = None,
+                 dovish_count: int = 0,
+                 hawkish_count: int = 0,
+                 risk_on_count: int = 0,
+                 risk_off_count: int = 0,
+                 source_breakdown: dict[str, float] = None,
+                 cross_references: list[CrossReferenceEntry] = None,
+                 source_accuracy: list[SourceAccuracy] = None):
+        self.overall_score = overall_score
+        self.headlines = headlines or []
+        self.trending_topics = trending_topics or []
+        self.dovish_count = dovish_count
+        self.hawkish_count = hawkish_count
+        self.risk_on_count = risk_on_count
+        self.risk_off_count = risk_off_count
+        self.source_breakdown = source_breakdown or {}
+        self.cross_references = cross_references or []
+        self.source_accuracy = source_accuracy or []
 
 
-# RSS feed sources
+# ─── RSS / Scraped Sources ──────────────────────────────────────────────
+
 RSS_FEEDS = [
     ('ForexLive', 'https://www.forexlive.com/feed/news/'),
     ('ForexLive', 'https://www.forexlive.com/feed/technical-analysis/'),
     ('Investing.com', 'https://www.investing.com/rss/news.rss'),
     ('DailyFX', 'https://www.dailyfx.com/feeds/rss/news'),
     ('Bloomberg', 'https://www.bloomberg.com/feed/podcast/etsy-marketplace.xml'),
-    # Crypto news
+    # NEW: FXStreet (live forex news & analysis)
+    ('FXStreet', 'https://www.fxstreet.com/rss/news'),
+    # NEW: TradingView (market ideas & analysis)
+    ('TradingView', 'https://www.tradingview.com/feed/'),
+    # Crypto
     ('CoinDesk', 'https://www.coindesk.com/arc/outboundfeeds/rss/'),
     ('CoinTelegraph', 'https://cointelegraph.com/rss'),
     ('Decrypt', 'https://decrypt.co/feed'),
     ('CryptoNews', 'https://cryptonews.com/news/feed/'),
 ]
 
-# Keyword categories for trading sentiment
+# Web-scraped sources (approaches that need requests/bs4)
+SCRAPED_SOURCES = {
+    'FXStreet': 'https://www.fxstreet.com/rss/news',
+    'CME Group': 'https://www.cmegroup.com/content/cme-group/feeds/market-news/rss.xml',
+    'ForexFactory': 'https://www.forexfactory.com/news',
+    'OPEC': 'https://www.opec.org/opec_web/en/press_releases/',
+    'myFXbook': 'https://www.myfxbook.com/community/outlook',
+}
+
+# ─── Keyword categories ─────────────────────────────────────────────────
+
 DOVISH_KEYWORDS = [
     'dovish', 'rate cut', 'easing', 'stimulus', 'lower rates',
     'accommodative', 'quantitative easing', 'loose policy',
@@ -71,7 +119,6 @@ RISK_OFF_KEYWORDS = [
     'volatility', 'uncertainty', 'crisis', 'emergency',
 ]
 
-# Crypto-specific keywords
 CRYPTO_BULLISH_KEYWORDS = [
     'bitcoin rally', 'ethereum surge', 'crypto rally', 'altcoin boom',
     'defi growth', 'nft boom', 'blockchain adoption', 'institutional adoption',
@@ -86,36 +133,42 @@ CRYPTO_BEARISH_KEYWORDS = [
     'volatility', 'dump', 'fud',
 ]
 
+# Commodity / Oil keywords
+COMMODITY_BULLISH_KEYWORDS = [
+    'oil rally', 'crude surge', 'supply cut', 'production cut',
+    'opec+ cut', 'supply constraint', 'inventory draw', 'bullish crude',
+    'gold rally', 'gold surge', 'precious metals', 'safe haven bid',
+]
 
-def _generate_sample_headlines() -> list[NewsHeadline]:
-    """Generate sample news headlines for development."""
-    now = datetime.now(timezone.utc).isoformat()
-    samples = [
-        ('ForexLive', 'Fed signals patience on rate cuts as inflation remains sticky'),
-        ('ForexLive', 'EURUSD extends decline on stronger US data'),
-        ('ForexLive', 'Gold hits new all-time high above $2,400 on geopolitical tensions'),
-        ('DailyFX', 'GBPUSD technical setup suggests further upside toward 1.30'),
-        ('DailyFX', 'BoJ intervention fears cap USDJPY at 152 level'),
-        ('DailyFX', 'Crude oil slides on demand concerns, OPEC+ supply outlook'),
-        ('Investing.com', 'Wall Street rallies on tech earnings, S&P 500 hits record'),
-        ('Investing.com', 'US Dollar Index holds steady ahead of CPI release'),
-        ('Investing.com', 'Treasury yields dip as market prices in September rate cut'),
-        ('Finviz', 'NFP expectations: 200K job additions forecast for May'),
-        ('Finviz', 'AAPL upgrades target on AI product cycle optimism'),
-        ('Finviz', 'Bitcoin volatility ahead of halving event'),
-        ('Bloomberg', 'China stimulus measures boost commodity demand outlook'),
-        ('Bloomberg', 'ECB officials push back against rapid rate cut expectations'),
-        ('ForexLive', 'AUDUSD rises on RBA hawkish hold, iron ore rebound'),
-    ]
-    return [
-        NewsHeadline(source=s, title=t, url='', published=now,
-                     sentiment_score=0.0, keywords=[], relevance=_calc_relevance(t))
-        for s, t in samples
-    ]
+COMMODITY_BEARISH_KEYWORDS = [
+    'oil crash', 'crude drop', 'supply glut', 'oversupply',
+    'demand concern', 'economic slowdown', 'inventory build',
+    'gold decline', 'silver drop', 'precious metals selloff',
+]
+
+# ─── Source credibility weights (0-1) ───────────────────────────────────
+# Based on: specificity, timeliness, editorial quality
+SOURCE_CREDIBILITY = {
+    'ForexLive': 0.85,
+    'DailyFX': 0.80,
+    'FXStreet': 0.85,
+    'Investing.com': 0.75,
+    'Bloomberg': 0.90,
+    'TradingView': 0.60,   # user-generated, varies in quality
+    'CME Group': 0.90,
+    'ForexFactory': 0.80,
+    'OPEC': 0.85,
+    'myFXbook': 0.60,
+    'Finviz': 0.75,
+    'CoinDesk': 0.80,
+    'CoinTelegraph': 0.70,
+    'Decrypt': 0.65,
+    'CryptoNews': 0.60,
+}
 
 
 def analyze() -> SentimentResult:
-    """Multi-source sentiment analysis."""
+    """Multi-source sentiment analysis across all news feeds."""
     headlines = _fetch_headlines()
     if not headlines:
         headlines = _generate_sample_headlines()
@@ -126,7 +179,7 @@ def analyze() -> SentimentResult:
         h.sentiment_score = scores[i] if i < len(scores) else 0.0
         h.keywords = _extract_keywords(h.title)
 
-    # Aggregation
+    # ── Aggregation ──
     overall = _aggregate_sentiment(headlines)
     trending = _trending_topics(headlines)
     dovish = sum(1 for h in headlines if any(k in h.title.lower() for k in DOVISH_KEYWORDS))
@@ -135,57 +188,124 @@ def analyze() -> SentimentResult:
     risk_off = sum(1 for h in headlines if any(k in h.title.lower() for k in RISK_OFF_KEYWORDS))
 
     # Source breakdown
-    src_brk = {}
-    for h in headlines:
-        if h.source not in src_brk:
-            src_brk[h.source] = []
-        src_brk[h.source].append(h.sentiment_score)
-    src_avg = {s: round(sum(v)/len(v), 2) for s, v in src_brk.items()}
+    src_brk = _build_source_breakdown(headlines)
+
+    # Cross-reference: detect when sources disagree on same topic
+    cross_refs = _cross_reference_sources(headlines)
+
+    # Source accuracy / credibility assessment
+    src_accuracy = _assess_source_accuracy(headlines)
 
     return SentimentResult(
         overall_score=round(overall, 1),
-        headlines=headlines[:50],  # keep top 50
+        headlines=headlines[:50],
         trending_topics=trending,
         dovish_count=dovish,
         hawkish_count=hawkish,
         risk_on_count=risk_on,
         risk_off_count=risk_off,
-        source_breakdown=src_avg,
+        source_breakdown=src_brk,
+        cross_references=cross_refs,
+        source_accuracy=src_accuracy,
     )
 
 
 def _fetch_headlines() -> list[NewsHeadline]:
-    """Fetch news headlines from RSS feeds. Returns empty list on failure."""
+    """Fetch news headlines from ALL sources — RSS + scraped."""
     headlines = []
+
+    # ── RSS feeds (feedparser) with parallel fetching ──
     try:
         import feedparser
-        for source, url in RSS_FEEDS:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+        rss_lock = threading.Lock()
+
+        def _parse_rss(source, url):
+            """Parse one RSS feed with timeout."""
             try:
                 feed = feedparser.parse(url)
+                local_hl = []
                 for entry in feed.entries[:10]:
-                    published = entry.get('published', '') or entry.get('updated', '') or ''
-                    headlines.append(NewsHeadline(
+                    published = (entry.get('published', '')
+                                 or entry.get('updated', '') or '')
+                    title = entry.get('title', '')
+                    if not title:
+                        continue
+                    local_hl.append(NewsHeadline(
                         source=source,
-                        title=entry.get('title', ''),
+                        title=title,
                         url=entry.get('link', ''),
                         published=published,
                         sentiment_score=0.0,
                         keywords=[],
-                        relevance=_calc_relevance(entry.get('title', '')),
+                        relevance=_calc_relevance(title),
                     ))
+                if local_hl:
+                    with rss_lock:
+                        headlines.extend(local_hl)
             except Exception:
-                continue
+                pass
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            futures = [pool.submit(_parse_rss, source, url) for source, url in RSS_FEEDS]
+            for f in as_completed(futures, timeout=30):
+                try:
+                    f.result()
+                except Exception:
+                    pass
     except Exception:
         pass
 
-    # Also try Finviz news
+    # ── Finviz + Scraped sources (concurrent, short timeouts) ──
     try:
-        finviz = _fetch_finviz()
-        headlines.extend(finviz)
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import threading
+        scrape_lock = threading.Lock()
+
+        def _scrape_source(name):
+            """Run the appropriate scraper for a source name."""
+            try:
+                scrapers = {
+                    'Finviz': _fetch_finviz,
+                    'FXStreet': _fetch_fxstreet,
+                    'CME Group': _fetch_cme,
+                    'ForexFactory': _fetch_forexfactory_news,
+                    'OPEC': _fetch_opec,
+                    'myFXbook': _fetch_myfxbook,
+                }
+                scraper = scrapers.get(name)
+                if scraper:
+                    result = scraper()
+                    if result:
+                        with scrape_lock:
+                            headlines.extend(result)
+            except Exception:
+                pass
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            futures = [pool.submit(_scrape_source, name)
+                       for name in ['Finviz', 'FXStreet']]  # fastest first
+            for f in as_completed(futures, timeout=15):
+                try:
+                    f.result()
+                except Exception:
+                    pass
+            # Optional slower sources in background
+            futures2 = [pool.submit(_scrape_source, name)
+                        for name in ['CME Group', 'ForexFactory', 'OPEC', 'myFXbook']]
+            for f in as_completed(futures2, timeout=20):
+                try:
+                    f.result()
+                except Exception:
+                    pass
     except Exception:
         pass
 
     return headlines
+
+
+# ─── Individual Source Fetchers ─────────────────────────────────────────
 
 
 def _fetch_finviz() -> list[NewsHeadline]:
@@ -194,12 +314,21 @@ def _fetch_finviz() -> list[NewsHeadline]:
     try:
         import requests
         from bs4 import BeautifulSoup
-        resp = requests.get('https://finviz.com/news.ashx', timeout=5,
-                            headers={'User-Agent': 'Mozilla/5.0'})
+        resp = requests.get(
+            'https://finviz.com/news.ashx',
+            timeout=5,
+            headers={
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/125.0.0.0 Safari/537.36'
+                ),
+            },
+        )
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             rows = soup.select('tr.nn tr')
-            for row in rows[:20]:
+            for row in rows[:25]:
                 cells = row.find_all('td')
                 if len(cells) >= 2:
                     title = cells[1].get_text(strip=True)
@@ -216,6 +345,247 @@ def _fetch_finviz() -> list[NewsHeadline]:
     except Exception:
         pass
     return headlines
+
+
+def _fetch_fxstreet() -> list[NewsHeadline]:
+    """Fetch FXStreet forex news (scraped fallback)."""
+    headlines = []
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        resp = requests.get(
+            'https://www.fxstreet.com/rss/news',
+            timeout=5,
+            headers={'User-Agent': 'Mozilla/5.0'},
+        )
+        if resp.status_code == 200:
+            import feedparser as _fp
+            feed = _fp.parse(resp.text)
+            for entry in feed.entries[:15]:
+                title = entry.get('title', '')
+                if not title:
+                    continue
+                headlines.append(NewsHeadline(
+                    source='FXStreet',
+                    title=title,
+                    url=entry.get('link', ''),
+                    published=entry.get('published', ''),
+                    sentiment_score=0.0,
+                    keywords=[],
+                    relevance=_calc_relevance(title),
+                ))
+    except Exception:
+        pass
+    return headlines
+
+
+def _fetch_cme() -> list[NewsHeadline]:
+    """Fetch CME Group market news (futures, rates, commodities)."""
+    headlines = []
+    urls = [
+        'https://www.cmegroup.com/content/cme-group/feeds/market-news/rss.xml',
+        'https://www.cmegroup.com/feed/rss/command-center',
+    ]
+    try:
+        import requests
+        for url in urls:
+            try:
+                resp = requests.get(
+                    url,
+                    timeout=6,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                )
+                if resp.status_code == 200:
+                    import feedparser as _fp
+                    feed = _fp.parse(resp.text)
+                    for entry in feed.entries[:8]:
+                        title = entry.get('title', '')
+                        if not title:
+                            continue
+                        headlines.append(NewsHeadline(
+                            source='CME Group',
+                            title=title,
+                            url=entry.get('link', ''),
+                            published=entry.get('published', ''),
+                            sentiment_score=0.0,
+                            keywords=[],
+                            relevance=_calc_relevance(title),
+                        ))
+                    if headlines:
+                        break  # got data, stop trying other URLs
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return headlines
+
+
+def _fetch_forexfactory_news() -> list[NewsHeadline]:
+    """Scrape ForexFactory news headlines."""
+    headlines = []
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        resp = requests.get(
+            'https://www.forexfactory.com/',
+            timeout=5,
+            headers={
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/125.0.0.0 Safari/537.36'
+                ),
+            },
+        )
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            # Look for news items — Forex Factory uses various structures
+            for tag in soup.select('a'):
+                text = tag.get_text(strip=True)
+                if text and len(text) > 30 and any(
+                    kw in text.lower() for kw in ['forex', 'eur', 'usd', 'gbp',
+                                                  'jpy', 'gold', 'oil', 'cpi',
+                                                  'nfp', 'fed', 'ecb', 'boe']
+                ):
+                    headlines.append(NewsHeadline(
+                        source='ForexFactory',
+                        title=text,
+                        url=tag.get('href', ''),
+                        published=datetime.now(timezone.utc).isoformat(),
+                        sentiment_score=0.0,
+                        keywords=[],
+                        relevance=_calc_relevance(text),
+                    ))
+    except Exception:
+        pass
+    return headlines
+
+
+def _fetch_opec() -> list[NewsHeadline]:
+    """Scrape OPEC press releases for oil market signals."""
+    headlines = []
+    urls = [
+        'https://www.opec.org/opec_web/en/press_releases/',
+        'https://www.opec.org/opec_web/en/rss.xml',
+    ]
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        for url in urls:
+            try:
+                resp = requests.get(
+                    url,
+                    timeout=5,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                )
+                if resp.status_code == 200:
+                    # Try RSS feed first
+                    if 'xml' in resp.headers.get('Content-Type', ''):
+                        import feedparser as _fp
+                        feed = _fp.parse(resp.text)
+                        for entry in feed.entries[:10]:
+                            title = entry.get('title', '')
+                            if not title:
+                                continue
+                            headlines.append(NewsHeadline(
+                                source='OPEC',
+                                title=title,
+                                url=entry.get('link', ''),
+                                published=entry.get('published', ''),
+                                sentiment_score=0.0,
+                                keywords=[],
+                                relevance=_calc_relevance(title),
+                            ))
+                    else:
+                        # HTML page — scrape press release list
+                        soup = BeautifulSoup(resp.text, 'html.parser')
+                        for link in soup.select('a[href*="press_release"]'):
+                            text = link.get_text(strip=True)
+                            if text and len(text) > 10:
+                                headlines.append(NewsHeadline(
+                                    source='OPEC',
+                                    title=text,
+                                    url=url.rstrip('/') + '/' + link.get('href', '').lstrip('/'),
+                                    published=datetime.now(timezone.utc).isoformat(),
+                                    sentiment_score=0.0,
+                                    keywords=[],
+                                    relevance=_calc_relevance(text),
+                                ))
+                    if headlines:
+                        break
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return headlines
+
+
+def _fetch_myfxbook() -> list[NewsHeadline]:
+    """Scrape myFXbook community outlook / analysis."""
+    headlines = []
+    urls = [
+        'https://www.myfxbook.com/community/outlook',
+        'https://www.myfxbook.com/community/news',
+        'https://blog.myfxbook.com/feed/',
+    ]
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        for url in urls:
+            try:
+                resp = requests.get(
+                    url,
+                    timeout=5,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                )
+                if resp.status_code == 200:
+                    # Try RSS/XML
+                    ct = resp.headers.get('Content-Type', '')
+                    if 'xml' in ct or 'rss' in ct or 'atom' in ct:
+                        import feedparser as _fp
+                        feed = _fp.parse(resp.text)
+                        for entry in feed.entries[:10]:
+                            title = entry.get('title', '')
+                            if not title:
+                                continue
+                            headlines.append(NewsHeadline(
+                                source='myFXbook',
+                                title=title,
+                                url=entry.get('link', ''),
+                                published=entry.get('published', ''),
+                                sentiment_score=0.0,
+                                keywords=[],
+                                relevance=_calc_relevance(title),
+                            ))
+                    else:
+                        soup = BeautifulSoup(resp.text, 'html.parser')
+                        # Try common article containers
+                        for sel in ['h2 a', 'h3 a', '.article-title a',
+                                    '.outlook-item a', '.news-item a']:
+                            for link in soup.select(sel):
+                                text = link.get_text(strip=True)
+                                if text and len(text) > 15:
+                                    headlines.append(NewsHeadline(
+                                        source='myFXbook',
+                                        title=text,
+                                        url=link.get('href', ''),
+                                        published=datetime.now(timezone.utc).isoformat(),
+                                        sentiment_score=0.0,
+                                        keywords=[],
+                                        relevance=_calc_relevance(text),
+                                    ))
+                            if headlines:
+                                break
+                    if headlines:
+                        break
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return headlines
+
+
+# ─── VADER Scoring ──────────────────────────────────────────────────────
 
 
 def _vader_scores(titles: list[str]) -> list[float]:
@@ -235,7 +605,6 @@ def _vader_scores(titles: list[str]) -> list[float]:
             scores.append(vs['compound'])
         return scores
     except Exception:
-        # Fallback: simple word-level polarity
         return [_simple_polarity(t) for t in titles]
 
 
@@ -254,6 +623,9 @@ def _simple_polarity(text: str) -> float:
     return (pos_count - neg_count) / total
 
 
+# ─── Keyword / Relevance ────────────────────────────────────────────────
+
+
 def _extract_keywords(text: str) -> list[str]:
     """Extract trading-relevant keywords from headline."""
     keywords = []
@@ -269,21 +641,157 @@ def _extract_keywords(text: str) -> list[str]:
 
 def _calc_relevance(title: str) -> float:
     """Estimate relevance of a headline to trading (0-1)."""
-    trading_keywords = ['forex', 'fx', 'eur', 'usd', 'gbp', 'jpy', 'aud', 'nzd',
-                        'cad', 'chf', 'cpi', 'gdp', 'nfp', 'fed', 'ecb', 'boe',
-                        'boj', 'rba', 'rbnz', 'stock', 'index', 'commodity',
-                        'oil', 'gold', 'bond', 'yield', 'rate', 'inflation',
-                        'market', 'trading', 'bull', 'bear', 'rally', 'crash',
-                        # Crypto keywords
-                        'bitcoin', 'ethereum', 'crypto', 'blockchain', 'altcoin',
-                        'defi', 'nft', 'web3', 'solana', 'xrp', 'cardano',
-                        'dogecoin', 'avalanche', 'chainlink', 'polkadot',
-                        'binance', 'coinbase', 'halving', 'btc', 'eth', 'usdt',
-                        'token', 'mining', 'staking', 'layer 2']
+    trading_keywords = [
+        'forex', 'fx', 'eur', 'usd', 'gbp', 'jpy', 'aud', 'nzd',
+        'cad', 'chf', 'cpi', 'gdp', 'nfp', 'fed', 'ecb', 'boe',
+        'boj', 'rba', 'rbnz', 'stock', 'index', 'commodity',
+        'oil', 'gold', 'bond', 'yield', 'rate', 'inflation',
+        'market', 'trading', 'bull', 'bear', 'rally', 'crash',
+        'opec', 'cme', 'futures', 'fomc', 'treasury', 'spx',
+        # FXStreet / TradingView specific
+        'technical', 'analysis', 'fibonacci', 'support', 'resistance',
+        'breakout', 'retracement', 'divergence', 'candle', 'pattern',
+        'entry', 'target', 'stop loss', 'take profit', 'signal',
+        # Crypto
+        'bitcoin', 'ethereum', 'crypto', 'blockchain', 'altcoin',
+        'defi', 'nft', 'web3', 'solana', 'xrp', 'cardano',
+        'dogecoin', 'avalanche', 'chainlink', 'polkadot',
+        'binance', 'coinbase', 'halving', 'btc', 'eth', 'usdt',
+        'token', 'mining', 'staking', 'layer 2',
+    ]
     title_lower = title.lower()
     matches = sum(1 for kw in trading_keywords if kw in title_lower)
-    # Scale: 3+ keywords = very relevant, 0 = low relevance
     return min(1.0, matches / 5)
+
+
+def _build_source_breakdown(headlines: list[NewsHeadline]) -> dict[str, float]:
+    """Compute per-source average sentiment."""
+    src_brk = {}
+    for h in headlines:
+        if h.source not in src_brk:
+            src_brk[h.source] = []
+        src_brk[h.source].append(h.sentiment_score)
+    return {s: round(sum(v) / len(v), 2) for s, v in src_brk.items()}
+
+
+# ─── Cross-Reference Logic ──────────────────────────────────────────────
+
+
+def _cross_reference_sources(headlines: list[NewsHeadline]) -> list[CrossReferenceEntry]:
+    """Detect same topics across multiple sources and flag discrepancies.
+
+    Groups headlines by topic (common keywords), compares sentiment
+    per source, and flags when sources strongly disagree.
+    """
+    if not headlines:
+        return []
+
+    # Build keyword → list of (source, sentiment) mappings
+    topic_map: dict[str, list[tuple[str, float]]] = {}
+    for h in headlines:
+        for kw in h.keywords:
+            kw_lower = kw.lower()
+            if kw_lower not in topic_map:
+                topic_map[kw_lower] = []
+            topic_map[kw_lower].append((h.source, h.sentiment_score))
+
+    # Only care about topics mentioned by 2+ different sources
+    entries = []
+    for topic, pairs in topic_map.items():
+        unique_sources = set(s for s, _ in pairs)
+        if len(unique_sources) < 2:
+            continue
+
+        # Per-source average sentiment for this topic
+        src_sent: dict[str, float] = {}
+        for s, score in pairs:
+            if s not in src_sent:
+                src_sent[s] = []
+            src_sent[s].append(score)
+        src_avg = {s: sum(v) / len(v) for s, v in src_sent.items()}
+
+        # Consensus: bullish, bearish, or mixed
+        vals = list(src_avg.values())
+        pos = sum(1 for v in vals if v > 0.1)
+        neg = sum(1 for v in vals if v < -0.1)
+        neu = sum(1 for v in vals if -0.1 <= v <= 0.1)
+
+        if pos > neg and pos >= len(vals) * 0.6:
+            consensus = 'bullish'
+        elif neg > pos and neg >= len(vals) * 0.6:
+            consensus = 'bearish'
+        elif neu >= len(vals) * 0.6:
+            consensus = 'neutral'
+        else:
+            consensus = 'mixed'
+
+        # Agreement level: standard deviation of sentiments (lower = more agreement)
+        if len(vals) >= 2:
+            mean_v = sum(vals) / len(vals)
+            variance = sum((v - mean_v) ** 2 for v in vals) / len(vals)
+            std_dev = variance ** 0.5
+            agreement = max(0.0, min(1.0, 1.0 - std_dev))
+        else:
+            agreement = 1.0
+
+        # Flag discrepancy: two or more sources disagree in sign
+        pos_sources = sum(1 for v in vals if v > 0.1)
+        neg_sources = sum(1 for v in vals if v < -0.1)
+        discrepancy = (pos_sources >= 1 and neg_sources >= 1)
+
+        if discrepancy or agreement < 0.5:
+            entries.append(CrossReferenceEntry(
+                topic=topic,
+                source_sentiments=src_avg,
+                consensus=consensus,
+                agreement_level=round(agreement, 2),
+                discrepancy_flag=discrepancy,
+            ))
+
+    # Return top 15 most interesting discrepancies first
+    entries.sort(key=lambda e: (-e.discrepancy_flag, e.agreement_level))
+    return entries[:15]
+
+
+def _assess_source_accuracy(headlines: list[NewsHeadline]) -> list[SourceAccuracy]:
+    """Assess source quality metrics based on scraped data."""
+    source_data: dict[str, dict] = {}
+
+    for h in headlines:
+        if h.source not in source_data:
+            source_data[h.source] = {
+                'articles': 0,
+                'relevance_sum': 0.0,
+                'topics': set(),
+            }
+        source_data[h.source]['articles'] += 1
+        source_data[h.source]['relevance_sum'] += h.relevance
+        source_data[h.source]['topics'].update(h.keywords)
+
+    results = []
+    for source, data in source_data.items():
+        n = data['articles']
+        avg_rel = data['relevance_sum'] / n if n > 0 else 0.0
+        n_unique = len(data['topics'])
+
+        # Credibility = weighted blend of source credibility + observed relevance
+        base_cred = SOURCE_CREDIBILITY.get(source, 0.5)
+        relevance_bonus = avg_rel * 0.15  # +0.15 if all headlines are relevant
+        credibility = min(1.0, base_cred + relevance_bonus)
+
+        results.append(SourceAccuracy(
+            source=source,
+            articles_scraped=n,
+            avg_relevance=round(avg_rel, 2),
+            unique_topics=n_unique,
+            credibility_score=round(credibility, 2),
+        ))
+
+    results.sort(key=lambda r: -r.credibility_score)
+    return results
+
+
+# ─── Aggregation ────────────────────────────────────────────────────────
 
 
 def _aggregate_sentiment(headlines: list[NewsHeadline]) -> float:
@@ -291,11 +799,12 @@ def _aggregate_sentiment(headlines: list[NewsHeadline]) -> float:
     if not headlines:
         return 0.0
 
-    # Weighted average by relevance
     total_weight = 0.0
     weighted_sum = 0.0
     for h in headlines:
-        w = h.relevance
+        # Blend: relevance + source credibility as weight
+        base_weight = SOURCE_CREDIBILITY.get(h.source, 0.5)
+        w = h.relevance * base_weight
         weighted_sum += h.sentiment_score * w
         total_weight += w
 
@@ -303,7 +812,7 @@ def _aggregate_sentiment(headlines: list[NewsHeadline]) -> float:
         return 0.0
 
     avg = weighted_sum / total_weight
-    return float(avg * 100)  # scale to -100 / +100
+    return float(avg * 100)
 
 
 def _trending_topics(headlines: list[NewsHeadline]) -> list[str]:
@@ -312,5 +821,59 @@ def _trending_topics(headlines: list[NewsHeadline]) -> list[str]:
     for h in headlines:
         all_words.extend(h.keywords)
     freq = Counter(all_words)
-    # Return top 10 trending words/phrases
     return [word for word, _ in freq.most_common(10)]
+
+
+# ─── Sample Data ────────────────────────────────────────────────────────
+
+
+def _generate_sample_headlines() -> list[NewsHeadline]:
+    """Generate sample news headlines for development with multi-source coverage."""
+    now = datetime.now(timezone.utc).isoformat()
+    samples = [
+        # ForexLive
+        ('ForexLive', 'Fed signals patience on rate cuts as inflation remains sticky'),
+        ('ForexLive', 'EURUSD extends decline on stronger US data'),
+        ('ForexLive', 'Gold hits new all-time high above $2,400 on geopolitical tensions'),
+        ('ForexLive', 'AUDUSD rises on RBA hawkish hold, iron ore rebound'),
+        # DailyFX
+        ('DailyFX', 'GBPUSD technical setup suggests further upside toward 1.30'),
+        ('DailyFX', 'BoJ intervention fears cap USDJPY at 152 level'),
+        ('DailyFX', 'Crude oil slides on demand concerns, OPEC+ supply outlook'),
+        # Investing.com
+        ('Investing.com', 'Wall Street rallies on tech earnings, S&P 500 hits record'),
+        ('Investing.com', 'US Dollar Index holds steady ahead of CPI release'),
+        ('Investing.com', 'Treasury yields dip as market prices in September rate cut'),
+        # Finviz
+        ('Finviz', 'NFP expectations: 200K job additions forecast for May'),
+        ('Finviz', 'AAPL upgrades target on AI product cycle optimism'),
+        ('Finviz', 'Bitcoin volatility ahead of halving event'),
+        # Bloomberg
+        ('Bloomberg', 'China stimulus measures boost commodity demand outlook'),
+        ('Bloomberg', 'ECB officials push back against rapid rate cut expectations'),
+        # NEW: FXStreet
+        ('FXStreet', 'EURUSD technical: key support at 1.1050 holds, bounce expected'),
+        ('FXStreet', 'GBPUSD finds resistance at 1.2900 ahead of BOE testimony'),
+        ('FXStreet', 'Gold technical analysis: bulls eye $2,420 breakout'),
+        # NEW: TradingView
+        ('TradingView', 'SP500 reaching new highs — trend continuation or reversal?'),
+        ('TradingView', 'BTCUSD analysis: institutional accumulation suggests upside'),
+        ('TradingView', 'XAUUSD: triangle breakout to the upside confirmed'),
+        # CME Group
+        ('CME Group', 'Fed Funds futures price in 25bp cut by September'),
+        ('CME Group', 'Soybean futures rally on weather concerns'),
+        # ForexFactory
+        ('ForexFactory', 'AUDNZD volatile on RBA vs RBNZ policy divergence'),
+        ('ForexFactory', 'USDCHF steady ahead of SNB rate decision'),
+        # OPEC
+        ('OPEC', 'OPEC+ agrees to maintain production cuts through Q3'),
+        ('OPEC', 'Crude oil demand growth forecast revised higher'),
+        # myFXbook
+        ('myFXbook', 'Community outlook: 65% bearish on USD into NFP week'),
+        ('myFXbook', 'EURUSD sentiment turns bullish above 1.1200'),
+    ]
+    return [
+        NewsHeadline(source=s, title=t, url='', published=now,
+                     sentiment_score=0.0, keywords=[], relevance=_calc_relevance(t))
+        for s, t in samples
+    ]

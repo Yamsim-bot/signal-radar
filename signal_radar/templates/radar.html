@@ -523,6 +523,24 @@ Welcome! I can analyze any trading instrument in our database. Try asking:
       </div>
     </div>
   </div>
+
+  <!-- Source Accuracy & Cross-Reference Comparison -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    <!-- Source Breakdown -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">📊 Source Sentiment Comparison</h3>
+      <div id="news-sources">
+        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
+      </div>
+    </div>
+    <!-- Cross-Reference / Discrepancies -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">⚠️ Cross-Source Signals</h3>
+      <div id="news-crossref">
+        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1034,6 +1052,10 @@ async function loadNews() {
     } else {
       trending.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No trending topics</div>';
     }
+
+    // Source comparison + cross-references
+    renderSourceBreakdown(data.source_breakdown, data.source_accuracy);
+    renderCrossReferences(data.cross_references);
   } catch (e) {
     document.getElementById('news-calendar').innerHTML = '<div style="color:var(--red);padding:20px">Error loading news: ' + e.message + '</div>';
   }
@@ -1098,6 +1120,88 @@ function renderCentralBanks(events) {
     </div>`;
   });
   html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderSourceBreakdown(srcBreakdown, sourceAccuracy) {
+  const container = document.getElementById('news-sources');
+
+  // Source sentiment comparison
+  let html = '<div style="margin-bottom:10px"><b style="font-size:12px">Avg Sentiment by Source</b>';
+  const sources = Object.keys(srcBreakdown || {}).sort();
+  if (sources.length === 0) {
+    html += '<div style="color:var(--text-dim);font-size:12px;padding:4px 0">No source data</div>';
+  } else {
+    sources.forEach(s => {
+      const val = srcBreakdown[s];
+      const color = val >= 0.05 ? 'var(--green)' : val <= -0.05 ? 'var(--red)' : 'var(--yellow)';
+      const barW = 50 + (val * 50);
+      html += `<div class="factor-bar"><span class="factor-label" style="width:90px">${s}</span>
+        <div class="factor-track"><div class="factor-fill" style="width:${Math.max(0, Math.min(100, barW))}%;background:${color}"></div></div>
+        <span class="factor-score" style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(2)}</span></div>`;
+    });
+  }
+  html += '</div>';
+
+  // Source credibility table
+  if (sourceAccuracy && sourceAccuracy.length > 0) {
+    html += '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
+    html += '<b style="font-size:12px">Source Reliability</b>';
+    html += '<table style="width:100%;font-size:11px;margin-top:6px;border-collapse:collapse">';
+    html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)">' +
+      '<th style="text-align:left;padding:4px">Source</th>' +
+      '<th style="text-align:right;padding:4px">Articles</th>' +
+      '<th style="text-align:right;padding:4px">Relevance</th>' +
+      '<th style="text-align:right;padding:4px">Credibility</th></tr>';
+    sourceAccuracy.forEach(s => {
+      const credColor = s.credibility_score >= 0.8 ? 'var(--green)' : s.credibility_score >= 0.6 ? 'var(--yellow)' : 'var(--red)';
+      html += `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px">${s.source}</td>
+        <td style="text-align:right;padding:4px">${s.articles_scraped}</td>
+        <td style="text-align:right;padding:4px">${s.avg_relevance.toFixed(2)}</td>
+        <td style="text-align:right;padding:4px;color:${credColor};font-weight:600">${(s.credibility_score * 100).toFixed(0)}%</td>
+      </tr>`;
+    });
+    html += '</table></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function renderCrossReferences(crossRefs) {
+  const container = document.getElementById('news-crossref');
+  if (!crossRefs || crossRefs.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No cross-source signals — sources agree broadly</div>';
+    return;
+  }
+
+  let html = '';
+  crossRefs.forEach(cr => {
+    const bgColor = cr.discrepancy_flag ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)';
+    const icon = cr.discrepancy_flag ? '🔴' : '🟡';
+    const consensusColor = cr.consensus === 'bullish' ? 'var(--green)' : cr.consensus === 'bearish' ? 'var(--red)' : 'var(--yellow)';
+
+    html += `<div style="background:${bgColor};border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span>${icon} <b>${cr.topic}</b></span>
+        <span style="color:${consensusColor};font-weight:600;font-size:12px">${cr.consensus}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">
+        Agreement: ${(cr.agreement_level * 100).toFixed(0)}%
+        ${cr.discrepancy_flag ? '<span style="color:var(--red);margin-left:8px">⚠️ Sources disagree</span>' : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">`;
+
+    Object.entries(cr.source_sentiments || {}).forEach(([src, sent]) => {
+      const sc = sent >= 0.1 ? 'var(--green)' : sent <= -0.1 ? 'var(--red)' : 'var(--yellow)';
+      html += `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.05)">
+        ${src}: <span style="color:${sc};font-weight:600">${sent >= 0 ? '+' : ''}${sent.toFixed(2)}</span>
+      </span>`;
+    });
+
+    html += '</div></div>';
+  });
+
   container.innerHTML = html;
 }
 
