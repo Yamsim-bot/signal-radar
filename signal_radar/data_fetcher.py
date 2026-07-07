@@ -49,9 +49,15 @@ def fetch_bars(symbol: str, bars: int = 200, timeframe: str = "M5") -> Optional[
             return df
         return generate_sample_data(symbol, bars)
 
-    # Fallback to MT5 for forex/indices/commodities/stocks
+    # Route non-crypto to Yahoo Finance (works on Render/Linux)
+    df = fetch_yahoo_bars(symbol, bars)
+    if df is not None and len(df) > 10:
+        _save_cache(df, symbol, timeframe)
+        return df
+
+    # Try MT5 as fallback (Windows-only, won't work on Render)
     from .config import Config
-    mt5_tf = 5  # default M5
+    mt5_tf = 5
     try:
         mt5_mod = __import__("MetaTrader5", fromlist=["TIMEFRAME_M5"])
         mt5_tf = getattr(mt5_mod, f"TIMEFRAME_{timeframe}", 5)
@@ -87,7 +93,12 @@ def fetch_bars(symbol: str, bars: int = 200, timeframe: str = "M5") -> Optional[
             except Exception: pass
 
     # Try cache
-    return _load_cache(symbol, timeframe)
+    cached = _load_cache(symbol, timeframe)
+    if cached is not None:
+        return cached
+
+    # Last resort: sample data
+    return generate_sample_data(symbol, bars)
 
 
 def _cache_path(symbol: str, timeframe: str) -> Path:
@@ -107,6 +118,78 @@ def _load_cache(symbol: str, timeframe: str) -> Optional[pd.DataFrame]:
 
 def _save_cache(df: pd.DataFrame, symbol: str, timeframe: str):
     df.to_csv(_cache_path(symbol, timeframe))
+
+
+def fetch_yahoo_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
+    """Fetch OHLCV data from Yahoo Finance for forex/indices/commodities/stocks.
+
+    Yahoo Finance symbol mapping (add as needed):
+      EURUSD -> EURUSD=X,  GBPUSD -> GBPUSD=X,  USDJPY -> USDJPY=X,
+      US30 -> ^DJI,        SP500 -> ^GSPC,       NAS100 -> ^IXIC,
+      DAX40 -> ^GDAXI,     FTSE100 -> ^FTSE,     JP225 -> ^N225,
+      XAUUSD -> GC=F,      XAGUSD -> SI=F,       XTIUSD -> CL=F,
+      XBRUSD -> BZ=F,
+      AAPL/TSLA/GOOG/AMZN/MSFT -> same as symbol.
+    """
+    # Build Yahoo Finance ticker from our symbol
+    spec = INSTRUMENTS.get(symbol, {})
+    yahoo_map = {
+        # Forex — Yahoo uses "=X" suffix
+        'EURUSD': 'EURUSD=X', 'GBPUSD': 'GBPUSD=X', 'USDJPY': 'USDJPY=X',
+        'USDCHF': 'USDCHF=X', 'USDCAD': 'USDCAD=X', 'AUDUSD': 'AUDUSD=X',
+        'NZDUSD': 'NZDUSD=X',
+        'GBPJPY': 'GBPJPY=X', 'EURJPY': 'EURJPY=X', 'EURGBP': 'EURGBP=X',
+        'EURCHF': 'EURCHF=X', 'AUDJPY': 'AUDJPY=X', 'CHFJPY': 'CHFJPY=X',
+        'NZDJPY': 'NZDJPY=X', 'GBPAUD': 'GBPAUD=X', 'EURAUD': 'EURAUD=X',
+        'AUDNZD': 'AUDNZD=X', 'NZDCAD': 'NZDCAD=X', 'AUDCAD': 'AUDCAD=X',
+        'GBPCAD': 'GBPCAD=X', 'GBPCHF': 'GBPCHF=X', 'EURNZD': 'EURNZD=X',
+        'EURCAD': 'EURCAD=X', 'CADCHF': 'CADCHF=X',
+        # Indices — Yahoo uses "^" prefix
+        'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
+        'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
+        # Commodities — Yahoo uses futures codes
+        'XAUUSD': 'GC=F', 'XAGUSD': 'SI=F', 'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
+        # Stocks — same as symbol
+        'AAPL': 'AAPL', 'TSLA': 'TSLA', 'GOOG': 'GOOG', 'AMZN': 'AMZN', 'MSFT': 'MSFT',
+    }
+
+    yahoo_sym = yahoo_map.get(symbol)
+    if not yahoo_sym:
+        return None
+
+    # Map bar count to Yahoo period
+    if bars <= 50:
+        period = '1d'
+    elif bars <= 100:
+        period = '2d'
+    elif bars <= 200:
+        period = '5d'
+    else:
+        period = '1mo'
+
+    try:
+        import yfinance as yf
+        df = yf.download(yahoo_sym, period=period, interval='15m', progress=False, auto_adjust=False)
+        if df is None or len(df) < 5:
+            return None
+
+        # Flatten yfinance's multi-level columns
+        # df has columns like ('Close', 'EURUSD=X') — extract first level
+        df.columns = [col[0].lower() for col in df.columns]
+
+        # Required columns
+        for col in ['open', 'high', 'low', 'close', 'volume']:
+            if col not in df.columns:
+                return None
+
+        df = df[['open', 'high', 'low', 'close', 'volume']].copy()
+        df.index = pd.DatetimeIndex(df.index)
+        # Remove timezone info if present
+        if df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
+        return df
+    except Exception:
+        return None
 
 
 def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
