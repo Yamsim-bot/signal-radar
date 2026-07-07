@@ -9,34 +9,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --gold: #d4af37;
-  --gold-light: #e0b94a;
-  --gold-lighter: #ecd17a;
-  --gold-lightest: #f5e1a4;
-  --gold-dark: #b8941f;
-  --gold-darkest: #3a2c08;
-  --bg-primary: #0f1115;
-  --bg-secondary: #18181b;
-  --bg-card: rgba(22, 24, 29, 0.6);
-  --bg-card-hover: rgba(30, 32, 38, 0.8);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-gold: rgba(212, 175, 55, 0.2);
-  --text: #f4f4f5;
-  --text-dim: #a1a1aa;
-  --text-muted: #71717a;
+  --accent: #22c55e;
+  --accent-light: #4ade80;
+  --accent-dark: #16a34a;
+  --accent-darkest: rgba(5, 46, 22, 0.8);
+  --accent-glow: rgba(34, 197, 94, 0.15);
+  --bg-primary: #080a0b;
+  --bg-secondary: #0d0f12;
+  --bg-card: rgba(13, 15, 18, 0.7);
+  --bg-card-hover: rgba(20, 25, 22, 0.85);
+  --bg-card-alt: #111316;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-accent: rgba(34, 197, 94, 0.15);
+  --text: #e8eaed;
+  --text-dim: #9aa0a6;
+  --text-muted: #5f6368;
   --green: #22c55e;
   --green-bg: rgba(34, 197, 94, 0.10);
-  --red: #f43f5e;
-  --red-bg: rgba(244, 63, 94, 0.10);
-  --yellow: #fbbf24;
-  --yellow-bg: rgba(251, 191, 36, 0.10);
-  --blue: #3b82f6;
-  --blue-bg: rgba(59, 130, 246, 0.10);
+  --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.10);
+  --yellow: #facc15;
+  --yellow-bg: rgba(250, 204, 21, 0.10);
+  --blue: #60a5fa;
+  --blue-bg: rgba(96, 165, 250, 0.10);
   --cyan: #22d3ee;
   --cyan-bg: rgba(34, 211, 238, 0.10);
-  --purple: #8b5cf6;
-  --purple-bg: rgba(139, 92, 246, 0.10);
+  --purple: #a78bfa;
+  --purple-bg: rgba(167, 139, 250, 0.10);
   --sidebar-w: 220px;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -70,7 +71,7 @@ body {
 }
 .sidebar-logo .logo-icon {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 16px; font-weight: 800; color: #000;
@@ -92,14 +93,14 @@ body {
 }
 .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
 .nav-item.active {
-  background: var(--gold-darkest);
-  color: var(--gold-light);
-  box-shadow: inset 2px 0 0 var(--gold);
+  background: var(--accent-darkest);
+  color: var(--accent-light);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .nav-item .nav-icon { font-size: 16px; width: 22px; text-align: center; }
 .nav-item .nav-badge {
   margin-left: auto; font-size: 10px; padding: 1px 6px;
-  border-radius: 4px; background: var(--gold-darkest); color: var(--gold-light);
+  border-radius: 4px; background: var(--accent-darkest); color: var(--accent-light);
 }
 .sidebar-footer {
   padding: 12px; border-top: 1px solid var(--border);
@@ -148,23 +149,23 @@ body {
   background: var(--bg-secondary); color: var(--text);
   font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif;
 }
-.filters select:focus, .filters input:focus { outline: none; border-color: var(--gold); }
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--accent); }
 .btn {
   cursor: pointer; font-weight: 600; transition: all .2s;
   font-family: 'Plus Jakarta Sans', sans-serif;
   border-radius: 8px;
 }
-.btn-gold {
-  background: var(--gold); color: #000; border: none;
+.btn-accent {
+  background: var(--accent); color: #000; border: none;
   padding: 8px 16px; font-size: 13px;
 }
-.btn-gold:hover { background: var(--gold-light); }
+.btn-accent:hover { background: var(--accent-light); }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .btn-ghost {
   background: transparent; border: 1px solid var(--border);
   color: var(--text-dim); padding: 6px 12px; font-size: 12px;
 }
-.btn-ghost:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
+.btn-ghost:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--accent); }
 .btn-danger { background: var(--red); color: #fff; border: none; padding: 6px 12px; font-size: 12px; }
 
 /* ═══ Overview Banner ═══ */
@@ -184,7 +185,7 @@ body {
 }
 .market-banner.bullish { background: var(--green-bg); border: 1px solid rgba(34,197,94,0.2); }
 .market-banner.bearish { background: var(--red-bg); border: 1px solid rgba(244,63,94,0.2); }
-.market-banner.neutral { background: var(--gold-darkest); border: 1px solid var(--border-gold); }
+.market-banner.neutral { background: var(--accent-darkest); border: 1px solid var(--border-accent); }
 .market-label { font-size: 16px; font-weight: 600; }
 .market-score { font-size: 28px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
 
@@ -221,7 +222,7 @@ body {
 .str-bar { display: inline-flex; align-items: center; gap: 4px; width: 70px; }
 .str-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
 .str-bar-fill { height: 100%; border-radius: 2px; }
-.str-bar-fill.gold { background: var(--gold); }
+.str-bar-fill.accent { background: var(--accent); }
 .str-bar-fill.green { background: var(--green); }
 .str-bar-fill.red { background: var(--red); }
 .str-bar-fill.yellow { background: var(--yellow); }
@@ -230,7 +231,7 @@ body {
 .chg-negative { color: var(--red); font-weight: 600; }
 
 .entry-now { color: var(--green); font-weight: 600; }
-.entry-soon { color: var(--gold-light); }
+.entry-soon { color: var(--accent-light); }
 .entry-wait { color: var(--yellow); }
 
 /* Detail row */
@@ -271,7 +272,7 @@ body {
   overflow-y: auto; margin-bottom: 12px;
 }
 .chat-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
-.chat-user { background: var(--gold-darkest); border: 1px solid var(--border-gold); margin-left: 40px; }
+.chat-user { background: var(--accent-darkest); border: 1px solid var(--border-accent); margin-left: 40px; }
 .chat-bot { background: var(--bg-card-hover); border: 1px solid var(--border); margin-right: 40px; white-space: pre-wrap; }
 .chat-input { display: flex; gap: 8px; }
 .chat-input input {
@@ -279,7 +280,7 @@ body {
   border-radius: 8px; background: var(--bg-secondary); color: var(--text);
   font-size: 14px; font-family: 'Plus Jakarta Sans', sans-serif;
 }
-.chat-input input:focus { outline: none; border-color: var(--gold); }
+.chat-input input:focus { outline: none; border-color: var(--accent); }
 
 /* ═══ Calculator ═══ */
 .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; margin: 0 auto; }
@@ -289,7 +290,7 @@ body {
   border-radius: 8px; background: var(--bg-secondary); color: var(--text);
   font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif;
 }
-.calc-form input:focus { outline: none; border-color: var(--gold); }
+.calc-form input:focus { outline: none; border-color: var(--accent); }
 .calc-results { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
 .calc-result-item {
   display: flex; justify-content: space-between; padding: 6px 0;
@@ -305,7 +306,7 @@ body {
   padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between;
   border-bottom: 1px solid var(--border); transition: background .15s; color: var(--text);
 }
-.calc-dropdown-item:hover, .calc-dropdown-item.active { background: var(--gold-darkest); }
+.calc-dropdown-item:hover, .calc-dropdown-item.active { background: var(--accent-darkest); }
 
 /* ═══ Journal ═══ */
 .journal-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
@@ -332,20 +333,20 @@ body {
   font-size: 12px; cursor: pointer; transition: all .2s;
   background: var(--bg-secondary); color: var(--text-dim);
 }
-.chip:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
+.chip:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--accent); }
 
 /* ═══ Loading ═══ */
 .loading { text-align: center; padding: 40px; color: var(--text-dim); }
 .spinner {
   width: 30px; height: 30px; border: 3px solid var(--border);
-  border-top-color: var(--gold); border-radius: 50%;
+  border-top-color: var(--accent); border-radius: 50%;
   animation: spin .6s linear infinite; margin: 0 auto 12px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ═══ Shimmer ═══ */
 .shimmer {
-  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(212,175,55,0.04) 20%, rgba(212,175,55,0.08) 50%, rgba(212,175,55,0.04) 80%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(34,197,94,0.04) 20%, rgba(34,197,94,0.08) 50%, rgba(34,197,94,0.04) 80%, rgba(255,255,255,0) 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
@@ -359,7 +360,7 @@ body {
 
 /* ═══ Misc ═══ */
 .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-.badge-gold { background: var(--gold-darkest); color: var(--gold-light); }
+.badge-accent { background: var(--accent-darkest); color: var(--accent-light); }
 .badge-green { background: var(--green-bg); color: var(--green); }
 .badge-red { background: var(--red-bg); color: var(--red); }
 .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
@@ -373,7 +374,7 @@ body {
   color: var(--text-dim); font-size: 18px; cursor: pointer;
   transition: all .2s; flex-shrink: 0;
 }
-.hamburger:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
+.hamburger:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--accent); }
 .sidebar-overlay {
   display: none; position: fixed; inset: 0; z-index: 180;
   background: rgba(0,0,0,0.5);
@@ -502,7 +503,7 @@ body {
         <option value="Strong Sell">Strong Sell</option>
       </select>
       <input type="text" id="filter-search" placeholder="Search symbol..." style="width:150px">
-      <button class="btn btn-gold" onclick="scan()">⟳ Scan Now</button>
+      <button class="btn btn-accent" onclick="scan()">⟳ Scan Now</button>
     </div>
 
     <div id="loading" class="loading"><div class="spinner"></div>Running radar scan...</div>
@@ -554,33 +555,33 @@ body {
 
     <div class="news-grid">
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📅 Economic Calendar</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📅 Economic Calendar</h3>
         <div id="news-calendar"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
       </div>
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📰 News Headlines</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📰 News Headlines</h3>
         <div id="news-headlines"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
       </div>
     </div>
 
     <div class="news-grid">
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">🏛️ Central Bank Events</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">🏛️ Central Bank Events</h3>
         <div id="news-cb"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
       </div>
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">🔥 Trending Topics</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">🔥 Trending Topics</h3>
         <div id="news-trending"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
       </div>
     </div>
 
     <div class="news-grid">
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📊 Source Sentiment</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📊 Source Sentiment</h3>
         <div id="news-sources"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
       </div>
       <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">⚠️ Cross-Source Signals</h3>
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">⚠️ Cross-Source Signals</h3>
         <div id="news-crossref"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
       </div>
     </div>
@@ -610,7 +611,7 @@ body {
       <div class="chat-input">
         <input type="text" id="chat-input" placeholder="Ask about a pair, e.g. 'Why is XAUUSD bearish?'"
                onkeydown="if(event.key==='Enter')sendChat()">
-        <button class="btn btn-gold" onclick="sendChat()">Send</button>
+        <button class="btn btn-accent" onclick="sendChat()">Send</button>
       </div>
     </div>
   </div>
@@ -649,7 +650,7 @@ body {
           <input type="number" id="calc-tp" step="any" placeholder="e.g. 1.09200" style="flex:1">
           <button class="btn btn-ghost btn-sm" onclick="calcAutoTP()" title="Auto-calculate TP from current price + 2× spread">Auto</button>
         </div>
-        <button class="btn btn-gold" onclick="calcPosition()" style="margin-top:12px;width:100%;padding:10px;font-size:14px">
+        <button class="btn btn-accent" onclick="calcPosition()" style="margin-top:12px;width:100%;padding:10px;font-size:14px">
           Calculate
         </button>
       </div>
@@ -673,7 +674,7 @@ body {
 
     <div class="journal-grid">
       <div class="journal-form">
-        <h3 style="margin-bottom:10px;font-size:14px;color:var(--gold-light)">Add Trade</h3>
+        <h3 style="margin-bottom:10px;font-size:14px;color:var(--accent-light)">Add Trade</h3>
         <label>Symbol</label>
         <select id="j-symbol"></select>
         <label>Direction</label>
@@ -694,11 +695,11 @@ body {
         <input type="number" id="j-pnl" step="0.01">
         <label>Notes</label>
         <textarea id="j-notes" placeholder="Entry reason, notes..."></textarea>
-        <button class="btn btn-gold" onclick="addJournalEntry()" style="margin-top:10px;width:100%;padding:9px;font-size:14px">➕ Add Entry</button>
+        <button class="btn btn-accent" onclick="addJournalEntry()" style="margin-top:10px;width:100%;padding:9px;font-size:14px">➕ Add Entry</button>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-          <h3 style="font-size:14px;color:var(--gold-light)">Trade History</h3>
+          <h3 style="font-size:14px;color:var(--accent-light)">Trade History</h3>
           <button class="btn btn-sm btn-ghost" onclick="clearJournal()">Clear All</button>
         </div>
         <div class="glass-panel" style="padding:12px;max-height:500px;overflow-y:auto" id="journal-entries">
@@ -835,14 +836,14 @@ function renderTable(instruments) {
   catOrder.forEach(cat => {
     const group = filtered.filter(i => i.category === cat);
     if (group.length === 0) return;
-    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="9" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
+    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="9" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
     group.forEach(i => {
       const isBull = i.bias === 'Strong Buy' || i.bias === 'Buy';
       const isBear = i.bias === 'Strong Sell' || i.bias === 'Sell';
       const biasCls = i.bias === 'Strong Buy' ? 'bias-strong-buy' :
         i.bias === 'Buy' ? 'bias-buy' : i.bias === 'Neutral' ? 'bias-neutral' :
         i.bias === 'Sell' ? 'bias-sell' : 'bias-strong-sell';
-      const strCls = i.strength >= 7 ? 'gold' : i.strength >= 4 ? 'yellow' : 'red';
+      const strCls = i.strength >= 7 ? 'accent' : i.strength >= 4 ? 'yellow' : 'red';
       const strPct = (i.strength / 10) * 100;
       const chgCls = i.change_pct >= 0 ? 'chg-positive' : 'chg-negative';
       const chgSign = i.change_pct >= 0 ? '+' : '';
@@ -864,7 +865,7 @@ function renderTable(instruments) {
       html += `<tr class="detail-row" id="${detailId}">
         <td colspan="9" class="detail-cell">
           <div class="detail-inner">
-            <b style="color:var(--gold-light)">Why ${i.bias}?</b><br>${i.explanation}
+            <b style="color:var(--accent-light)">Why ${i.bias}?</b><br>${i.explanation}
             <div class="detail-grid">
               <div class="detail-item"><span class="detail-label">Technical</span><span class="detail-value" style="color:${i.technical_score>=0?'var(--green)':'var(--red)'}">${i.technical_score>0?'+':''}${i.technical_score}</span></div>
               <div class="detail-item"><span class="detail-label">Fundamental</span><span class="detail-value" style="color:${i.fundamental_score>=0?'var(--green)':'var(--red)'}">${i.fundamental_score>0?'+':''}${i.fundamental_score}</span></div>
@@ -878,7 +879,7 @@ function renderTable(instruments) {
 
       if (i.breakdown) {
         html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-width:400px">
-          <b style="color:var(--gold-light);font-size:11px">Fundamental Breakdown</b>`;
+          <b style="color:var(--accent-light);font-size:11px">Fundamental Breakdown</b>`;
         ['growth','inflation','jobs','sentiment','trend','seasonality'].forEach(f => {
           const val = i.breakdown[f];
           const w = 50 + val/2;
@@ -951,7 +952,7 @@ function buildCalcDropdown(list) {
   const dd = document.getElementById('calc-dropdown');
   dd.innerHTML = list.map(i => `<div class="calc-dropdown-item" data-sym="${i.symbol}" onclick="selectCalcSymbol('${i.symbol}','${i.name}')">
     <span><b>${i.symbol}</b> <span style="font-size:11px;color:var(--text-dim)">${i.name}</span></span>
-    <span style="font-size:10px;color:var(--gold-light)">${i.category_label}</span>
+    <span style="font-size:10px;color:var(--accent-light)">${i.category_label}</span>
   </div>`).join('');
 }
 function filterCalcSymbols(val) {
@@ -1015,7 +1016,7 @@ async function calcPosition() {
   const res = await fetch('/api/calculator', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   const r = await res.json();
   document.getElementById('calc-results').innerHTML = `
-    <h3 style="font-size:15px;margin-bottom:10px;color:var(--gold-light)">${r.symbol} <span style="color:var(--text-dim);font-weight:400;font-size:12px">${r.commodity||''}</span></h3>
+    <h3 style="font-size:15px;margin-bottom:10px;color:var(--accent-light)">${r.symbol} <span style="color:var(--text-dim);font-weight:400;font-size:12px">${r.commodity||''}</span></h3>
     <div class="calc-result-item"><span>Pip Factor</span><span style="font-family:JetBrains Mono">${r.pip_factor}</span></div>
     <div class="calc-result-item"><span>Contract Size</span><span style="font-family:JetBrains Mono">${r.contract_size}</span></div>
     <div class="calc-result-item"><span>Pip Value (USD)</span><span style="font-family:JetBrains Mono;font-weight:600">$${r.pip_value_usd}</span></div>
@@ -1024,9 +1025,9 @@ async function calcPosition() {
     <div class="calc-result-item"><span>Swap Daily</span><span style="font-family:JetBrains Mono">$${r.swap_fee_daily}</span></div>
     <div class="calc-result-item"><span>Risk</span><span style="color:var(--red);font-weight:700;font-family:JetBrains Mono">$${r.risk_usd}</span></div>
     <div class="calc-result-item"><span>Reward</span><span style="color:var(--green);font-weight:700;font-family:JetBrains Mono">$${r.reward_usd}</span></div>
-    <div class="calc-result-item"><span>R:R Ratio</span><span style="font-weight:700;font-family:JetBrains Mono;color:var(--gold-light)">1:${r.risk_reward_ratio}</span></div>
+    <div class="calc-result-item"><span>R:R Ratio</span><span style="font-weight:700;font-family:JetBrains Mono;color:var(--accent-light)">1:${r.risk_reward_ratio}</span></div>
     <div class="calc-result-item"><span>Risk % of Account</span><span style="font-family:JetBrains Mono">${r.risk_pct_of_account}%</span></div>
-    <div class="calc-result-item"><span>Recommended Lot</span><span style="color:var(--gold-light);font-weight:700;font-family:JetBrains Mono">${r.recommended_lot_size}</span></div>
+    <div class="calc-result-item"><span>Recommended Lot</span><span style="color:var(--accent-light);font-weight:700;font-family:JetBrains Mono">${r.recommended_lot_size}</span></div>
     <div class="calc-result-item" style="border-bottom:none"><span>Max Loss (2%/5%)</span><span style="font-family:JetBrains Mono;color:var(--red)">$${r.max_loss_2pct} / $${r.max_loss_5pct}</span></div>
     <div style="margin-top:10px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:8px">
       Commission: $${r.commission} RT + $${r.swap_fee_daily}/day overnight
@@ -1167,7 +1168,7 @@ function renderCentralBanks(events) {
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   events.forEach(e => {
     html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-      <span><span class="badge badge-gold">${e.currency}</span> ${e.event}</span>
+      <span><span class="badge badge-accent">${e.currency}</span> ${e.event}</span>
       <span style="color:var(--text-dim)">${e.time.slice(5,10)}</span>
     </div>`;
   });
@@ -1210,7 +1211,7 @@ function renderCrossReferences(crossRefs) {
   if (!crossRefs || crossRefs.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No cross-source discrepancies — sources agree broadly</div>'; return; }
   let html = '';
   crossRefs.forEach(cr => {
-    const bgColor = cr.discrepancy_flag ? 'rgba(244,63,94,0.08)' : 'rgba(212,175,55,0.06)';
+    const bgColor = cr.discrepancy_flag ? 'rgba(244,63,94,0.08)' : 'rgba(34,197,94,0.06)';
     const icon = cr.discrepancy_flag ? '🔴' : '🟡';
     const cc = cr.consensus === 'bullish' ? 'var(--green)' : cr.consensus === 'bearish' ? 'var(--red)' : 'var(--yellow)';
     html += `<div style="background:${bgColor};border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px">
