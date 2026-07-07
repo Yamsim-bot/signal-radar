@@ -224,7 +224,14 @@ def _fetch_headlines() -> list[NewsHeadline]:
         def _parse_rss(source, url):
             """Parse one RSS feed with timeout."""
             try:
-                feed = feedparser.parse(url)
+                # Set socket timeout so feedparser doesn't hang
+                import socket
+                old_to = socket.getdefaulttimeout()
+                socket.setdefaulttimeout(5)
+                try:
+                    feed = feedparser.parse(url)
+                finally:
+                    socket.setdefaulttimeout(old_to)
                 local_hl = []
                 for entry in feed.entries[:10]:
                     published = (entry.get('published', '')
@@ -249,7 +256,7 @@ def _fetch_headlines() -> list[NewsHeadline]:
 
         with ThreadPoolExecutor(max_workers=6) as pool:
             futures = [pool.submit(_parse_rss, source, url) for source, url in RSS_FEEDS]
-            for f in as_completed(futures, timeout=30):
+            for f in as_completed(futures, timeout=15):
                 try:
                     f.result()
                 except Exception:
@@ -294,7 +301,7 @@ def _fetch_headlines() -> list[NewsHeadline]:
             # Optional slower sources in background
             futures2 = [pool.submit(_scrape_source, name)
                         for name in ['CME Group', 'ForexFactory', 'OPEC', 'myFXbook']]
-            for f in as_completed(futures2, timeout=20):
+            for f in as_completed(futures2, timeout=10):
                 try:
                     f.result()
                 except Exception:
@@ -392,7 +399,7 @@ def _fetch_cme() -> list[NewsHeadline]:
             try:
                 resp = requests.get(
                     url,
-                    timeout=6,
+                    timeout=5,
                     headers={'User-Agent': 'Mozilla/5.0'},
                 )
                 if resp.status_code == 200:
