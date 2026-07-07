@@ -321,32 +321,27 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
         except Exception:
             pass  # Non-fatal — fall back to OHLC sample close
 
-    # ── Phase 2: Precious metals via gold-api.com (spot price) ──
+    # ── Phase 2: Precious metals via Kitco (industry-standard spot price) ──
     if _time.time() - _start < _MAX_BUDGET:
         precious = [s for s in symbols if s in ('XAUUSD', 'XAGUSD')]
         if precious:
-            metal_map = {'XAUUSD': 'XAU', 'XAGUSD': 'XAG'}
             try:
+                import re as _re
                 import requests as _req
-                import concurrent.futures as _cf
-                with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
-                    _futures = {
-                        sym: _pool.submit(
-                            _req.get, f'https://api.gold-api.com/price/{metal_map[sym]}',
-                            timeout=5,
-                        ) for sym in precious
-                    }
-                    for sym, _fut in _futures.items():
-                        try:
-                            _resp = _fut.result()
-                            if _resp.status_code == 200:
-                                _price = _resp.json().get('price')
-                                if _price:
-                                    prices[sym] = float(_price)
-                        except Exception:
-                            pass
+                _resp = _req.get(
+                    'https://www.kitco.com/market/',
+                    timeout=5,
+                    headers={'User-Agent': 'Mozilla/5.0'},
+                )
+                if _resp.status_code == 200:
+                    _bids = _re.findall(r'"bid":"?([\d.]+)"?', _resp.text)
+                    _asks = _re.findall(r'"ask":"?([\d.]+)"?', _resp.text)
+                    if len(_bids) >= 2 and len(_asks) >= 2:
+                        # Kitco order: gold (0), silver (1), platinum (2), palladium (3)
+                        prices['XAUUSD'] = (float(_bids[0]) + float(_asks[0])) / 2
+                        prices['XAGUSD'] = (float(_bids[1]) + float(_asks[1])) / 2
             except Exception:
-                pass
+                pass  # Fall back to sample close
 
     # ── Phase 3: Yahoo Finance — only if time budget allows ──
     if _time.time() - _start < _MAX_BUDGET:
