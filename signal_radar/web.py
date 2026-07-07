@@ -46,14 +46,15 @@ def index():
 
 @app.route('/api/news')
 def api_news():
-    """Serve news headlines and calendar events."""
-    from .radar import scan
+    """Serve news headlines and calendar events — uses full live sentiment."""
+    from .sentiment import analyze as sentiment_analyze
+    from .calendar import analyze as calendar_analyze
     from .config import Config
-    cfg = Config()
-    result = radar_scan(cfg)
+    sent_result = sentiment_analyze(quick=False)   # full live fetch for news tab
+    cal_result = calendar_analyze()
 
     headlines = []
-    for h in result.sentiment.headlines[:15]:
+    for h in sent_result.headlines[:15]:
         headlines.append({
             'source': h.source,
             'title': h.title,
@@ -63,7 +64,7 @@ def api_news():
         })
 
     events = []
-    for e in result.calendar.events_this_week[:20]:
+    for e in cal_result.events_this_week[:20]:
         events.append({
             'time': e.time,
             'currency': e.currency,
@@ -75,7 +76,7 @@ def api_news():
         })
 
     cb_events = []
-    for e in result.calendar.central_bank_events[:10]:
+    for e in cal_result.central_bank_events[:10]:
         cb_events.append({
             'time': e.time,
             'currency': e.currency,
@@ -85,7 +86,7 @@ def api_news():
 
     # Cross-reference data for source comparison
     cross_refs = []
-    for cr in result.sentiment.cross_references[:10]:
+    for cr in sent_result.cross_references[:10]:
         cross_refs.append({
             'topic': cr.topic,
             'source_sentiments': cr.source_sentiments,
@@ -96,7 +97,7 @@ def api_news():
 
     # Source accuracy / credibility
     src_accuracy = []
-    for sa in result.sentiment.source_accuracy:
+    for sa in sent_result.source_accuracy:
         src_accuracy.append({
             'source': sa.source,
             'articles_scraped': sa.articles_scraped,
@@ -109,14 +110,14 @@ def api_news():
         'headlines': headlines,
         'calendar_events': events,
         'central_bank_events': cb_events,
-        'sentiment_score': result.sentiment.overall_score,
-        'trending_topics': result.sentiment.trending_topics[:8],
-        'source_breakdown': result.sentiment.source_breakdown,
-        'dovish_count': result.sentiment.dovish_count,
-        'hawkish_count': result.sentiment.hawkish_count,
-        'risk_on_count': result.sentiment.risk_on_count,
-        'risk_off_count': result.sentiment.risk_off_count,
-        'high_impact_count': result.calendar.high_impact_count,
+        'sentiment_score': sent_result.overall_score,
+        'trending_topics': sent_result.trending_topics[:8],
+        'source_breakdown': sent_result.source_breakdown,
+        'dovish_count': sent_result.dovish_count,
+        'hawkish_count': sent_result.hawkish_count,
+        'risk_on_count': sent_result.risk_on_count,
+        'risk_off_count': sent_result.risk_off_count,
+        'high_impact_count': cal_result.high_impact_count,
         'cross_references': cross_refs,
         'source_accuracy': src_accuracy,
     })

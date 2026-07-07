@@ -167,11 +167,21 @@ SOURCE_CREDIBILITY = {
 }
 
 
-def analyze() -> SentimentResult:
-    """Multi-source sentiment analysis across all news feeds."""
-    headlines = _fetch_headlines()
-    if not headlines:
+def analyze(quick: bool = False) -> SentimentResult:
+    """Multi-source sentiment analysis across all news feeds.
+
+    Args:
+        quick: If True, skip live fetching and use sample headlines (instant).
+               Use False for the News tab where accuracy matters more than speed.
+    """
+    if quick:
+        # Instant path: use pre-generated sample headlines, no network calls
         headlines = _generate_sample_headlines()
+    else:
+        # Full path: fetch from live sources (RSS + scrapers, ~15-20s)
+        headlines = _fetch_headlines()
+        if not headlines:
+            headlines = _generate_sample_headlines()
 
     # Score each headline with VADER
     scores = _vader_scores([h.title for h in headlines])

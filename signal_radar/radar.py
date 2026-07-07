@@ -74,7 +74,7 @@ def scan(cfg: Config = Config()) -> RadarResult:
     # Run fundamental/sentiment/calendar once (shared across instruments)
     fund_result = fundamental_analyze()
     cal_result = calendar_analyze()
-    sent_result = sentiment_analyze()
+    sent_result = sentiment_analyze(quick=True)  # instant — sample headlines
 
     # Per-instrument analysis
     instruments = []
