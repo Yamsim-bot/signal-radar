@@ -315,15 +315,18 @@ def _compute_fundamental_score(
     if instr.get('crypto'):
         score += fund_result.overall_score * 0.3
         # Crypto thrives on risk appetite
-        if fund_result.risk == 'bullish':
+        if fund_result.risk_sentiment == 'risk_on':
             score += 20
-        elif fund_result.risk == 'bearish':
+        elif fund_result.risk_sentiment == 'risk_off':
             score -= 20
         return float(max(-100, min(100, score)))
 
     # CB stance contribution
     base = symbol[:3]
     quote = symbol[3:]
+
+    cb_base = next((cb for cb in fund_result.central_bank_stances if cb.currency == base), None)
+    cb_quote = next((cb for cb in fund_result.central_bank_stances if cb.currency == quote), None)
 
     if cb_base and cb_quote:
         # Rate differential direction

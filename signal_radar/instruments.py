@@ -243,8 +243,6 @@ INSTRUMENTS = {
         'typical_spread': 3.0, 'margin_pct': 5.0,
         'description': 'Microsoft Corp.', 'currency': 'USD',
     },
-}
-
     # ═══════ CRYPTO ═══════
     'BTCUSD': {
         'category': 'crypto', 'pip_factor': 0.1, 'contract_size': 1,
