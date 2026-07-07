@@ -287,7 +287,25 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
         except Exception:
             pass  # Non-fatal — fall back to OHLC sample close
 
-    # ── Phase 2: Non-forex via Yahoo Finance (individual downloads by batch) ──
+    # ── Phase 2: Precious metals via gold-api.com (spot price, not futures) ──
+    # Yahoo's GC=F gives futures price which can differ from spot by $10-15.
+    precious = [s for s in symbols if s in ('XAUUSD', 'XAGUSD')]
+    if precious:
+        metal_map = {'XAUUSD': 'XAU', 'XAGUSD': 'XAG'}
+        try:
+            import requests as _req
+            for sym in precious:
+                metal = metal_map[sym]
+                resp = _req.get(f'https://api.gold-api.com/price/{metal}', timeout=5)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    price = data.get('price')
+                    if price:
+                        prices[sym] = float(price)
+        except Exception:
+            pass  # Fall back to Yahoo futures
+
+    # ── Phase 3: Non-forex via Yahoo Finance (individual downloads by batch) ──
     non_forex = [s for s in symbols if s not in prices]
     if non_forex:
         # Group by category for better batch reliability
@@ -296,7 +314,6 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
             'AMZN': 'AMZN', 'MSFT': 'MSFT',
             'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
             'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
-            'XAUUSD': 'GC=F', 'XAGUSD': 'SI=F',
             'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
         }
 
