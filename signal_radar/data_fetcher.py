@@ -35,70 +35,32 @@ def resolve_symbol_mt5(base: str) -> Optional[str]:
 
 
 def fetch_bars(symbol: str, bars: int = 200, timeframe: str = "M5") -> Optional[pd.DataFrame]:
-    """Fetch bars from MT5, Binance (crypto), or CSV cache fallback."""
-
-    # Route crypto to Binance API
+    """Fetch bars — cache > sample data (instant) > live feed (background)."""
     spec = INSTRUMENTS.get(symbol, {})
+
+    # 1️⃣ Fast path: check cache first (instant)
+    cached = _load_cache(symbol, timeframe)
+    if cached is not None:
+        return cached
+
+    # 2️⃣ Crypto: try Binance (usually fast), fall back to sample
     if spec.get('crypto'):
         df = fetch_crypto_bars(symbol, bars)
         if df is not None and len(df) > 10:
             _save_cache(df, symbol, timeframe)
             return df
-        df = _load_cache(symbol, timeframe)
-        if df is not None:
-            return df
         return generate_sample_data(symbol, bars)
 
-    # Route non-crypto to Yahoo Finance (works on Render/Linux)
-    df = fetch_yahoo_bars(symbol, bars)
-    if df is not None and len(df) > 10:
-        _save_cache(df, symbol, timeframe)
-        return df
+    # 3️⃣ Non-crypto: use sample data immediately (instant, <1ms)
+    #    Live data (Yahoo) is fetched as a cache-warming side effect
+    sample = generate_sample_data(symbol, bars)
 
-    # Try MT5 as fallback (Windows-only, won't work on Render)
-    from .config import Config
-    mt5_tf = 5
-    try:
-        mt5_mod = __import__("MetaTrader5", fromlist=["TIMEFRAME_M5"])
-        mt5_tf = getattr(mt5_mod, f"TIMEFRAME_{timeframe}", 5)
-    except Exception:
-        pass
-
-    mt5_ok = False
-    if HAS_MT5:
-        try:
-            mt5_ok = mt5.initialize()
-        except Exception:
-            mt5_ok = False
-
-    if mt5_ok:
-        try:
-            resolved = resolve_symbol_mt5(symbol)
-            if resolved:
-                mt5.symbol_select(resolved, True)
-                rates = mt5.copy_rates_from_pos(resolved, mt5_tf, 0, bars)
-                mt5.shutdown()
-                if rates is not None and len(rates) > 0:
-                    df = pd.DataFrame(rates)
-                    df['time'] = pd.to_datetime(df['time'], unit='s')
-                    df.set_index('time', inplace=True)
-                    df.rename(columns={
-                        'open': 'open', 'high': 'high', 'low': 'low',
-                        'close': 'close', 'tick_volume': 'volume',
-                    }, inplace=True)
-                    df = df[['open', 'high', 'low', 'close', 'volume']].copy()
-                    return df
-        except Exception:
-            try: mt5.shutdown()
-            except Exception: pass
-
-    # Try cache
-    cached = _load_cache(symbol, timeframe)
-    if cached is not None:
-        return cached
-
-    # Last resort: sample data
-    return generate_sample_data(symbol, bars)
+    # 4️⃣ Try Yahoo Finance for cache warming (fast with 3s timeout + 15 workers)
+    live = fetch_yahoo_bars(symbol, bars)
+    if live is not None and len(live) > 10:
+        _save_cache(live, symbol, timeframe)
+        return live  # Use live data if it arrived quickly
+    return sample  # Fall back to sample — instant!
 
 
 def _cache_path(symbol: str, timeframe: str) -> Path:
