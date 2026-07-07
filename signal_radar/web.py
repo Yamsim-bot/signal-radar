@@ -205,17 +205,90 @@ def api_scan():
     return jsonify(data)
 
 
+# ─── Tagalog trading vocabulary ────────────────────────────────────────────
+TAGALOG_WORDS = {
+    'bumili': 'buy', 'bili': 'buy', 'bilhin': 'buy', 'tumataas': 'rising',
+    'pagtaas': 'increase', 'lakas': 'strong', 'malakas': 'strong',
+    'mababa': 'low', 'bumaba': 'went_down', 'ibaba': 'down', 'pababa': 'downward',
+    'tumaas': 'went_up', 'tataas': 'will_rise', 'bababa': 'will_fall',
+    'pera': 'money', 'salapi': 'currency', 'piso': 'peso',
+    'presyo': 'price', 'halaga': 'value', 'trading': 'trading',
+    'negosyo': 'business', 'merkado': 'market', 'palitan': 'exchange',
+    'puhunan': 'capital', 'invest': 'invest', 'tubo': 'profit',
+    'luging': 'loss', 'talunan': 'loser', 'panalo': 'winner',
+    'kita': 'earnings', 'gastos': 'expenses', 'swerte': 'luck',
+    'oras': 'time', 'araw': 'day', 'linggo': 'week', 'buwan': 'month',
+    'ngayon': 'now', 'kahapon': 'yesterday', 'bukas': 'tomorrow',
+    'ano': 'what', 'bakit': 'why', 'paano': 'how', 'saan': 'where',
+    'kailan': 'when', 'sino': 'who', 'magkano': 'how_much',
+    'mabagal': 'slow', 'mabilis': 'fast', 'malaki': 'big', 'maliit': 'small',
+    'maganda': 'good', 'masama': 'bad', 'tama': 'correct', 'mali': 'wrong',
+    'posisyon': 'position', 'order': 'order', 'stop': 'stop', 'limit': 'limit',
+    'usd': 'usd', 'dolyar': 'dollar', 'usd/pHP': 'usd_php',
+    'euro': 'euro', 'gold': 'gold', 'ginto': 'gold', 'pilak': 'silver',
+    'langis': 'oil', 'index': 'index', 'sapi': 'stock',
+}
+
+TAGALOG_GREETINGS = ['kamusta', 'hello', 'magandang', 'salamat', 'sige', 'opo', 'oo']
+
+def _detect_tagalog(text: str) -> bool:
+    """Check if the input contains Tagalog words."""
+    lower = text.lower()
+    # Check for distinct Tagalog words
+    tagalog_words = {'ang', 'ay', 'ko', 'mo', 'siya', 'sila', 'kami', 'tayo',
+                     'ito', 'iyan', 'doon', 'dito', 'ng', 'sa', 'mga', 'po',
+                     'opo', 'oo', 'hindi', 'wala', 'meron', 'may', 'kasi',
+                     'kaya', 'kung', 'gagawin', 'ginagawa', 'ginawa',
+                     'pwede', 'pwedeng', 'dapat', 'kailangan', 'gusto',
+                     'yung', 'yong', 'mong', 'kong', 'nito', 'niyan',
+                     'kamusta', 'magkano', 'paano', 'bakit', 'saan'}
+    words = lower.split()
+    tagalog_hits = sum(1 for w in words if w in tagalog_words)
+    return tagalog_hits >= 2
+
+
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    """AI assistant for trading questions."""
+    """AI assistant for trading questions. Supports Tagalog."""
     question = request.json.get('question', '').strip()
     if not question:
-        return jsonify({'answer': 'Please ask a question about a trading instrument.'})
+        return jsonify({'answer': 'Please ask a question about a trading instrument. / Magtanong tungkol sa trading.'})
+
+    is_tagalog = _detect_tagalog(question)
+    question_lower = question.lower()
+
+    # Translate Tagalog words
+    translated = question_lower
+    for tl_word, en_word in TAGALOG_WORDS.items():
+        translated = translated.replace(tl_word, en_word)
+
+    # ── Translations ──
+    T = {} if not is_tagalog else {
+        'welcome': 'Maligayang pagdating! Ako ang Signal Radar assistant.',
+        'loading': 'Kinukuha ang pinakabagong datos ng merkado...',
+        'market_overview': '✅ Pangkalahatang Merkado',
+        'sentiment': 'Sentimyento',
+        'bullish': 'Bullish', 'bearish': 'Bearish', 'neutral': 'Neutral',
+        'strong_buy': 'Malakas na Bili', 'buy': 'Bili',
+        'strong_sell': 'Malakas na Benta', 'sell': 'Benta',
+        'score': 'puntos', 'strength': 'lakas', 'confidence': 'kumpiyansa',
+        'support': 'Suporta', 'resistance': 'Resistensiya',
+        'trend': 'Trend', 'entry': 'Pagpasok', 'timing': 'Oras',
+        'top_bullish': 'Pinaka Bullish', 'top_bearish': 'Pinaka Bearish',
+        'high_impact': 'mataas na epekto', 'events': 'pangyayari',
+        'this_week': 'ngayong linggo', 'news': 'balita',
+        'fundamental': 'Pundamental', 'technical': 'Teknikal',
+        'session': 'Session', 'level': 'Antas',
+        'recommendation': 'Rekomendasyon', 'analysis': 'Pagsusuri',
+        'suggest': 'Subukan', 'ask_about': 'Magtanong tungkol sa',
+        'for_details': 'para sa detalyadong pagsusuri',
+        'none': 'Wala',
+    }
 
     # Run radar to get current data
     cfg = Config()
     result = radar_scan(cfg)
-    question_lower = question.lower()
+    question_lower = translated
 
     # Find mentioned symbols
     mentioned = []
@@ -226,8 +299,22 @@ def api_chat():
     # Find mentioned categories
     cat_map = {'major': 'major', 'majors': 'major', 'cross': 'cross', 'crosses': 'cross',
                'index': 'index', 'indices': 'index', 'commodity': 'commodity',
-               'stock': 'stocks', 'stocks': 'stock'}
+               'stock': 'stocks', 'stocks': 'stock', 'crypto': 'crypto',
+               'cryptocurrency': 'crypto'}
     mentioned_cats = [cat_map[w] for w in cat_map if w in question_lower]
+
+    # Greeting / basics
+    if is_tagalog and any(g in question_lower for g in ['kamusta', 'hello', 'magandang', 'salamat']):
+        return jsonify({'answer': (
+            f"{T.get('welcome', '')}\n\n"
+            f"📊 **{T.get('market_overview', 'Market Overview')}:** "
+            f"{result.market_sentiment} ({result.market_score:+.1f})\n\n"
+            f"Magtanong lang tulad ng:\n"
+            f"• \"Bakit neutral ang EURUSD?\"\n"
+            f"• \"Ano ang pinakamalakas na bilhin?\"\n"
+            f"• \"Paano ang GBPJPY?\"\n"
+            f"• \"Ano ang sentiment ng merkado?\""
+        )})
 
     # Build answer
     if not mentioned and not mentioned_cats:
@@ -236,15 +323,28 @@ def api_chat():
         top_buy = [i for i in result.instruments if i.bias in ('Strong Buy', 'Buy')][:3]
         top_sell = [i for i in result.instruments if i.bias in ('Strong Sell', 'Sell')][:3]
 
-        answer = (
-            f"📊 **Market Overview** — Overall sentiment: {market} (score: {result.market_score:+.1f}).\n\n"
-            f"**Top bullish:** {', '.join(f'{i.symbol} ({i.bias}, strength {i.strength}/10)' for i in top_buy) if top_buy else 'None'}\n"
-            f"**Top bearish:** {', '.join(f'{i.symbol} ({i.bias}, strength {i.strength}/10)' for i in top_sell) if top_sell else 'None'}\n\n"
-            f"**News sentiment:** {result.sentiment.overall_score:+.1f} (dovish {result.sentiment.dovish_count}, hawkish {result.sentiment.hawkish_count})\n"
-            f"**Fundamental:** {result.fundamental.overall_score:+.1f} ({result.fundamental.risk_sentiment})\n"
-            f"**Calendar:** {result.calendar.high_impact_count} high-impact events this week\n\n"
-            f"Ask about a specific symbol (e.g., 'Why is EURUSD bearish?') for detailed analysis."
-        )
+        if is_tagalog:
+            bull_list = ', '.join(f'{i.symbol} ({T.get("strong_buy","Strong Buy") if i.bias=="Strong Buy" else T.get("buy","Buy")}, {T.get("strength","strength")} {i.strength}/10)' for i in top_buy) if top_buy else T.get('none', 'None')
+            bear_list = ', '.join(f'{i.symbol} ({T.get("strong_sell","Strong Sell") if i.bias=="Strong Sell" else T.get("sell","Sell")}, {T.get("strength","strength")} {i.strength}/10)' for i in top_sell) if top_sell else T.get('none', 'None')
+            answer = (
+                f"📊 **{T.get('market_overview','Market Overview')}** — {market} ({result.market_score:+.1f})\n\n"
+                f"**{T.get('top_bullish','Top Bullish')}:** {bull_list}\n"
+                f"**{T.get('top_bearish','Top Bearish')}:** {bear_list}\n\n"
+                f"📰 **{T.get('news','News')} {T.get('sentiment','Sentiment')}:** {result.sentiment.overall_score:+.1f}\n"
+                f"🏛️ **{T.get('fundamental','Fundamental')}:** {result.fundamental.overall_score:+.1f} ({result.fundamental.risk_sentiment})\n"
+                f"📅 **{T.get('high_impact','High impact')} {T.get('events','events')}:** {result.calendar.high_impact_count} {T.get('this_week','this week')}\n\n"
+                f"💡 {T.get('suggest','Try')}: \"Bakit bearish ang XAUUSD?\" {T.get('for_details','for details')}"
+            )
+        else:
+            answer = (
+                f"📊 **Market Overview** — Overall sentiment: {market} (score: {result.market_score:+.1f}).\n\n"
+                f"**Top bullish:** {', '.join(f'{i.symbol} ({i.bias}, strength {i.strength}/10)' for i in top_buy) if top_buy else 'None'}\n"
+                f"**Top bearish:** {', '.join(f'{i.symbol} ({i.bias}, strength {i.strength}/10)' for i in top_sell) if top_sell else 'None'}\n\n"
+                f"**News sentiment:** {result.sentiment.overall_score:+.1f} (dovish {result.sentiment.dovish_count}, hawkish {result.sentiment.hawkish_count})\n"
+                f"**Fundamental:** {result.fundamental.overall_score:+.1f} ({result.fundamental.risk_sentiment})\n"
+                f"**Calendar:** {result.calendar.high_impact_count} high-impact events this week\n\n"
+                f"Ask about a specific symbol (e.g., 'Why is EURUSD bearish?') for detailed analysis."
+            )
         return jsonify({'answer': answer})
 
     # Specific instrument questions
@@ -254,30 +354,61 @@ def api_chat():
             fb = i.explanation.fundamental_breakdown
             breakdown_str = ''
             if fb:
-                breakdown_str = (
-                    f"\n\n**Fundamental factors:**"
-                    f"\n• Growth: {fb.growth:+.0f}"
-                    f"\n• Inflation: {fb.inflation:+.0f}"
-                    f"\n• Jobs: {fb.jobs:+.0f}"
-                    f"\n• Sentiment: {fb.sentiment:+.0f}"
-                    f"\n• Trend: {fb.trend:+.0f}"
-                    f"\n• Seasonality: {fb.seasonality:+.0f}"
-                )
+                if is_tagalog:
+                    breakdown_str = (
+                        f"\n\n**Pundamental na salik:**"
+                        f"\n• Paglago: {fb.growth:+.0f}"
+                        f"\n• Implasyon: {fb.inflation:+.0f}"
+                        f"\n• Trabaho: {fb.jobs:+.0f}"
+                        f"\n• Sentimyento: {fb.sentiment:+.0f}"
+                        f"\n• Trend: {fb.trend:+.0f}"
+                        f"\n• Seasonality: {fb.seasonality:+.0f}"
+                    )
+                else:
+                    breakdown_str = (
+                        f"\n\n**Fundamental factors:**"
+                        f"\n• Growth: {fb.growth:+.0f}"
+                        f"\n• Inflation: {fb.inflation:+.0f}"
+                        f"\n• Jobs: {fb.jobs:+.0f}"
+                        f"\n• Sentiment: {fb.sentiment:+.0f}"
+                        f"\n• Trend: {fb.trend:+.0f}"
+                        f"\n• Seasonality: {fb.seasonality:+.0f}"
+                    )
 
-            answers.append(
-                f"🔍 **{i.symbol}** — {i.name}\n"
-                f"**Bias:** {i.bias} (score: {i.bias_score:+.0f}) | "
-                f"**Strength:** {i.strength}/10 | "
-                f"**Confidence:** {i.confidence}%\n\n"
-                f"**Technical:** {i.explanation.technical_score:+.0f} | "
-                f"**Fundamental:** {i.explanation.fundamental_score:+.0f} | "
-                f"**Sentiment:** {i.explanation.sentiment_score:+.0f}\n\n"
-                f"**Trend:** {i.explanation.trend_direction} ({i.explanation.trend_strength})\n"
-                f"**Key levels:** Support {i.explanation.key_support:.5f}, Resistance {i.explanation.key_resistance:.5f}\n"
-                f"**Timing:** {i.explanation.session_quality} session, entry: {i.explanation.entry_timing}\n"
-                f"**AOV position:** {i.explanation.aov_position.replace('_', ' ')}"
-                f"{breakdown_str}"
-            )
+            if is_tagalog:
+                bias_tl = {'Strong Buy': 'Malakas na Bili', 'Buy': 'Bili',
+                           'Neutral': 'Neutral', 'Sell': 'Benta',
+                           'Strong Sell': 'Malakas na Benta'}.get(i.bias, i.bias)
+                aov_tl = i.explanation.aov_position.replace('_', ' ')
+                answers.append(
+                    f"🔍 **{i.symbol}** — {i.name}\n"
+                    f"**Posisyong:** {bias_tl} ({i.bias_score:+.0f}) | "
+                    f"**Lakas:** {i.strength}/10 | "
+                    f"**Kumpiyansa:** {i.confidence}%\n\n"
+                    f"**Teknikal:** {i.explanation.technical_score:+.0f} | "
+                    f"**Pundamental:** {i.explanation.fundamental_score:+.0f} | "
+                    f"**Sentimyento:** {i.explanation.sentiment_score:+.0f}\n\n"
+                    f"**Trend:** {i.explanation.trend_direction} ({i.explanation.trend_strength})\n"
+                    f"**Mga antas:** Suporta {i.explanation.key_support:.5f}, Resistensiya {i.explanation.key_resistance:.5f}\n"
+                    f"**Oras ng pagpasok:** {i.explanation.session_quality} session, {i.explanation.entry_timing}\n"
+                    f"**Posisyon sa AOV:** {aov_tl}"
+                    f"{breakdown_str}"
+                )
+            else:
+                answers.append(
+                    f"🔍 **{i.symbol}** — {i.name}\n"
+                    f"**Bias:** {i.bias} (score: {i.bias_score:+.0f}) | "
+                    f"**Strength:** {i.strength}/10 | "
+                    f"**Confidence:** {i.confidence}%\n\n"
+                    f"**Technical:** {i.explanation.technical_score:+.0f} | "
+                    f"**Fundamental:** {i.explanation.fundamental_score:+.0f} | "
+                    f"**Sentiment:** {i.explanation.sentiment_score:+.0f}\n\n"
+                    f"**Trend:** {i.explanation.trend_direction} ({i.explanation.trend_strength})\n"
+                    f"**Key levels:** Support {i.explanation.key_support:.5f}, Resistance {i.explanation.key_resistance:.5f}\n"
+                    f"**Timing:** {i.explanation.session_quality} session, entry: {i.explanation.entry_timing}\n"
+                    f"**AOV position:** {i.explanation.aov_position.replace('_', ' ')}"
+                    f"{breakdown_str}"
+                )
 
         return jsonify({'answer': '\n\n---\n\n'.join(answers)})
 
@@ -291,14 +422,37 @@ def api_chat():
         bears = [i for i in cat_instrs if i.bias in ('Strong Sell', 'Sell')]
         neutrals = [i for i in cat_instrs if i.bias == 'Neutral']
 
-        answer = (
-            f"📈 **{label}** ({len(cat_instrs)} instruments)\n\n"
-            f"**Bullish:** {', '.join(f'{i.symbol}({i.strength})' for i in bulls) if bulls else 'None'}\n"
-            f"**Bearish:** {', '.join(f'{i.symbol}({i.strength})' for i in bears) if bears else 'None'}\n"
-            f"**Neutral:** {', '.join(f'{i.symbol}' for i in neutrals[:5])}{'...' if len(neutrals) > 5 else '' if neutrals else 'None'}\n\n"
-            f"Ask about a specific symbol for detailed breakdown."
-        )
+        if is_tagalog:
+            buy_tl = {'Strong Buy': 'Malakas na Bili', 'Buy': 'Bili'}
+            sell_tl = {'Strong Sell': 'Malakas na Benta', 'Sell': 'Benta'}
+            bull_str = ', '.join(f'{i.symbol}({i.strength}) — {buy_tl.get(i.bias,i.bias)}' for i in bulls) if bulls else 'Wala'
+            bear_str = ', '.join(f'{i.symbol}({i.strength}) — {sell_tl.get(i.bias,i.bias)}' for i in bears) if bears else 'Wala'
+            neut_str = ', '.join(f'{i.symbol}' for i in neutrals[:5]) if neutrals else 'Wala'
+            answer = (
+                f"📈 **{label}** ({len(cat_instrs)} na instrumento)\n\n"
+                f"**Bullish:** {bull_str}\n"
+                f"**Bearish:** {bear_str}\n"
+                f"**Neutral:** {neut_str}{'...' if len(neutrals) > 5 else ''}\n\n"
+                f"Magtanong tungkol sa specific na instrumento para sa detalyadong breakdown."
+            )
+        else:
+            answer = (
+                f"📈 **{label}** ({len(cat_instrs)} instruments)\n\n"
+                f"**Bullish:** {', '.join(f'{i.symbol}({i.strength})' for i in bulls) if bulls else 'None'}\n"
+                f"**Bearish:** {', '.join(f'{i.symbol}({i.strength})' for i in bears) if bears else 'None'}\n"
+                f"**Neutral:** {', '.join(f'{i.symbol}' for i in neutrals[:5])}{'...' if len(neutrals) > 5 else '' if neutrals else 'None'}\n\n"
+                f"Ask about a specific symbol for detailed breakdown."
+            )
         return jsonify({'answer': answer})
+
+    if is_tagalog:
+        return jsonify({'answer': (
+            "Hindi ko maintindihan ang tanong mo. Subukan ang:\n\n"
+            "• \"Bakit neutral ang EURUSD?\"\n"
+            "• \"Ano ang sentiment ng merkado?\"\n"
+            "• \"Ipakita ang GBPJPY\"\n"
+            "• \"Kumusta ang stocks ngayon?\""
+        )})
 
     return jsonify({'answer': 'I couldn\'t understand your question. Try: "Why is EURUSD neutral?" or "Show me GBPJPY details"'})
 
@@ -340,6 +494,40 @@ def api_instruments():
             'is_crypto': spec.get('crypto', False),
         })
     return jsonify({'instruments': result})
+
+@app.route('/api/calculator/price/<symbol>')
+def api_calculator_price(symbol):
+    """Get latest price for a symbol from radar data."""
+    symbol = symbol.upper()
+    from .data_fetcher import fetch_bars
+    df = fetch_bars(symbol, bars=3, timeframe="M5")
+    if df is not None and len(df) > 0:
+        latest = df.iloc[-1]
+        return jsonify({
+            'symbol': symbol,
+            'bid': round(latest['close'], 5),
+            'ask': round(latest['close'], 5),
+            'spread': 0,
+            'high': round(latest['high'], 5),
+            'low': round(latest['low'], 5),
+            'price': round(latest['close'], 5),
+        })
+    # Fallback: try to get from radar scan cache
+    spec = INSTRUMENTS.get(symbol, {})
+    base_price = {
+        'EURUSD': 1.08500, 'GBPUSD': 1.28500, 'USDJPY': 150.500, 'USDCHF': 0.88500,
+        'USDCAD': 1.36500, 'AUDUSD': 0.67500, 'NZDUSD': 0.61500,
+        'GBPJPY': 192.500, 'EURJPY': 162.500, 'XAUUSD': 2350.00,
+        'US30': 39000, 'SP500': 5400, 'NAS100': 19500,
+        'BTCUSD': 58000, 'ETHUSD': 3100,
+    }.get(symbol, 100.0)
+    return jsonify({
+        'symbol': symbol,
+        'bid': base_price,
+        'ask': base_price,
+        'spread': 0,
+        'price': base_price,
+    })
 
 @app.route('/api/calculator', methods=['POST'])
 def api_calculator():

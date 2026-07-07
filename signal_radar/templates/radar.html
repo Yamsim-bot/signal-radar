@@ -4,555 +4,725 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Signal Radar — Multi-Asset Trading Bias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f1117;
-  --card: #1a1d28;
-  --card-hover: #222639;
-  --border: #2a2e3a;
-  --text: #e4e6eb;
-  --text-dim: #8b8fa3;
+  --gold: #d4af37;
+  --gold-light: #e0b94a;
+  --gold-lighter: #ecd17a;
+  --gold-lightest: #f5e1a4;
+  --gold-dark: #b8941f;
+  --gold-darkest: #3a2c08;
+  --bg-primary: #0f1115;
+  --bg-secondary: #18181b;
+  --bg-card: rgba(22, 24, 29, 0.6);
+  --bg-card-hover: rgba(30, 32, 38, 0.8);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-gold: rgba(212, 175, 55, 0.2);
+  --text: #f4f4f5;
+  --text-dim: #a1a1aa;
+  --text-muted: #71717a;
   --green: #22c55e;
-  --green-bg: rgba(34,197,94,0.12);
-  --red: #ef4444;
-  --red-bg: rgba(239,68,68,0.12);
-  --yellow: #eab308;
-  --yellow-bg: rgba(234,179,8,0.12);
+  --green-bg: rgba(34, 197, 94, 0.10);
+  --red: #f43f5e;
+  --red-bg: rgba(244, 63, 94, 0.10);
+  --yellow: #fbbf24;
+  --yellow-bg: rgba(251, 191, 36, 0.10);
   --blue: #3b82f6;
-  --blue-bg: rgba(59,130,246,0.12);
+  --blue-bg: rgba(59, 130, 246, 0.10);
   --cyan: #22d3ee;
-  --cyan-bg: rgba(34,211,238,0.12);
+  --cyan-bg: rgba(34, 211, 238, 0.10);
+  --purple: #8b5cf6;
+  --purple-bg: rgba(139, 92, 246, 0.10);
+  --sidebar-w: 220px;
 }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-       background: var(--bg); color: var(--text); min-height: 100vh; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
 
-/* Tabs */
-.tabs { display:flex; gap:0; background:var(--card); border-bottom:1px solid var(--border);
-        padding:0 16px; overflow-x:auto; position:sticky; top:0; z-index:100; }
-.tab-btn { padding:14px 20px; background:none; border:none; color:var(--text-dim);
-           cursor:pointer; font-size:14px; font-weight:600; border-bottom:2px solid transparent;
-           transition: all .2s; white-space:nowrap; }
-.tab-btn:hover { color:var(--text); }
-.tab-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
-.tab-content { display:none; padding:16px; }
-.tab-content.active { display:block; }
+/* ═══ Sidebar ═══ */
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: #000;
+}
+.sidebar-logo .logo-text {
+  font-size: 14px; font-weight: 700; color: var(--text);
+}
+.sidebar-logo .logo-sub {
+  font-size: 10px; color: var(--text-dim);
+  font-weight: 400;
+}
+.sidebar-nav { padding: 10px 12px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; color: var(--text-dim);
+  cursor: pointer; transition: all .15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.nav-item.active {
+  background: var(--gold-darkest);
+  color: var(--gold-light);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+.nav-item .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.nav-item .nav-badge {
+  margin-left: auto; font-size: 10px; padding: 1px 6px;
+  border-radius: 4px; background: var(--gold-darkest); color: var(--gold-light);
+}
+.sidebar-footer {
+  padding: 12px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted);
+  text-align: center;
+}
 
-/* Header */
-.header { padding:16px 20px; background:var(--card); border-bottom:1px solid var(--border); }
-.header h1 { font-size:22px; color:var(--text); }
-.header .subtitle { color:var(--text-dim); font-size:13px; margin-top:4px; }
+/* ═══ Main Content ═══ */
+.main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  padding: 0;
+}
 
-/* Filters */
-.filters { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; align-items:center; }
+/* ═══ Top Bar ═══ */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-title { font-size: 16px; font-weight: 700; }
+.topbar-subtitle { font-size: 12px; color: var(--text-dim); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+/* ═══ Tabs (inside main, not top nav) ═══ */
+.tab-content { display: none; padding: 20px 24px; }
+.tab-content.active { display: block; }
+
+/* ═══ Glass Cards ═══ */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+/* ═══ Filters Row ═══ */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
 .filters select, .filters input, .filters button {
-  padding:7px 12px; border-radius:6px; border:1px solid var(--border);
-  background:var(--card); color:var(--text); font-size:13px; }
-.filters select:focus, .filters input:focus { outline:none; border-color:var(--cyan); }
-.btn { cursor:pointer; font-weight:600; transition:all .2s; }
-.btn-primary { background:var(--cyan); color:#000; border-color:var(--cyan); }
-.btn-primary:hover { background:#1cc5df; }
-.btn-sm { padding:5px 10px; font-size:12px; }
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-secondary); color: var(--text);
+  font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--gold); }
+.btn {
+  cursor: pointer; font-weight: 600; transition: all .2s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-radius: 8px;
+}
+.btn-gold {
+  background: var(--gold); color: #000; border: none;
+  padding: 8px 16px; font-size: 13px;
+}
+.btn-gold:hover { background: var(--gold-light); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); padding: 6px 12px; font-size: 12px;
+}
+.btn-ghost:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
+.btn-danger { background: var(--red); color: #fff; border: none; padding: 6px 12px; font-size: 12px; }
 
-/* Range slider (dual-handle strength filter) */
-.range-slider-group { display:flex; align-items:center; gap:10px; }
-.range-label { font-size:12px; color:var(--text-dim); white-space:nowrap; }
-.range-slider { position:relative; width:140px; height:24px; }
-.range-track { position:absolute; top:50%; left:0; right:0; height:4px;
-               background:var(--border); border-radius:2px; transform:translateY(-50%); }
-.range-fill { height:100%; background:var(--cyan); border-radius:2px;
-              position:absolute; left:0; right:0; }
-.range-thumb { position:absolute; width:100%; height:100%; margin:0; padding:0;
-               background:transparent; -webkit-appearance:none; appearance:none;
-               pointer-events:none; z-index:2; }
-.range-thumb::-webkit-slider-thumb { -webkit-appearance:none; appearance:none;
-       width:16px; height:16px; border-radius:50%; background:var(--cyan);
-       border:2px solid var(--card); cursor:pointer; pointer-events:all;
-       box-shadow:0 1px 4px rgba(0,0,0,0.4); }
-.range-thumb::-moz-range-thumb { width:16px; height:16px; border-radius:50%;
-       background:var(--cyan); border:2px solid var(--card); cursor:pointer;
-       pointer-events:all; box-shadow:0 1px 4px rgba(0,0,0,0.4); }
-.range-thumb:focus { outline:none; }
-.range-values { font-size:12px; color:var(--text); font-weight:600;
-                min-width:45px; text-align:center; }
-.btn-danger { background:var(--red); color:#fff; border-color:var(--red); }
-.btn-danger:hover { background:#dc2626; }
-.btn-warning { background:var(--yellow); color:#000; border-color:var(--yellow); }
-.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text-dim); }
-.btn-ghost:hover { background:var(--card-hover); color:var(--text); }
+/* ═══ Overview Banner ═══ */
+.overview { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.overview-item {
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 14px; border-radius: 8px; background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+.overview-label { font-size: 12px; color: var(--text-dim); }
+.overview-value { font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+
+/* ═══ Market Banner ═══ */
+.market-banner {
+  padding: 14px 20px; border-radius: 10px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.market-banner.bullish { background: var(--green-bg); border: 1px solid rgba(34,197,94,0.2); }
+.market-banner.bearish { background: var(--red-bg); border: 1px solid rgba(244,63,94,0.2); }
+.market-banner.neutral { background: var(--gold-darkest); border: 1px solid var(--border-gold); }
+.market-label { font-size: 16px; font-weight: 600; }
+.market-score { font-size: 28px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
 
 /* ═══ Instrument Table ═══ */
-.instr-wrapper { overflow-x:auto; margin-top:8px; border:1px solid var(--border); border-radius:8px; }
-.instr-table { width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }
-.instr-table th { padding:8px 10px; text-align:left; font-weight:600; color:var(--text-dim);
-                  background:var(--card); border-bottom:2px solid var(--border);
-                  position:sticky; top:0; white-space:nowrap; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
-.instr-table td { padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
-.instr-table tr:last-child td { border-bottom:none; }
-.instr-table tr:hover { filter:brightness(1.2); cursor:pointer; }
+.instr-wrapper {
+  overflow-x: auto; border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+}
+.instr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.instr-table th {
+  padding: 10px 12px; text-align: left; font-weight: 600;
+  color: var(--text-dim); font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.5px; background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+}
+.instr-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.instr-table tr:last-child td { border-bottom: none; }
+.instr-table tr:hover { background: var(--bg-card-hover); cursor: pointer; }
 
-/* Row background tints by bias */
-.row-bullish { background:rgba(34,197,94,0.06); }
-.row-bearish { background:rgba(239,68,68,0.06); }
-.row-neutral { background:transparent; }
+/* Bias pills */
+.bias-pill {
+  display: inline-block; padding: 3px 10px; border-radius: 6px;
+  font-weight: 700; font-size: 11px; letter-spacing: 0.3px;
+}
+.bias-strong-buy { background: var(--green-bg); color: var(--green); }
+.bias-buy { background: rgba(34, 211, 238, 0.10); color: var(--cyan); }
+.bias-neutral { background: var(--yellow-bg); color: var(--yellow); }
+.bias-sell { background: var(--blue-bg); color: var(--blue); }
+.bias-strong-sell { background: var(--red-bg); color: var(--red); }
 
-/* Bias badge in table */
-.bias-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
-.bias-strong-buy { background:var(--green-bg); color:var(--green); }
-.bias-buy { background:var(--cyan-bg); color:var(--cyan); }
-.bias-neutral { background:var(--yellow-bg); color:var(--yellow); }
-.bias-sell { background:var(--blue-bg); color:var(--blue); }
-.bias-strong-sell { background:var(--red-bg); color:var(--red); }
+/* Strength bars */
+.str-bar { display: inline-flex; align-items: center; gap: 4px; width: 70px; }
+.str-bar-track { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.str-bar-fill { height: 100%; border-radius: 2px; }
+.str-bar-fill.gold { background: var(--gold); }
+.str-bar-fill.green { background: var(--green); }
+.str-bar-fill.red { background: var(--red); }
+.str-bar-fill.yellow { background: var(--yellow); }
 
-/* Strength bar inline */
-.str-bar { display:inline-flex; align-items:center; gap:4px; width:70px; }
-.str-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
-.str-bar-fill { height:100%; border-radius:3px; }
-.str-bar-fill.green { background:var(--green); }
-.str-bar-fill.yellow { background:var(--yellow); }
-.str-bar-fill.red { background:var(--red); }
+.chg-positive { color: var(--green); font-weight: 600; }
+.chg-negative { color: var(--red); font-weight: 600; }
 
-/* Change % coloring */
-.chg-positive { color:var(--green); font-weight:600; }
-.chg-negative { color:var(--red); font-weight:600; }
+.entry-now { color: var(--green); font-weight: 600; }
+.entry-soon { color: var(--gold-light); }
+.entry-wait { color: var(--yellow); }
 
-/* Best time styling */
-.best-time { color:var(--cyan); font-size:11px; }
-.entry-now { color:var(--green); font-weight:600; }
-.entry-soon { color:var(--cyan); }
-.entry-wait { color:var(--yellow); }
+/* Detail row */
+.detail-row { display: none; }
+.detail-row.open { display: table-row; }
+.detail-cell {
+  padding: 14px 16px !important;
+  background: rgba(0,0,0,0.15);
+}
+.detail-inner { max-width: 800px; font-size: 12px; line-height: 1.6; }
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0;
+}
+.detail-item {
+  display: flex; justify-content: space-between; padding: 4px 8px;
+  border-radius: 4px; background: rgba(255,255,255,0.03);
+}
+.detail-label { color: var(--text-dim); }
+.detail-value { font-weight: 600; }
 
-/* ═══ Calendar section (on radar page) ═══ */
-.radar-calendar { margin-top:16px; background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px; }
-.radar-calendar h3 { font-size:14px; margin-bottom:10px; color:var(--cyan); }
-.cal-events { display:flex; gap:10px; flex-wrap:wrap; }
-.cal-event { padding:6px 10px; border-radius:6px; font-size:12px; border:1px solid var(--border); background:rgba(255,255,255,0.02); }
-.cal-event .cal-impact { font-weight:700; font-size:10px; text-transform:uppercase; }
-.cal-event .cal-impact.high { color:var(--red); }
-.cal-event .cal-impact.medium { color:var(--yellow); }
-.cal-event .cal-time { color:var(--text-dim); font-size:11px; }
-.cal-event .cal-name { color:var(--text); }
-.cal-event .cal-currency { font-weight:600; }
+/* Factor bars */
+.factor-bar { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.factor-label { width: 80px; font-size: 11px; color: var(--text-dim); }
+.factor-track { flex: 1; height: 12px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; }
+.factor-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.factor-score { width: 40px; text-align: right; font-size: 11px; font-weight: 600; }
+.factor-total { border-top: 1px solid var(--border); padding-top: 4px; margin-top: 4px; font-weight: 700; }
 
-/* Expanded detail row */
-.detail-row { display:none; }
-.detail-row.open { display:table-row; }
-.detail-cell { padding:12px 16px !important; background:rgba(0,0,0,0.15); }
-.detail-inner { max-width:800px; font-size:12px; line-height:1.6; }
-.detail-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin:6px 0; }
-.detail-item { display:flex; justify-content:space-between; padding:3px 8px; border-radius:3px; background:rgba(255,255,255,0.03); }
-.detail-label { color:var(--text-dim); }
-.detail-value { font-weight:600; }
+/* ═══ News Tab ═══ */
+.news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.news-full { grid-column: 1 / -1; }
 
-/* Factor bars in detail */
-.factor-bar { display:flex; align-items:center; gap:6px; margin:2px 0; }
-.factor-label { width:80px; font-size:11px; color:var(--text-dim); }
-.factor-track { flex:1; height:14px; background:rgba(255,255,255,0.05); border-radius:3px; position:relative; overflow:hidden; }
-.factor-fill { height:100%; border-radius:3px; transition:width .3s; }
-.factor-score { width:40px; text-align:right; font-size:11px; font-weight:600; }
-.factor-total { border-top:1px solid var(--border); padding-top:4px; margin-top:4px; font-weight:700; }
+/* ═══ Chat ═══ */
+.chat-box { max-width: 700px; margin: 0 auto; }
+.chat-messages {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; height: 400px;
+  overflow-y: auto; margin-bottom: 12px;
+}
+.chat-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.chat-user { background: var(--gold-darkest); border: 1px solid var(--border-gold); margin-left: 40px; }
+.chat-bot { background: var(--bg-card-hover); border: 1px solid var(--border); margin-right: 40px; white-space: pre-wrap; }
+.chat-input { display: flex; gap: 8px; }
+.chat-input input {
+  flex: 1; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--bg-secondary); color: var(--text);
+  font-size: 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.chat-input input:focus { outline: none; border-color: var(--gold); }
 
-/* Overview bar */
-.overview { display:flex; gap:16px; flex-wrap:wrap; padding:12px 16px;
-            background:var(--card); border-bottom:1px solid var(--border); font-size:13px; }
-.overview-item { display:flex; gap:6px; align-items:center; }
-.overview-label { color:var(--text-dim); }
-.overview-value { font-weight:700; }
-
-/* Chat */
-.chat-box { max-width:700px; margin:0 auto; }
-.chat-messages { background:var(--card); border:1px solid var(--border); border-radius:10px;
-                 padding:16px; height:400px; overflow-y:auto; margin-bottom:12px; }
-.chat-msg { margin-bottom:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.6; }
-.chat-user { background:var(--cyan-bg); border:1px solid rgba(34,211,238,0.2); margin-left:40px; }
-.chat-bot { background:var(--card-hover); border:1px solid var(--border); margin-right:40px; white-space:pre-wrap; }
-.chat-input { display:flex; gap:8px; }
-.chat-input input { flex:1; padding:10px 14px; border:1px solid var(--border); border-radius:6px;
-                    background:var(--card); color:var(--text); font-size:14px; }
-.chat-input input:focus { outline:none; border-color:var(--cyan); }
-
-/* Calculator Symbol Search */
-.calc-symbol-wrap { position:relative; }
+/* ═══ Calculator ═══ */
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 800px; margin: 0 auto; }
+.calc-form label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 3px; }
+.calc-form input, .calc-form select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--bg-secondary); color: var(--text);
+  font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.calc-form input:focus { outline: none; border-color: var(--gold); }
+.calc-results { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.calc-result-item {
+  display: flex; justify-content: space-between; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.calc-symbol-wrap { position: relative; }
 .calc-dropdown {
-  position:absolute; top:100%; left:0; right:0; max-height:220px; overflow-y:auto;
-  background:var(--card); border:1px solid var(--border); border-radius:6px;
-  z-index:200; display:none;
+  position: absolute; top: 100%; left: 0; right: 0; max-height: 220px; overflow-y: auto;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+  z-index: 200; display: none;
 }
 .calc-dropdown-item {
-  padding:8px 12px; cursor:pointer; font-size:13px; display:flex; justify-content:space-between;
-  border-bottom:1px solid var(--border); transition:background .15s;
+  padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between;
+  border-bottom: 1px solid var(--border); transition: background .15s; color: var(--text);
 }
-.calc-dropdown-item:hover, .calc-dropdown-item.active { background:var(--blue-bg); }
-.calc-dropdown-item .cat-tag { font-size:10px; color:var(--text-dim); padding:1px 6px; border-radius:4px; background:var(--border); }
-.calc-dropdown-item .cat-tag.crypto { color:var(--yellow); border-color:var(--yellow); }
-/* Calculator */
-.calc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:800px; margin:0 auto; }
-.calc-form label { display:block; font-size:12px; color:var(--text-dim); margin:8px 0 3px; }
-.calc-form input, .calc-form select { width:100%; padding:8px 10px; border:1px solid var(--border);
-               border-radius:5px; background:var(--card); color:var(--text); font-size:13px; }
-.calc-form input:focus { outline:none; border-color:var(--cyan); }
-.calc-results { background:var(--card); border:1px solid var(--border); border-radius:10px;
-                padding:16px; }
-.calc-result-item { display:flex; justify-content:space-between; padding:6px 0;
-                    border-bottom:1px solid var(--border); font-size:13px; }
-.calc-result-item:last-child { border-bottom:none; font-weight:700; }
+.calc-dropdown-item:hover, .calc-dropdown-item.active { background: var(--gold-darkest); }
 
-/* Journal */
-.journal-grid { display:grid; grid-template-columns:1fr 2fr; gap:20px; }
-.journal-form { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
-.journal-form label { display:block; font-size:12px; color:var(--text-dim); margin:8px 0 3px; }
+/* ═══ Journal ═══ */
+.journal-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+.journal-form { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.journal-form label { display: block; font-size: 12px; color: var(--text-dim); margin: 8px 0 3px; }
 .journal-form input, .journal-form select, .journal-form textarea {
-  width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:5px;
-  background:var(--bg); color:var(--text); font-size:13px; }
-.journal-form textarea { height:60px; resize:vertical; }
-.journal-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px; }
-.stat-card { background:var(--card); border:1px solid var(--border); border-radius:8px;
-             padding:10px; text-align:center; }
-.stat-num { font-size:22px; font-weight:700; }
-.stat-label { font-size:11px; color:var(--text-dim); }
-.journal-table { width:100%; border-collapse:collapse; font-size:12px; }
-.journal-table th { text-align:left; padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border); }
-.journal-table td { padding:6px 8px; border-bottom:1px solid var(--border); }
-.journal-entries { max-height:500px; overflow-y:auto; }
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg-primary); color: var(--text);
+  font-size: 13px; font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.journal-form textarea { height: 60px; resize: vertical; }
+.journal-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; text-align: center;
+}
+.stat-num { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.stat-label { font-size: 11px; color: var(--text-dim); }
 
-/* Market overview banner */
-.market-banner { display:flex; gap:20px; align-items:center; padding:12px 20px;
-                 border-radius:8px; margin-bottom:12px; }
-.market-banner.bullish { background:var(--green-bg); border:1px solid rgba(34,197,94,0.2); }
-.market-banner.bearish { background:var(--red-bg); border:1px solid rgba(239,68,68,0.2); }
-.market-banner.neutral { background:var(--yellow-bg); border:1px solid rgba(234,179,8,0.2); }
-.market-label { font-size:18px; font-weight:700; }
-.market-score { font-size:24px; font-weight:800; }
+/* ═══ Suggestion chips ═══ */
+.chip-group { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.chip {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 12px; cursor: pointer; transition: all .2s;
+  background: var(--bg-secondary); color: var(--text-dim);
+}
+.chip:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
 
-/* Badge */
-.badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; font-weight:600; }
-.badge-green { background:var(--green-bg); color:var(--green); }
-.badge-red { background:var(--red-bg); color:var(--red); }
-.badge-yellow { background:var(--yellow-bg); color:var(--yellow); }
-.badge-cyan { background:var(--cyan-bg); color:var(--cyan); }
-.badge-blue { background:var(--blue-bg); color:var(--blue); }
+/* ═══ Loading ═══ */
+.loading { text-align: center; padding: 40px; color: var(--text-dim); }
+.spinner {
+  width: 30px; height: 30px; border: 3px solid var(--border);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin .6s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Suggestion chips */
-.chip-group { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
-.chip { padding:5px 12px; border:1px solid var(--border); border-radius:14px;
-        font-size:12px; cursor:pointer; transition:all .2s; background:var(--card); color:var(--text-dim); }
-.chip:hover { background:var(--card-hover); color:var(--text); border-color:var(--cyan); }
+/* ═══ Shimmer ═══ */
+.shimmer {
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(212,175,55,0.04) 20%, rgba(212,175,55,0.08) 50%, rgba(212,175,55,0.04) 80%, rgba(255,255,255,0) 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+@keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
 
-/* Loading */
-.loading { text-align:center; padding:40px; color:var(--text-dim); }
-.spinner { width:30px; height:30px; border:3px solid var(--border); border-top-color:var(--cyan);
-           border-radius:50%; animation:spin .6s linear infinite; margin:0 auto 12px; }
-@keyframes spin { to { transform:rotate(360deg); } }
+/* ═══ Scrollbar ═══ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
-/* Scrollbar */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:var(--bg); }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+/* ═══ Misc ═══ */
+.badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.badge-gold { background: var(--gold-darkest); color: var(--gold-light); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-red { background: var(--red-bg); color: var(--red); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.badge-gray { background: rgba(255,255,255,0.05); color: var(--text-dim); }
 
-/* Responsive */
+/* ═══ Responsive ═══ */
+.hamburger {
+  display: none; width: 34px; height: 34px; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-dim); font-size: 18px; cursor: pointer;
+  transition: all .2s; flex-shrink: 0;
+}
+.hamburger:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--gold); }
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 180;
+  background: rgba(0,0,0,0.5);
+}
 @media(max-width:768px) {
-  .calc-grid, .journal-grid { grid-template-columns:1fr; }
-  .overview { flex-direction:column; gap:4px; }
+  .hamburger { display: flex; }
+  .sidebar {
+    display: flex; z-index: 250; transform: translateX(-100%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+  .main-content { margin-left: 0; }
+  .calc-grid, .journal-grid, .news-grid { grid-template-columns: 1fr; }
+  .overview { gap: 8px; }
+  .instr-wrapper { border-radius: 0; margin-left: -12px; margin-right: -12px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .tab-content { padding: 12px; }
+  .topbar { padding: 10px 12px; }
+  .market-score { font-size: 20px; }
+  .market-banner { padding: 10px 14px; flex-direction: column; gap: 4px; text-align: center; }
+  .overview-item { padding: 6px 10px; flex: 1; min-width: 0; }
+  .overview-value { font-size: 14px; }
+  .overview-label { font-size: 10px; }
+  .filters { gap: 4px; }
+  .filters select, .filters input { font-size: 11px; padding: 6px 8px; flex: 1; min-width: 0; }
+  .chat-msg { font-size: 12px; }
+  .chat-user { margin-left: 10px; }
+  .chat-bot { margin-right: 10px; }
+  .instr-table { font-size: 11px; }
+  .instr-table th, .instr-table td { padding: 6px 8px; }
+  .calc-results { padding: 12px; }
+  .calc-result-item { font-size: 12px; }
+  .glass-panel { padding: 10px !important; }
+  .factor-label { width: 60px; font-size: 10px; }
 }
 </style>
 </head>
 <body>
 
-<div class="tabs" id="tabs">
-  <button class="tab-btn active" data-tab="radar">📡 Radar</button>
-  <button class="tab-btn" data-tab="chat">💬 Ask Me</button>
-  <button class="tab-btn" data-tab="calculator">🧮 Position Calculator</button>
-  <button class="tab-btn" data-tab="journal">📓 Trading Journal</button>
-</div>
+<!-- ════ MOBILE OVERLAY ════ -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileMenu()"></div>
 
-<!-- ════ TAB 1: RADAR ════ -->
-<div id="tab-radar" class="tab-content active">
-  <div class="header">
-    <h1>Signal Radar</h1>
-    <div class="subtitle" id="update-time">Multi-Asset Trading Bias Scanner</div>
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">SR</div>
+    <div>
+      <div class="logo-text">Signal Radar</div>
+      <div class="logo-sub">Multi-Asset Scanner</div>
+    </div>
   </div>
-
-  <div class="market-banner neutral" id="market-banner">
-    <span class="market-label" id="market-label">Scanning...</span>
-    <span class="market-score" id="market-score">0.0</span>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" data-tab="radar">
+      <span class="nav-icon">📡</span> Radar
+    </button>
+    <button class="nav-item" data-tab="news">
+      <span class="nav-icon">📰</span> News
+      <span class="nav-badge" id="news-badge">•</span>
+    </button>
+    <button class="nav-item" data-tab="chat">
+      <span class="nav-icon">🤖</span> Let me explain, BUDDY!
+    </button>
+    <button class="nav-item" data-tab="calculator">
+      <span class="nav-icon">🧮</span> Calculator
+    </button>
+    <button class="nav-item" data-tab="journal">
+      <span class="nav-icon">📓</span> Journal
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    Signal Radar v2.0<br>
+    Data: Yahoo • Binance • RSS
   </div>
+</aside>
 
-  <div class="overview" id="overview-bar">
-    <div class="overview-item"><span class="overview-label">Total:</span><span class="overview-value" id="ov-total">0</span></div>
-    <div class="overview-item" style="color:var(--green)">Strong Buy: <span id="ov-sb">0</span></div>
-    <div class="overview-item" style="color:var(--cyan)">Buy: <span id="ov-b">0</span></div>
-    <div class="overview-item" style="color:var(--yellow)">Neutral: <span id="ov-n">0</span></div>
-    <div class="overview-item" style="color:var(--blue)">Sell: <span id="ov-s">0</span></div>
-    <div class="overview-item" style="color:var(--red)">Strong Sell: <span id="ov-ss">0</span></div>
-  </div>
+<!-- ════ MAIN ════ -->
+<main class="main-content">
 
-  <div class="filters">
-    <select id="filter-category">
-      <option value="">All Categories</option>
-      <option value="major">Forex Majors</option>
-      <option value="cross">Forex Crosses</option>
-      <option value="index">Indices</option>
-      <option value="commodity">Commodities / CFDs</option>
-      <option value="stock">Stocks</option>
-    </select>
-    <select id="filter-bias">
-      <option value="">All Bias</option>
-      <option value="Strong Buy">Strong Buy</option>
-      <option value="Buy">Buy</option>
-      <option value="Neutral">Neutral</option>
-      <option value="Sell">Sell</option>
-      <option value="Strong Sell">Strong Sell</option>
-    </select>
-    <div class="range-slider-group">
-      <span class="range-label">Strength:</span>
-      <div class="range-slider">
-        <input type="range" id="filter-strength-min" min="1" max="10" value="1" class="range-thumb range-thumb-min">
-        <input type="range" id="filter-strength-max" min="1" max="10" value="10" class="range-thumb range-thumb-max">
-        <div class="range-track"><div class="range-fill" id="range-fill"></div></div>
+  <!-- ════ TOP BAR ════ -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">☰</button>
+      <div>
+        <div class="topbar-title" id="page-title">Radar</div>
+        <div class="topbar-subtitle" id="update-time">Multi-Asset Trading Bias Scanner</div>
       </div>
-      <span class="range-values" id="range-values">1 — 10</span>
     </div>
-    <input type="text" id="filter-search" placeholder="Search symbol..." style="width:150px">
-    <button class="btn btn-primary" onclick="scan()">Scan Now</button>
-    <span id="scan-status" style="font-size:12px;color:var(--text-dim)"></span>
-  </div>
-
-  <div id="loading" class="loading"><div class="spinner"></div>Running radar scan...</div>
-
-  <!-- ═══ Calendar Events (shows on radar page) ═══ -->
-  <div class="radar-calendar" id="radar-calendar" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <h3>Upcoming Economic Events</h3>
-      <span id="cal-count" style="font-size:12px;color:var(--text-dim)"></span>
-    </div>
-    <div class="cal-events" id="cal-events"></div>
-  </div>
-
-  <!-- ═══ Instrument Table ═══ -->
-  <div id="table-container" style="display:none">
-    <div class="instr-wrapper">
-      <table class="instr-table" id="instr-table">
-        <thead>
-          <tr>
-            <th>Symbol</th>
-            <th>Bias</th>
-            <th>Score</th>
-            <th>Strength</th>
-            <th>Conf</th>
-            <th>Price</th>
-            <th>Chg%</th>
-            <th>Trend</th>
-            <th>Best Time</th>
-            <th>Entry</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:var(--text-dim)" id="scan-status"></span>
     </div>
   </div>
-</div>
 
-<!-- ════ TAB 2: CHAT ════ -->
-<div id="tab-chat" class="tab-content">
-  <div class="header">
-    <h1>💬 Ask Me — AI Trading Assistant</h1>
-    <div class="subtitle">Ask about any instrument, category, or market condition</div>
+  <!-- ════ TAB 1: RADAR ════ -->
+  <div id="tab-radar" class="tab-content active">
+
+    <div class="market-banner neutral" id="market-banner">
+      <span class="market-label" id="market-label">Scanning...</span>
+      <span class="market-score" id="market-score">0.0</span>
+    </div>
+
+    <div class="overview" id="overview-bar">
+      <div class="overview-item"><span class="overview-label">Total</span><span class="overview-value" id="ov-total">0</span></div>
+      <div class="overview-item" style="border-color:rgba(34,197,94,0.2)"><span class="overview-label" style="color:var(--green)">▲ Strong Buy</span><span class="overview-value" style="color:var(--green)" id="ov-sb">0</span></div>
+      <div class="overview-item" style="border-color:rgba(34,211,238,0.2)"><span class="overview-label" style="color:var(--cyan)">◆ Buy</span><span class="overview-value" style="color:var(--cyan)" id="ov-b">0</span></div>
+      <div class="overview-item" style="border-color:rgba(251,191,36,0.2)"><span class="overview-label" style="color:var(--yellow)">● Neutral</span><span class="overview-value" style="color:var(--yellow)" id="ov-n">0</span></div>
+      <div class="overview-item" style="border-color:rgba(59,130,246,0.2)"><span class="overview-label" style="color:var(--blue)">▼ Sell</span><span class="overview-value" style="color:var(--blue)" id="ov-s">0</span></div>
+      <div class="overview-item" style="border-color:rgba(244,63,94,0.2)"><span class="overview-label" style="color:var(--red)">◆ Strong Sell</span><span class="overview-value" style="color:var(--red)" id="ov-ss">0</span></div>
+    </div>
+
+    <div class="filters">
+      <select id="filter-category">
+        <option value="">All</option>
+        <option value="major">Forex Majors</option>
+        <option value="cross">Forex Crosses</option>
+        <option value="index">Indices</option>
+        <option value="commodity">Commodities</option>
+        <option value="stock">Stocks</option>
+      </select>
+      <select id="filter-bias">
+        <option value="">All Bias</option>
+        <option value="Strong Buy">Strong Buy</option>
+        <option value="Buy">Buy</option>
+        <option value="Neutral">Neutral</option>
+        <option value="Sell">Sell</option>
+        <option value="Strong Sell">Strong Sell</option>
+      </select>
+      <input type="text" id="filter-search" placeholder="Search symbol..." style="width:150px">
+      <button class="btn btn-gold" onclick="scan()">⟳ Scan Now</button>
+    </div>
+
+    <div id="loading" class="loading"><div class="spinner"></div>Running radar scan...</div>
+
+    <div id="table-container" style="display:none">
+      <div class="instr-wrapper">
+        <table class="instr-table" id="instr-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Bias</th>
+              <th>Score</th>
+              <th>Strength</th>
+              <th>Conf</th>
+              <th>Price</th>
+              <th>Chg%</th>
+              <th>Trend</th>
+              <th>Entry</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Calendar (minimal, shown on radar page) -->
+    <div id="radar-calendar" style="margin-top:16px;display:none">
+      <div class="glass-panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:14px;font-weight:600">📅 Economic Events</span>
+          <span id="cal-count" style="font-size:12px;color:var(--text-dim)"></span>
+        </div>
+        <div class="cal-events" id="cal-events" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+    </div>
   </div>
-  <div class="chat-box">
-    <div class="chat-messages" id="chat-messages">
-      <div class="chat-msg chat-bot">
-Welcome! I can analyze any trading instrument in our database. Try asking:
+
+  <!-- ════ TAB 2: NEWS ════ -->
+  <div id="tab-news" class="tab-content">
+
+    <div class="overview" id="news-overview" style="margin-bottom:12px">
+      <div class="overview-item"><span class="overview-label">Sentiment</span><span class="overview-value" id="news-sentiment" style="color:var(--yellow)">--</span></div>
+      <div class="overview-item"><span class="overview-label">High Impact</span><span class="overview-value" id="news-high-impact">0</span></div>
+      <div class="overview-item"><span class="overview-label">Dovish</span><span class="overview-value" style="color:var(--cyan)" id="news-dovish">0</span></div>
+      <div class="overview-item"><span class="overview-label">Hawkish</span><span class="overview-value" style="color:var(--red)" id="news-hawkish">0</span></div>
+      <div class="overview-item"><span class="overview-label">Risk On</span><span class="overview-value" style="color:var(--green)" id="news-risk-on">0</span></div>
+      <div class="overview-item"><span class="overview-label">Risk Off</span><span class="overview-value" style="color:var(--red)" id="news-risk-off">0</span></div>
+    </div>
+
+    <div class="news-grid">
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📅 Economic Calendar</h3>
+        <div id="news-calendar"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📰 News Headlines</h3>
+        <div id="news-headlines"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <div class="news-grid">
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">🏛️ Central Bank Events</h3>
+        <div id="news-cb"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">🔥 Trending Topics</h3>
+        <div id="news-trending"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
+      </div>
+    </div>
+
+    <div class="news-grid">
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">📊 Source Sentiment</h3>
+        <div id="news-sources"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:14px;margin-bottom:10px;color:var(--gold-light);font-weight:600">⚠️ Cross-Source Signals</h3>
+        <div id="news-crossref"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ TAB 3: CHAT ════ -->
+  <div id="tab-chat" class="tab-content">
+    <div class="glass-panel" style="max-width:700px;margin:0 auto;padding:20px">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg chat-bot">
+🤖 **Let me explain, BUDDY!** at your service! I can analyze any trading instrument. Try asking:
 
 • "Why is EURUSD neutral?"
 • "Show me GBPJPY details"
 • "What's the strongest buy right now?"
 • "How are the commodities doing?"
-• "Which pair has the best setup today?"
+• "Salamat! Kamusta ang merkado?" (Tagalog support 🎉)
+        </div>
       </div>
-    </div>
-    <div class="chip-group" id="chat-suggestions">
-      <span class="chip" onclick="ask('Show me the strongest buy signals')">🔥 Strongest buys</span>
-      <span class="chip" onclick="ask('Why is EURUSD neutral?')">❓ EURUSD</span>
-      <span class="chip" onclick="ask('What is the market sentiment overall?')">📊 Market overall</span>
-      <span class="chip" onclick="ask('Tell me about GBPJPY')">💷 GBPJPY</span>
-      <span class="chip" onclick="ask('How are stocks doing?')">📈 Stocks</span>
-    </div>
-    <div class="chat-input">
-      <input type="text" id="chat-input" placeholder="Ask about a pair, e.g. 'Why is XAUUSD bearish?'"
-             onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="btn btn-primary" onclick="sendChat()">Send</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════ TAB 3: POSITION CALCULATOR ════ -->
-<div id="tab-calculator" class="tab-content">
-  <div class="header">
-    <h1>🧮 Position Size Calculator</h1>
-    <div class="subtitle">Compute pips, fees, and risk for any instrument</div>
-  </div>
-  <div class="calc-grid">
-    <div class="calc-form">
-      <label>Symbol <span style="color:var(--text-dim);font-size:11px">(type to search)</span></label>
-      <div class="calc-symbol-wrap">
-        <input type="text" id="calc-symbol-search" placeholder="Search symbol..." autocomplete="off"
-               oninput="filterCalcSymbols(this.value)" onfocus="showCalcDropdown()" onblur="setTimeout(hideCalcDropdown,200)">
-        <input type="hidden" id="calc-symbol" value="EURUSD">
-        <div class="calc-dropdown" id="calc-dropdown"></div>
+      <div class="chip-group" id="chat-suggestions">
+        <span class="chip" onclick="ask('Show me the strongest buy signals')">🔥 Strongest buys</span>
+        <span class="chip" onclick="ask('Why is EURUSD neutral?')">❓ EURUSD</span>
+        <span class="chip" onclick="ask('What is the market sentiment overall?')">📊 Market overall</span>
+        <span class="chip" onclick="ask('Tell me about GBPJPY')">💷 GBPJPY</span>
+        <span class="chip" onclick="ask('How are stocks doing?')">📈 Stocks</span>
       </div>
-      <label>Account Balance ($)</label>
-      <input type="number" id="calc-balance" value="500" step="50">
-      <label>Risk %</label>
-      <input type="number" id="calc-risk" value="2" step="0.5" min="0.5" max="10">
-      <label>Lot Size</label>
-      <input type="number" id="calc-lot" value="0.01" step="0.01" min="0.01">
-      <label>Entry Price</label>
-      <input type="number" id="calc-entry" step="any" placeholder="e.g. 1.08500">
-      <label>Stop Loss</label>
-      <input type="number" id="calc-sl" step="any" placeholder="e.g. 1.08000">
-      <label>Take Profit</label>
-      <input type="number" id="calc-tp" step="any" placeholder="e.g. 1.09200">
-      <button class="btn btn-primary" onclick="calcPosition()" style="margin-top:10px;width:100%;padding:10px">
-        Calculate
-      </button>
-    </div>
-    <div class="calc-results" id="calc-results">
-      <div style="color:var(--text-dim);text-align:center;padding:40px 0">
-        Enter trade details and click Calculate
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════ TAB 4: TRADING JOURNAL ════ -->
-<div id="tab-journal" class="tab-content">
-  <div class="header">
-    <h1>📓 Trading Journal</h1>
-    <div class="subtitle">Log and track your trades</div>
-  </div>
-
-  <div class="journal-stats" id="journal-stats">
-    <div class="stat-card"><div class="stat-num" id="js-total">0</div><div class="stat-label">Total Trades</div></div>
-    <div class="stat-card"><div class="stat-num" id="js-wins">0</div><div class="stat-label">Wins</div></div>
-    <div class="stat-card"><div class="stat-num" id="js-winrate">0%</div><div class="stat-label">Win Rate</div></div>
-    <div class="stat-card"><div class="stat-num" id="js-pnl" style="color:var(--text)">$0</div><div class="stat-label">P&L</div></div>
-  </div>
-
-  <div class="journal-grid">
-    <div class="journal-form">
-      <h3 style="margin-bottom:8px;font-size:14px">Add Trade</h3>
-      <label>Symbol</label>
-      <select id="j-symbol"></select>
-      <label>Direction</label>
-      <select id="j-direction"><option>Buy</option><option>Sell</option></select>
-      <label>Entry Price</label>
-      <input type="number" id="j-entry" step="0.00001">
-      <label>Exit Price</label>
-      <input type="number" id="j-exit" step="0.00001">
-      <label>Lot Size</label>
-      <input type="number" id="j-lot" value="0.01" step="0.01">
-      <label>Stop Loss</label>
-      <input type="number" id="j-sl" step="0.00001">
-      <label>Take Profit</label>
-      <input type="number" id="j-tp" step="0.00001">
-      <label>Result</label>
-      <select id="j-result"><option value="open">Open</option><option value="win">Win</option><option value="loss">Loss</option></select>
-      <label>P&L ($)</label>
-      <input type="number" id="j-pnl" step="0.01">
-      <label>Notes</label>
-      <textarea id="j-notes" placeholder="Entry reason, notes..."></textarea>
-      <button class="btn btn-primary" onclick="addJournalEntry()" style="margin-top:8px;width:100%;padding:8px">➕ Add Entry</button>
-    </div>
-    <div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <h3 style="font-size:14px">Trade History</h3>
-        <button class="btn btn-sm btn-danger" onclick="clearJournal()">Clear All</button>
-      </div>
-      <div class="journal-entries" id="journal-entries">
-        <div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ════ TAB 5: NEWS ════ -->
-<div id="tab-news" class="tab-content">
-  <div class="header">
-    <h1>📰 News & Calendar</h1>
-    <div class="subtitle">Latest headlines, economic calendar, and central bank events</div>
-  </div>
-
-  <div class="overview" id="news-overview" style="margin-bottom:12px">
-    <div class="overview-item"><span class="overview-label">Sentiment:</span><span class="overview-value" id="news-sentiment" style="color:var(--yellow)">--</span></div>
-    <div class="overview-item"><span class="overview-label">High Impact Events:</span><span class="overview-value" id="news-high-impact">0</span></div>
-    <div class="overview-item"><span class="overview-label">Dovish:</span><span style="color:var(--cyan)" id="news-dovish">0</span></div>
-    <div class="overview-item"><span class="overview-label">Hawkish:</span><span style="color:var(--red)" id="news-hawkish">0</span></div>
-    <div class="overview-item"><span class="overview-label">Risk On:</span><span style="color:var(--green)" id="news-risk-on">0</span></div>
-    <div class="overview-item"><span class="overview-label">Risk Off:</span><span style="color:var(--red)" id="news-risk-off">0</span></div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    <!-- Calendar events -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">📅 Economic Calendar</h3>
-      <div id="news-calendar">
-        <div class="loading" style="padding:20px"><div class="spinner"></div></div>
-      </div>
-    </div>
-    <!-- News headlines -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">📰 News Headlines</h3>
-      <div id="news-headlines">
-        <div class="loading" style="padding:20px"><div class="spinner"></div></div>
+      <div class="chat-input">
+        <input type="text" id="chat-input" placeholder="Ask about a pair, e.g. 'Why is XAUUSD bearish?'"
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-gold" onclick="sendChat()">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Central Banks and Trending -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">🏛️ Central Bank Events</h3>
-      <div id="news-cb">
-        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
+  <!-- ════ TAB 4: POSITION CALCULATOR ════ -->
+  <div id="tab-calculator" class="tab-content">
+    <div class="calc-grid">
+      <div class="glass-panel" style="padding:16px">
+        <label style="font-size:12px;color:var(--text-dim);margin:8px 0 3px;display:block">
+          Symbol <span style="color:var(--text-muted);font-size:11px">(type to search)</span>
+        </label>
+        <div class="calc-symbol-wrap">
+          <input type="text" id="calc-symbol-search" placeholder="Search symbol..." autocomplete="off"
+                 oninput="filterCalcSymbols(this.value)" onfocus="showCalcDropdown()" onblur="setTimeout(hideCalcDropdown,200)">
+          <input type="hidden" id="calc-symbol" value="EURUSD">
+          <div class="calc-dropdown" id="calc-dropdown"></div>
+        </div>
+        <label>Account Balance ($)</label>
+        <input type="number" id="calc-balance" value="500" step="50">
+        <label>Risk %</label>
+        <input type="number" id="calc-risk" value="2" step="0.5" min="0.5" max="10">
+        <label>Lot Size</label>
+        <input type="number" id="calc-lot" value="0.01" step="0.01" min="0.01">
+        <label>Entry Price <span id="calc-live-price" style="color:var(--green);font-size:11px"></span></label>
+        <div style="display:flex;gap:4px">
+          <input type="number" id="calc-entry" step="any" placeholder="e.g. 1.08500" style="flex:1">
+          <button class="btn btn-ghost btn-sm" style="white-space:nowrap" onclick="fetchCalcLivePrice()" title="Get live price">⟳ Live</button>
+        </div>
+        <label>Stop Loss</label>
+        <div style="display:flex;gap:4px">
+          <input type="number" id="calc-sl" step="any" placeholder="e.g. 1.08000" style="flex:1">
+          <button class="btn btn-ghost btn-sm" onclick="calcAutoSL()" title="Auto-calculate SL from ATR/2">Auto</button>
+        </div>
+        <label>Take Profit</label>
+        <div style="display:flex;gap:4px">
+          <input type="number" id="calc-tp" step="any" placeholder="e.g. 1.09200" style="flex:1">
+          <button class="btn btn-ghost btn-sm" onclick="calcAutoTP()" title="Auto-calculate TP from current price + 2× spread">Auto</button>
+        </div>
+        <button class="btn btn-gold" onclick="calcPosition()" style="margin-top:12px;width:100%;padding:10px;font-size:14px">
+          Calculate
+        </button>
       </div>
-    </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">🔥 Trending Topics</h3>
-      <div id="news-trending">
-        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
+      <div class="calc-results" id="calc-results">
+        <div style="color:var(--text-dim);text-align:center;padding:40px 0">
+          Enter trade details and click Calculate
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Source Accuracy & Cross-Reference Comparison -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
-    <!-- Source Breakdown -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">📊 Source Sentiment Comparison</h3>
-      <div id="news-sources">
-        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
-      </div>
+  <!-- ════ TAB 5: TRADING JOURNAL ════ -->
+  <div id="tab-journal" class="tab-content">
+
+    <div class="journal-stats" id="journal-stats">
+      <div class="stat-card"><div class="stat-num" id="js-total">0</div><div class="stat-label">Total Trades</div></div>
+      <div class="stat-card"><div class="stat-num" id="js-wins">0</div><div class="stat-label">Wins</div></div>
+      <div class="stat-card"><div class="stat-num" id="js-winrate">0%</div><div class="stat-label">Win Rate</div></div>
+      <div class="stat-card"><div class="stat-num" id="js-pnl" style="color:var(--text)">$0</div><div class="stat-label">P&L</div></div>
     </div>
-    <!-- Cross-Reference / Discrepancies -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <h3 style="font-size:14px;margin-bottom:10px;color:var(--cyan)">⚠️ Cross-Source Signals</h3>
-      <div id="news-crossref">
-        <div style="color:var(--text-dim);font-size:13px">Loading...</div>
+
+    <div class="journal-grid">
+      <div class="journal-form">
+        <h3 style="margin-bottom:10px;font-size:14px;color:var(--gold-light)">Add Trade</h3>
+        <label>Symbol</label>
+        <select id="j-symbol"></select>
+        <label>Direction</label>
+        <select id="j-direction"><option>Buy</option><option>Sell</option></select>
+        <label>Entry Price</label>
+        <input type="number" id="j-entry" step="0.00001">
+        <label>Exit Price</label>
+        <input type="number" id="j-exit" step="0.00001">
+        <label>Lot Size</label>
+        <input type="number" id="j-lot" value="0.01" step="0.01">
+        <label>Stop Loss</label>
+        <input type="number" id="j-sl" step="0.00001">
+        <label>Take Profit</label>
+        <input type="number" id="j-tp" step="0.00001">
+        <label>Result</label>
+        <select id="j-result"><option value="open">Open</option><option value="win">Win</option><option value="loss">Loss</option></select>
+        <label>P&L ($)</label>
+        <input type="number" id="j-pnl" step="0.01">
+        <label>Notes</label>
+        <textarea id="j-notes" placeholder="Entry reason, notes..."></textarea>
+        <button class="btn btn-gold" onclick="addJournalEntry()" style="margin-top:10px;width:100%;padding:9px;font-size:14px">➕ Add Entry</button>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <h3 style="font-size:14px;color:var(--gold-light)">Trade History</h3>
+          <button class="btn btn-sm btn-ghost" onclick="clearJournal()">Clear All</button>
+        </div>
+        <div class="glass-panel" style="padding:12px;max-height:500px;overflow-y:auto" id="journal-entries">
+          <div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+</main>
 
 <script>
 // ══════════════════════════════════════════════
-//  Tab switching
+//  Sidebar navigation
 // ══════════════════════════════════════════════
-document.querySelectorAll('.tab-btn').forEach(btn => {
+document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    // Title mapping — BUDDY is the chat tab's display name
+    const titles = { 'radar': 'Radar', 'news': 'News', 'chat': 'Let me explain, BUDDY!', 'calculator': 'Calculator', 'journal': 'Journal' };
+    document.getElementById('page-title').textContent = titles[btn.dataset.tab] || btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
   });
 });
 
@@ -568,7 +738,7 @@ async function scan() {
   container.style.display = 'none';
   calDiv.style.display = 'none';
   loading.style.display = 'block';
-  status.textContent = 'Scanning...';
+  status.textContent = '⟳ Scanning...';
 
   try {
     const res = await fetch('/api/scan');
@@ -583,10 +753,8 @@ async function scan() {
     label.textContent = data.market_sentiment;
     score.textContent = data.market_score.toFixed(1);
 
-    // Update time
     document.getElementById('update-time').textContent = 'Updated: ' + new Date().toLocaleString();
 
-    // Counts
     const counts = { 'Strong Buy': 0, 'Buy': 0, 'Neutral': 0, 'Sell': 0, 'Strong Sell': 0 };
     data.instruments.forEach(i => { counts[i.bias] = (counts[i.bias] || 0) + 1; });
     document.getElementById('ov-total').textContent = data.instruments.length;
@@ -596,7 +764,6 @@ async function scan() {
     document.getElementById('ov-s').textContent = counts['Sell'];
     document.getElementById('ov-ss').textContent = counts['Strong Sell'];
 
-    // Calendar events
     if (data.calendar && data.calendar.events && data.calendar.events.length > 0) {
       renderCalendarEvents(data.calendar);
       calDiv.style.display = 'block';
@@ -604,13 +771,12 @@ async function scan() {
 
     window._lastData = data.instruments;
     renderTable(data.instruments);
-    status.textContent = `Done (${data.instruments.length} instruments)`;
+    status.textContent = `✓ ${data.instruments.length} instruments`;
   } catch (e) {
-    status.textContent = 'Error: ' + e.message;
-    loading.innerHTML = '<div style="color:var(--red)">Scan failed. ' + e.message + '</div>';
+    status.textContent = '✗ Error';
+    loading.innerHTML = '<div style="color:var(--red)">Scan failed: ' + e.message + '</div>';
     return;
   }
-
   loading.style.display = 'none';
   container.style.display = 'block';
 }
@@ -619,14 +785,12 @@ function renderCalendarEvents(cal) {
   document.getElementById('cal-count').textContent = `${cal.high_impact_count} high-impact this week`;
   const container = document.getElementById('cal-events');
   container.innerHTML = cal.events.map(e => {
-    const impClass = e.impact.toLowerCase() === 'high' ? 'high' : e.impact.toLowerCase() === 'medium' ? 'medium' : '';
-    const dayStr = e.time.length > 10 ? e.time.slice(5, 10) : e.time;
-    return `<div class="cal-event">
-      <span class="cal-impact ${impClass}">${e.impact}</span>
-      <span class="cal-currency" style="margin-left:4px">${e.currency}</span>
-      <span class="cal-name" style="margin-left:4px">${e.event}</span>
-      <span class="cal-time" style="margin-left:6px">${dayStr}</span>
-    </div>`;
+    const impClass = e.impact.toLowerCase() === 'high' ? 'badge-red' : e.impact.toLowerCase() === 'medium' ? 'badge-yellow' : 'badge-gray';
+    return `<span class="glass-panel" style="padding:6px 10px;font-size:11px;border-radius:6px;display:inline-flex;align-items:center;gap:4px">
+      <span class="badge ${impClass}">${e.impact}</span>
+      <b>${e.currency}</b>
+      <span>${e.event}</span>
+    </span>`;
   }).join('');
 }
 
@@ -636,25 +800,21 @@ function renderTable(instruments) {
 
   const catFilter = document.getElementById('filter-category').value;
   const biasFilter = document.getElementById('filter-bias').value;
-  const strengthMin = parseInt(document.getElementById('filter-strength-min').value) || 1;
-  const strengthMax = parseInt(document.getElementById('filter-strength-max').value) || 10;
   const searchFilter = document.getElementById('filter-search').value.toLowerCase();
 
   let filtered = instruments.filter(i => {
     if (catFilter && i.category !== catFilter) return false;
     if (biasFilter && i.bias !== biasFilter) return false;
-    if (i.strength < strengthMin || i.strength > strengthMax) return false;
     if (searchFilter && !i.symbol.toLowerCase().includes(searchFilter) &&
         !i.name.toLowerCase().includes(searchFilter)) return false;
     return true;
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim)">No matching instruments</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-dim)">No matching instruments</td></tr>';
     return;
   }
 
-  // Group by category
   const catOrder = ['major', 'cross', 'index', 'commodity', 'stock'];
   const catLabels = { 'major': 'Forex Majors', 'cross': 'Forex Crosses', 'index': 'Indices',
     'commodity': 'Commodities', 'stock': 'Stocks' };
@@ -663,64 +823,50 @@ function renderTable(instruments) {
   catOrder.forEach(cat => {
     const group = filtered.filter(i => i.category === cat);
     if (group.length === 0) return;
-
-    // Category header row
-    html += `<tr style="background:var(--card-hover)"><td colspan="10" style="padding:6px 10px;font-weight:700;font-size:12px;color:var(--cyan);text-transform:uppercase;letter-spacing:1px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
-
+    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="9" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
     group.forEach(i => {
       const isBull = i.bias === 'Strong Buy' || i.bias === 'Buy';
       const isBear = i.bias === 'Strong Sell' || i.bias === 'Sell';
-      const rowCls = isBull ? 'row-bullish' : isBear ? 'row-bearish' : 'row-neutral';
-
       const biasCls = i.bias === 'Strong Buy' ? 'bias-strong-buy' :
-        i.bias === 'Buy' ? 'bias-buy' :
-        i.bias === 'Neutral' ? 'bias-neutral' :
+        i.bias === 'Buy' ? 'bias-buy' : i.bias === 'Neutral' ? 'bias-neutral' :
         i.bias === 'Sell' ? 'bias-sell' : 'bias-strong-sell';
-
-      const strFillCls = i.strength >= 7 ? 'green' : i.strength >= 4 ? 'yellow' : 'red';
+      const strCls = i.strength >= 7 ? 'gold' : i.strength >= 4 ? 'yellow' : 'red';
       const strPct = (i.strength / 10) * 100;
-
       const chgCls = i.change_pct >= 0 ? 'chg-positive' : 'chg-negative';
       const chgSign = i.change_pct >= 0 ? '+' : '';
+      const entryCls = i.entry_timing === 'now' ? 'entry-now' : i.entry_timing === 'soon' ? 'entry-soon' : 'entry-wait';
 
-      const entryCls = i.entry_timing === 'now' ? 'entry-now' :
-        i.entry_timing === 'soon' ? 'entry-soon' : 'entry-wait';
-
-      html += `<tr class="${rowCls}" onclick="toggleDetail('${i.symbol}')">
+      html += `<tr onclick="toggleDetail('${i.symbol}')">
         <td><b>${i.symbol}</b></td>
-        <td><span class="bias-badge ${biasCls}">${i.bias}</span></td>
-        <td style="font-weight:600">${i.bias_score > 0 ? '+' : ''}${i.bias_score}</td>
-        <td><span class="str-bar"><span class="str-bar-track"><span class="str-bar-fill ${strFillCls}" style="width:${strPct}%"></span></span>${i.strength}/10</span></td>
-        <td>${i.confidence}%</td>
-        <td style="font-size:11px">${i.price}</td>
-        <td class="${chgCls}">${chgSign}${i.change_pct}%</td>
+        <td><span class="bias-pill ${biasCls}">${i.bias}</span></td>
+        <td style="font-weight:600;font-family:'JetBrains Mono',monospace">${i.bias_score > 0 ? '+' : ''}${i.bias_score}</td>
+        <td><span class="str-bar"><span class="str-bar-track"><span class="str-bar-fill ${strCls}" style="width:${strPct}%"></span></span>${i.strength}/10</span></td>
+        <td style="font-family:'JetBrains Mono',monospace">${i.confidence}%</td>
+        <td style="font-size:11px;font-family:'JetBrains Mono',monospace">${i.price}</td>
+        <td class="${chgCls}" style="font-family:'JetBrains Mono',monospace">${chgSign}${i.change_pct}%</td>
         <td style="font-size:11px">${i.trend_direction}</td>
-        <td class="best-time">${i.best_session}</td>
         <td class="${entryCls}">${i.entry_timing}</td>
       </tr>`;
 
-      // Detail row (hidden, toggled by click)
       const detailId = `detail-${i.symbol}`;
       html += `<tr class="detail-row" id="${detailId}">
-        <td colspan="10" class="detail-cell">
+        <td colspan="9" class="detail-cell">
           <div class="detail-inner">
-            <b>Why ${i.bias}?</b><br>${i.explanation}
+            <b style="color:var(--gold-light)">Why ${i.bias}?</b><br>${i.explanation}
             <div class="detail-grid">
               <div class="detail-item"><span class="detail-label">Technical</span><span class="detail-value" style="color:${i.technical_score>=0?'var(--green)':'var(--red)'}">${i.technical_score>0?'+':''}${i.technical_score}</span></div>
               <div class="detail-item"><span class="detail-label">Fundamental</span><span class="detail-value" style="color:${i.fundamental_score>=0?'var(--green)':'var(--red)'}">${i.fundamental_score>0?'+':''}${i.fundamental_score}</span></div>
               <div class="detail-item"><span class="detail-label">Sentiment</span><span class="detail-value" style="color:${i.sentiment_score>=0?'var(--green)':'var(--red)'}">${i.sentiment_score>0?'+':''}${i.sentiment_score}</span></div>
               <div class="detail-item"><span class="detail-label">Key Support</span><span class="detail-value">${i.key_support}</span></div>
-              <div class="detail-item"><span class="detail-label">Key Resistance</span><span class="detail-value">${i.key_resistance}</span></div>
-              <div class="detail-item"><span class="detail-label">S/R Levels</span><span class="detail-value">${i.nearest_support} / ${i.nearest_resistance}</span></div>
+              <div class="detail-item"><span class="detail-label">Resistance</span><span class="detail-value">${i.key_resistance}</span></div>
               <div class="detail-item"><span class="detail-label">Trend Strength</span><span class="detail-value">${i.trend_strength}</span></div>
               <div class="detail-item"><span class="detail-label">Session</span><span class="detail-value">${i.session_quality}</span></div>
-              <div class="detail-item"><span class="detail-label">AOV Position</span><span class="detail-value">${i.aov_position.replace(/_/g, ' ')}</span></div>
+              <div class="detail-item"><span class="detail-label">AOV</span><span class="detail-value">${i.aov_position.replace(/_/g, ' ')}</span></div>
             </div>`;
 
-      // Factor breakdown
       if (i.breakdown) {
-        html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);max-width:400px">
-          <b>Fundamental Breakdown:</b>`;
+        html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-width:400px">
+          <b style="color:var(--gold-light);font-size:11px">Fundamental Breakdown</b>`;
         ['growth','inflation','jobs','sentiment','trend','seasonality'].forEach(f => {
           const val = i.breakdown[f];
           const w = 50 + val/2;
@@ -730,11 +876,9 @@ function renderTable(instruments) {
         html += `<div class="factor-bar factor-total"><span class="factor-label">Total</span><div class="factor-track"><div class="factor-fill" style="width:${50+i.breakdown.total/2}%;background:${i.breakdown.total>=0?'var(--green)':'var(--red)'}"></div></div><span class="factor-score" style="color:${i.breakdown.total>=0?'var(--green)':'var(--red)'}">${i.breakdown.total>0?'+':''}${i.breakdown.total}</span></div>`;
         html += `</div>`;
       }
-
       html += `</div></td></tr>`;
     });
   });
-
   tbody.innerHTML = html;
 }
 
@@ -743,42 +887,9 @@ function toggleDetail(symbol) {
   if (row) row.classList.toggle('open');
 }
 
-// Filter change events
-document.getElementById('filter-category').addEventListener('change', () => {
-  if (window._lastData) renderTable(window._lastData);
-});
-document.getElementById('filter-bias').addEventListener('change', () => {
-  if (window._lastData) renderTable(window._lastData);
-});
-document.getElementById('filter-search').addEventListener('input', () => {
-  if (window._lastData) renderTable(window._lastData);
-});
-// Dual range slider sync
-function syncRangeSliders() {
-  const min = document.getElementById('filter-strength-min');
-  const max = document.getElementById('filter-strength-max');
-  const fill = document.getElementById('range-fill');
-  const vals = document.getElementById('range-values');
-
-  // Ensure min <= max
-  if (parseInt(min.value) > parseInt(max.value)) {
-    if (min === document.activeElement) max.value = min.value;
-    else min.value = max.value;
-  }
-
-  const minVal = parseInt(min.value);
-  const maxVal = parseInt(max.value);
-  const pctMin = ((minVal - 1) / 9) * 100;
-  const pctMax = ((maxVal - 1) / 9) * 100;
-  fill.style.left = pctMin + '%';
-  fill.style.width = (pctMax - pctMin) + '%';
-  vals.textContent = minVal + ' — ' + maxVal;
-
-  renderTable(window._lastData || []);
-}
-document.getElementById('filter-strength-min').addEventListener('input', syncRangeSliders);
-document.getElementById('filter-strength-max').addEventListener('input', syncRangeSliders);
-document.getElementById('filter-search').addEventListener('input', () => {});
+document.getElementById('filter-category').addEventListener('change', () => { if (window._lastData) renderTable(window._lastData); });
+document.getElementById('filter-bias').addEventListener('change', () => { if (window._lastData) renderTable(window._lastData); });
+document.getElementById('filter-search').addEventListener('input', () => { if (window._lastData) renderTable(window._lastData); });
 
 // ══════════════════════════════════════════════
 //  Chat
@@ -790,97 +901,95 @@ async function sendChat() {
   input.value = '';
   await ask(msg);
 }
-
 async function ask(msg) {
   const container = document.getElementById('chat-messages');
-
-  // User message
   const userDiv = document.createElement('div');
   userDiv.className = 'chat-msg chat-user';
   userDiv.textContent = msg;
   container.appendChild(userDiv);
-
-  // Loading indicator
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'chat-msg chat-bot';
   loadingDiv.textContent = '🤔 Thinking...';
   loadingDiv.id = 'chat-loading';
   container.appendChild(loadingDiv);
   container.scrollTop = container.scrollHeight;
-
   try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: msg }),
-    });
+    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: msg }) });
     const data = await res.json();
     loadingDiv.textContent = data.answer;
-  } catch (e) {
-    loadingDiv.textContent = '⚠️ Error: ' + e.message;
-  }
-
+  } catch (e) { loadingDiv.textContent = '⚠️ Error: ' + e.message; }
   container.scrollTop = container.scrollHeight;
 }
 
 // ══════════════════════════════════════════════
-//  Position Calculator
+//  Calculator
 // ══════════════════════════════════════════════
 let allInstruments = [];
-
 async function loadInstruments() {
   try {
     const res = await fetch('/api/instruments');
     const data = await res.json();
     allInstruments = data.instruments;
     buildCalcDropdown(allInstruments);
-    // Populate journal dropdown
     const jSel = document.getElementById('j-symbol');
     jSel.innerHTML = allInstruments.map(i => `<option value="${i.symbol}">${i.symbol} — ${i.name}</option>`).join('');
-  } catch (e) { console.error('loadInstruments', e); }
+  } catch (e) { console.error(e); }
 }
-
 function buildCalcDropdown(list) {
   const dd = document.getElementById('calc-dropdown');
-  dd.innerHTML = list.map(i => `
-    <div class="calc-dropdown-item" data-sym="${i.symbol}"
-         onclick="selectCalcSymbol('${i.symbol}', '${i.name}', '${i.category}')">
-      <span><strong>${i.symbol}</strong> <span style="font-size:11px;color:var(--text-dim)">${i.name}</span></span>
-      <span class="cat-tag${i.is_crypto ? ' crypto' : ''}">${i.category_label}</span>
-    </div>
-  `).join('');
+  dd.innerHTML = list.map(i => `<div class="calc-dropdown-item" data-sym="${i.symbol}" onclick="selectCalcSymbol('${i.symbol}','${i.name}')">
+    <span><b>${i.symbol}</b> <span style="font-size:11px;color:var(--text-dim)">${i.name}</span></span>
+    <span style="font-size:10px;color:var(--gold-light)">${i.category_label}</span>
+  </div>`).join('');
 }
-
 function filterCalcSymbols(val) {
   const dd = document.getElementById('calc-dropdown');
   if (!val) { buildCalcDropdown(allInstruments); dd.style.display = 'block'; return; }
   const q = val.toUpperCase();
-  const filtered = allInstruments.filter(i =>
-    i.symbol.includes(q) || i.name.toUpperCase().includes(q) || i.category.toUpperCase().includes(q)
-  );
-  buildCalcDropdown(filtered);
+  buildCalcDropdown(allInstruments.filter(i => i.symbol.includes(q) || i.name.toUpperCase().includes(q) || i.category.toUpperCase().includes(q)));
   dd.style.display = 'block';
 }
-
-function showCalcDropdown() {
-  const dd = document.getElementById('calc-dropdown');
-  if (!dd.innerHTML) buildCalcDropdown(allInstruments);
-  dd.style.display = 'block';
-}
-
-function hideCalcDropdown() {
-  document.getElementById('calc-dropdown').style.display = 'none';
-}
-
-function selectCalcSymbol(sym, name, cat) {
+function showCalcDropdown() { const dd = document.getElementById('calc-dropdown'); if (!dd.innerHTML) buildCalcDropdown(allInstruments); dd.style.display = 'block'; }
+function hideCalcDropdown() { document.getElementById('calc-dropdown').style.display = 'none'; }
+function selectCalcSymbol(sym, name) {
   document.getElementById('calc-symbol').value = sym;
   document.getElementById('calc-symbol-search').value = `${sym} — ${name}`;
   document.getElementById('calc-dropdown').style.display = 'none';
-  // Auto-fill entry price for crypto from category hint
-  const step = allInstruments.find(i => i.symbol === sym)?.digits === 2 ? '0.01' : '0.00001';
-  document.getElementById('calc-entry').step = step;
+  // Auto-fetch live price
+  fetchCalcLivePrice(sym);
 }
-
+async function fetchCalcLivePrice(sym) {
+  const symbol = sym || document.getElementById('calc-symbol').value;
+  try {
+    const res = await fetch(`/api/calculator/price/${symbol}`);
+    const data = await res.json();
+    document.getElementById('calc-entry').value = data.price;
+    // Auto-calculate if SL or TP also filled
+    const slEl = document.getElementById('calc-sl');
+    const tpEl = document.getElementById('calc-tp');
+    if (slEl.value && tpEl.value) calcPosition();
+    // Show live price indicator
+    document.getElementById('calc-live-price').innerHTML =
+      `<span style="color:var(--green);font-size:11px">Live ${symbol}: ${data.price}</span>`;
+  } catch(e) {
+    document.getElementById('calc-live-price').innerHTML =
+      `<span style="color:var(--text-dim);font-size:11px">Could not fetch live price</span>`;
+  }
+}
+// Auto-calculate SL (~0.5% or 10 pips from entry)
+function calcAutoSL() {
+  const entry = parseFloat(document.getElementById('calc-entry').value);
+  const sym = document.getElementById('calc-symbol').value;
+  const pip = (sym.includes('JPY') || sym.includes('XAG') || sym.includes('XAU')) ? 0.01 : 0.0001;
+  if (entry) { document.getElementById('calc-sl').value = (entry - 15 * pip).toFixed(5); }
+}
+// Auto-calculate TP (~1.0% or 20 pips from entry)
+function calcAutoTP() {
+  const entry = parseFloat(document.getElementById('calc-entry').value);
+  const sym = document.getElementById('calc-symbol').value;
+  const pip = (sym.includes('JPY') || sym.includes('XAG') || sym.includes('XAU')) ? 0.01 : 0.0001;
+  if (entry) { document.getElementById('calc-tp').value = (entry + 30 * pip).toFixed(5); }
+}
 async function calcPosition() {
   const data = {
     symbol: document.getElementById('calc-symbol').value,
@@ -891,38 +1000,29 @@ async function calcPosition() {
     account_balance: document.getElementById('calc-balance').value,
     risk_pct: document.getElementById('calc-risk').value,
   };
-
-  const res = await fetch('/api/calculator', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+  const res = await fetch('/api/calculator', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   const r = await res.json();
-
   document.getElementById('calc-results').innerHTML = `
-    <h3 style="font-size:15px;margin-bottom:10px">${r.symbol} — ${r.commodity || ''}</h3>
-    <div class="calc-result-item"><span>Pip Factor</span><span>${r.pip_factor}</span></div>
-    <div class="calc-result-item"><span>Contract Size</span><span>${r.contract_size}</span></div>
-    <div class="calc-result-item"><span>Pip Value (USD)</span><span>$${r.pip_value_usd}</span></div>
-    <div class="calc-result-item"><span>SL Distance</span><span>${r.sl_pips} pips</span></div>
-    <div class="calc-result-item"><span>TP Distance</span><span>${r.tp_pips} pips</span></div>
-    <div class="calc-result-item"><span>Commission (RT)</span><span>$${r.commission} @ $${r.commission_per_lot}/lot</span></div>
-    <div class="calc-result-item"><span>Swap Fee (daily)</span><span>$${r.swap_fee_daily}</span></div>
-    <div class="calc-result-item"><span>Risk (USD)</span><span style="color:var(--red);font-weight:700">$${r.risk_usd}</span></div>
-    <div class="calc-result-item"><span>Reward (USD)</span><span style="color:var(--green);font-weight:700">$${r.reward_usd}</span></div>
-    <div class="calc-result-item"><span>Risk/Reward</span><span style="font-weight:700">1:${r.risk_reward_ratio}</span></div>
-    <div class="calc-result-item"><span>Risk (% of acc)</span><span>${r.risk_pct_of_account}%</span></div>
-    <div class="calc-result-item"><span>Recommended Lot (${data.risk_pct}% risk)</span><span style="color:var(--cyan);font-weight:700">${r.recommended_lot_size}</span></div>
-    <div class="calc-result-item" style="border-bottom:none"><span>Max Loss (2%)</span><span style="color:var(--red)">$${r.max_loss_2pct}</span></div>
-    <div class="calc-result-item" style="border-bottom:none;font-weight:700"><span>Max Loss (5%)</span><span style="color:var(--red)">$${r.max_loss_5pct}</span></div>
-    <div style="margin-top:12px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:8px">
-      Fees: $${r.commission} RT commission + $${r.swap_fee_daily}/day swap (if held overnight)
-    </div>
-  `;
+    <h3 style="font-size:15px;margin-bottom:10px;color:var(--gold-light)">${r.symbol} <span style="color:var(--text-dim);font-weight:400;font-size:12px">${r.commodity||''}</span></h3>
+    <div class="calc-result-item"><span>Pip Factor</span><span style="font-family:JetBrains Mono">${r.pip_factor}</span></div>
+    <div class="calc-result-item"><span>Contract Size</span><span style="font-family:JetBrains Mono">${r.contract_size}</span></div>
+    <div class="calc-result-item"><span>Pip Value (USD)</span><span style="font-family:JetBrains Mono;font-weight:600">$${r.pip_value_usd}</span></div>
+    <div class="calc-result-item"><span>SL / TP (pips)</span><span style="font-family:JetBrains Mono">${r.sl_pips} / ${r.tp_pips}</span></div>
+    <div class="calc-result-item"><span>Commission</span><span>$${r.commission} @ $${r.commission_per_lot}/lot</span></div>
+    <div class="calc-result-item"><span>Swap Daily</span><span style="font-family:JetBrains Mono">$${r.swap_fee_daily}</span></div>
+    <div class="calc-result-item"><span>Risk</span><span style="color:var(--red);font-weight:700;font-family:JetBrains Mono">$${r.risk_usd}</span></div>
+    <div class="calc-result-item"><span>Reward</span><span style="color:var(--green);font-weight:700;font-family:JetBrains Mono">$${r.reward_usd}</span></div>
+    <div class="calc-result-item"><span>R:R Ratio</span><span style="font-weight:700;font-family:JetBrains Mono;color:var(--gold-light)">1:${r.risk_reward_ratio}</span></div>
+    <div class="calc-result-item"><span>Risk % of Account</span><span style="font-family:JetBrains Mono">${r.risk_pct_of_account}%</span></div>
+    <div class="calc-result-item"><span>Recommended Lot</span><span style="color:var(--gold-light);font-weight:700;font-family:JetBrains Mono">${r.recommended_lot_size}</span></div>
+    <div class="calc-result-item" style="border-bottom:none"><span>Max Loss (2%/5%)</span><span style="font-family:JetBrains Mono;color:var(--red)">$${r.max_loss_2pct} / $${r.max_loss_5pct}</span></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:8px">
+      Commission: $${r.commission} RT + $${r.swap_fee_daily}/day overnight
+    </div>`;
 }
 
 // ══════════════════════════════════════════════
-//  Trading Journal
+//  Journal
 // ══════════════════════════════════════════════
 async function loadJournal() {
   try {
@@ -932,7 +1032,6 @@ async function loadJournal() {
     loadJournalStats();
   } catch (e) {}
 }
-
 async function loadJournalStats() {
   try {
     const res = await fetch('/api/journal/stats');
@@ -944,76 +1043,45 @@ async function loadJournalStats() {
     document.getElementById('js-pnl').style.color = s.total_pnl >= 0 ? 'var(--green)' : 'var(--red)';
   } catch (e) {}
 }
-
 function renderJournal(entries) {
   const container = document.getElementById('journal-entries');
-  if (entries.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>';
-    return;
-  }
-
+  if (entries.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>'; return; }
   const reversed = [...entries].reverse();
-  let html = `<table class="journal-table">
-    <tr><th>Date</th><th>Pair</th><th>Dir</th><th>Entry</th><th>Exit</th><th>P&L</th><th>Result</th><th></th></tr>`;
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Pair</th><th style="text-align:left;padding:6px">Dir</th><th style="text-align:right;padding:6px">P&L</th><th style="text-align:left;padding:6px">Result</th><th></th></tr>';
   reversed.forEach((e, i) => {
     const idx = entries.length - 1 - i;
-    html += `<tr>
-      <td>${e.date || ''}</td>
-      <td><b>${e.symbol}</b></td>
-      <td>${e.direction}</td>
-      <td>${e.entry_price || '-'}</td>
-      <td>${e.exit_price || '-'}</td>
-      <td style="color:${(e.pnl||0) >= 0 ? 'var(--green)' : 'var(--red)'}">${e.pnl ? (e.pnl >= 0 ? '+' : '') + '$' + e.pnl : '-'}</td>
-      <td><span class="badge ${e.result === 'win' ? 'badge-green' : e.result === 'loss' ? 'badge-red' : 'badge-yellow'}">${e.result}</span></td>
-      <td><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
+    html += `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.date?e.date.slice(5,10):''}</td>
+      <td style="padding:6px"><b>${e.symbol}</b></td>
+      <td style="padding:6px">${e.direction}</td>
+      <td style="padding:6px;text-align:right;font-family:JetBrains Mono;color:${(e.pnl||0)>=0?'var(--green)':'var(--red)'}">${e.pnl?(e.pnl>=0?'+':'')+'$'+e.pnl:'-'}</td>
+      <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result}</span></td>
+      <td style="padding:6px"><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
     </tr>`;
   });
   html += '</table>';
   container.innerHTML = html;
 }
-
 async function addJournalEntry() {
   const data = {
-    symbol: document.getElementById('j-symbol').value,
-    direction: document.getElementById('j-direction').value,
-    entry_price: document.getElementById('j-entry').value,
-    exit_price: document.getElementById('j-exit').value,
-    lot_size: document.getElementById('j-lot').value,
-    stop_loss: document.getElementById('j-sl').value,
-    take_profit: document.getElementById('j-tp').value,
-    result: document.getElementById('j-result').value,
-    pnl: document.getElementById('j-pnl').value,
-    notes: document.getElementById('j-notes').value,
-    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    symbol: document.getElementById('j-symbol').value, direction: document.getElementById('j-direction').value,
+    entry_price: document.getElementById('j-entry').value, exit_price: document.getElementById('j-exit').value,
+    lot_size: document.getElementById('j-lot').value, stop_loss: document.getElementById('j-sl').value,
+    take_profit: document.getElementById('j-tp').value, result: document.getElementById('j-result').value,
+    pnl: document.getElementById('j-pnl').value, notes: document.getElementById('j-notes').value,
+    date: new Date().toISOString().slice(0,16).replace('T',' '),
   };
-
-  await fetch('/api/journal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  // Clear form
+  await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   ['j-entry','j-exit','j-sl','j-tp','j-pnl','j-notes'].forEach(id => document.getElementById(id).value = '');
   loadJournal();
 }
-
 async function deleteJournalEntry(index) {
-  await fetch('/api/journal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'delete', index }),
-  });
+  await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', index }) });
   loadJournal();
 }
-
 async function clearJournal() {
   if (!confirm('Delete all journal entries?')) return;
-  await fetch('/api/journal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'clear' }),
-  });
+  await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) });
   loadJournal();
 }
 
@@ -1025,59 +1093,39 @@ async function loadNews() {
     const res = await fetch('/api/news');
     const data = await res.json();
 
-    // Overview bar
     document.getElementById('news-sentiment').textContent = (data.sentiment_score >= 0 ? '+' : '') + data.sentiment_score.toFixed(1);
-    document.getElementById('news-sentiment').style.color = data.sentiment_score >= 5 ? 'var(--green)' :
-      data.sentiment_score <= -5 ? 'var(--red)' : 'var(--yellow)';
+    document.getElementById('news-sentiment').style.color = data.sentiment_score >= 5 ? 'var(--green)' : data.sentiment_score <= -5 ? 'var(--red)' : 'var(--yellow)';
     document.getElementById('news-high-impact').textContent = data.high_impact_count;
     document.getElementById('news-dovish').textContent = data.dovish_count;
     document.getElementById('news-hawkish').textContent = data.hawkish_count;
     document.getElementById('news-risk-on').textContent = data.risk_on_count;
     document.getElementById('news-risk-off').textContent = data.risk_off_count;
 
-    // Calendar events
-    renderCalendar(data.calendar_events);
-
-    // News headlines
+    renderNewsCalendar(data.calendar_events);
     renderHeadlines(data.headlines);
-
-    // Central banks
     renderCentralBanks(data.central_bank_events);
 
-    // Trending topics
     const trending = document.getElementById('news-trending');
     if (data.trending_topics && data.trending_topics.length > 0) {
-      trending.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-        data.trending_topics.map(t => `<span class="chip" style="cursor:default">${t}</span>`).join('') + '</div>';
-    } else {
-      trending.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No trending topics</div>';
-    }
+      trending.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap">' + data.trending_topics.map(t => `<span class="chip" style="cursor:default">${t}</span>`).join('') + '</div>';
+    } else { trending.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No trending topics</div>'; }
 
-    // Source comparison + cross-references
     renderSourceBreakdown(data.source_breakdown, data.source_accuracy);
     renderCrossReferences(data.cross_references);
-  } catch (e) {
-    document.getElementById('news-calendar').innerHTML = '<div style="color:var(--red);padding:20px">Error loading news: ' + e.message + '</div>';
-  }
+  } catch (e) { document.getElementById('news-calendar').innerHTML = '<div style="color:var(--red);padding:20px">Error: '+e.message+'</div>'; }
 }
 
-function renderCalendar(events) {
+function renderNewsCalendar(events) {
   const container = document.getElementById('news-calendar');
-  if (!events || events.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No upcoming events</div>';
-    return;
-  }
-
+  if (!events || events.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No upcoming events</div>'; return; }
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   events.forEach(e => {
-    const impactColor = e.impact === 'High' ? 'badge-red' : e.impact === 'Medium' ? 'badge-yellow' : 'badge-blue';
-    const impactHtml = `<span class="badge ${impactColor}">${e.impact}</span>`;
-    const dayStr = e.time.length > 10 ? e.time.slice(5, 10) : e.time;
+    const imp = e.impact === 'High' ? 'badge-red' : e.impact === 'Medium' ? 'badge-yellow' : 'badge-gray';
     html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="color:var(--text-dim);min-width:45px">${dayStr}</span>
-      ${impactHtml}
-      <span style="font-weight:600;min-width:40px">${e.currency}</span>
-      <span style="flex:1;color:var(--text)">${e.event}</span>
+      <span style="color:var(--text-dim);min-width:40px">${e.time.slice(5,10)}</span>
+      <span class="badge ${imp}">${e.impact}</span>
+      <b style="min-width:35px">${e.currency}</b>
+      <span style="flex:1">${e.event}</span>
     </div>`;
   });
   html += '</div>';
@@ -1086,19 +1134,15 @@ function renderCalendar(events) {
 
 function renderHeadlines(headlines) {
   const container = document.getElementById('news-headlines');
-  if (!headlines || headlines.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No headlines available</div>';
-    return;
-  }
-
+  if (!headlines || headlines.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No headlines</div>'; return; }
   let html = '<div style="display:flex;flex-direction:column;gap:2px">';
   headlines.forEach(h => {
-    const sentColor = h.sentiment > 0.1 ? 'var(--green)' : h.sentiment < -0.1 ? 'var(--red)' : 'var(--yellow)';
-    const sentIcon = h.sentiment > 0.1 ? '📈' : h.sentiment < -0.1 ? '📉' : '➡️';
+    const sc = h.sentiment > 0.1 ? 'var(--green)' : h.sentiment < -0.1 ? 'var(--red)' : 'var(--yellow)';
+    const ic = h.sentiment > 0.1 ? '📈' : h.sentiment < -0.1 ? '📉' : '➡️';
     html += `<div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="color:${sentColor};min-width:55px;font-weight:600">${sentIcon} ${h.sentiment > 0 ? '+' : ''}${h.sentiment.toFixed(2)}</span>
-      <span style="color:var(--text-dim);min-width:60px">${h.source}</span>
-      <span style="color:var(--text);flex:1">${h.title}</span>
+      <span style="color:${sc};min-width:50px;font-weight:600;font-family:JetBrains Mono">${ic} ${h.sentiment>0?'+':''}${h.sentiment.toFixed(2)}</span>
+      <span style="color:var(--text-dim);min-width:55px;font-size:10px">${h.source}</span>
+      <span style="flex:1">${h.title}</span>
     </div>`;
   });
   html += '</div>';
@@ -1107,16 +1151,12 @@ function renderHeadlines(headlines) {
 
 function renderCentralBanks(events) {
   const container = document.getElementById('news-cb');
-  if (!events || events.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No central bank events scheduled</div>';
-    return;
-  }
-
+  if (!events || events.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No CB events scheduled</div>'; return; }
   let html = '<div style="display:flex;flex-direction:column;gap:6px">';
   events.forEach(e => {
     html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-      <span><span class="badge badge-yellow">${e.currency}</span> ${e.event}</span>
-      <span style="color:var(--text-dim)">${e.time.slice(5, 10)}</span>
+      <span><span class="badge badge-gold">${e.currency}</span> ${e.event}</span>
+      <span style="color:var(--text-dim)">${e.time.slice(5,10)}</span>
     </div>`;
   });
   html += '</div>';
@@ -1125,13 +1165,10 @@ function renderCentralBanks(events) {
 
 function renderSourceBreakdown(srcBreakdown, sourceAccuracy) {
   const container = document.getElementById('news-sources');
-
-  // Source sentiment comparison
-  let html = '<div style="margin-bottom:10px"><b style="font-size:12px">Avg Sentiment by Source</b>';
+  let html = '<div style="margin-bottom:10px"><b style="font-size:12px;color:var(--text-dim)">Avg Sentiment by Source</b>';
   const sources = Object.keys(srcBreakdown || {}).sort();
-  if (sources.length === 0) {
-    html += '<div style="color:var(--text-dim);font-size:12px;padding:4px 0">No source data</div>';
-  } else {
+  if (sources.length === 0) { html += '<div style="color:var(--text-dim);font-size:12px;padding:4px 0">No source data</div>'; }
+  else {
     sources.forEach(s => {
       const val = srcBreakdown[s];
       const color = val >= 0.05 ? 'var(--green)' : val <= -0.05 ? 'var(--red)' : 'var(--yellow)';
@@ -1143,67 +1180,61 @@ function renderSourceBreakdown(srcBreakdown, sourceAccuracy) {
   }
   html += '</div>';
 
-  // Source credibility table
   if (sourceAccuracy && sourceAccuracy.length > 0) {
-    html += '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
-    html += '<b style="font-size:12px">Source Reliability</b>';
+    html += '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"><b style="font-size:12px;color:var(--text-dim)">Source Reliability</b>';
     html += '<table style="width:100%;font-size:11px;margin-top:6px;border-collapse:collapse">';
-    html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)">' +
-      '<th style="text-align:left;padding:4px">Source</th>' +
-      '<th style="text-align:right;padding:4px">Articles</th>' +
-      '<th style="text-align:right;padding:4px">Relevance</th>' +
-      '<th style="text-align:right;padding:4px">Credibility</th></tr>';
+    html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Source</th><th style="text-align:right;padding:4px">Articles</th><th style="text-align:right;padding:4px">Rel.</th><th style="text-align:right;padding:4px">Cred.</th></tr>';
     sourceAccuracy.forEach(s => {
       const credColor = s.credibility_score >= 0.8 ? 'var(--green)' : s.credibility_score >= 0.6 ? 'var(--yellow)' : 'var(--red)';
-      html += `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:4px">${s.source}</td>
-        <td style="text-align:right;padding:4px">${s.articles_scraped}</td>
-        <td style="text-align:right;padding:4px">${s.avg_relevance.toFixed(2)}</td>
-        <td style="text-align:right;padding:4px;color:${credColor};font-weight:600">${(s.credibility_score * 100).toFixed(0)}%</td>
-      </tr>`;
+      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">${s.source}</td><td style="text-align:right;padding:4px">${s.articles_scraped}</td><td style="text-align:right;padding:4px">${s.avg_relevance.toFixed(2)}</td><td style="text-align:right;padding:4px;color:${credColor};font-weight:600">${(s.credibility_score*100).toFixed(0)}%</td></tr>`;
     });
     html += '</table></div>';
   }
-
   container.innerHTML = html;
 }
 
 function renderCrossReferences(crossRefs) {
   const container = document.getElementById('news-crossref');
-  if (!crossRefs || crossRefs.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No cross-source signals — sources agree broadly</div>';
-    return;
-  }
-
+  if (!crossRefs || crossRefs.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No cross-source discrepancies — sources agree broadly</div>'; return; }
   let html = '';
   crossRefs.forEach(cr => {
-    const bgColor = cr.discrepancy_flag ? 'rgba(239,68,68,0.08)' : 'rgba(234,179,8,0.08)';
+    const bgColor = cr.discrepancy_flag ? 'rgba(244,63,94,0.08)' : 'rgba(212,175,55,0.06)';
     const icon = cr.discrepancy_flag ? '🔴' : '🟡';
-    const consensusColor = cr.consensus === 'bullish' ? 'var(--green)' : cr.consensus === 'bearish' ? 'var(--red)' : 'var(--yellow)';
-
+    const cc = cr.consensus === 'bullish' ? 'var(--green)' : cr.consensus === 'bearish' ? 'var(--red)' : 'var(--yellow)';
     html += `<div style="background:${bgColor};border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span>${icon} <b>${cr.topic}</b></span>
-        <span style="color:${consensusColor};font-weight:600;font-size:12px">${cr.consensus}</span>
+        <span style="color:${cc};font-weight:600;font-size:12px">${cr.consensus}</span>
       </div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px">
-        Agreement: ${(cr.agreement_level * 100).toFixed(0)}%
-        ${cr.discrepancy_flag ? '<span style="color:var(--red);margin-left:8px">⚠️ Sources disagree</span>' : ''}
+        Agreement: ${(cr.agreement_level*100).toFixed(0)}% ${cr.discrepancy_flag ? '<span style="color:var(--red);margin-left:8px">⚠️ Sources disagree</span>' : ''}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">`;
-
     Object.entries(cr.source_sentiments || {}).forEach(([src, sent]) => {
       const sc = sent >= 0.1 ? 'var(--green)' : sent <= -0.1 ? 'var(--red)' : 'var(--yellow)';
-      html += `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.05)">
-        ${src}: <span style="color:${sc};font-weight:600">${sent >= 0 ? '+' : ''}${sent.toFixed(2)}</span>
-      </span>`;
+      html += `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.04)">${src}: <span style="color:${sc};font-weight:600">${sent>=0?'+':''}${sent.toFixed(2)}</span></span>`;
     });
-
     html += '</div></div>';
   });
-
   container.innerHTML = html;
 }
+
+// ══════════════════════════════════════════════
+//  Mobile hamburger menu
+// ══════════════════════════════════════════════
+function toggleMobileMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+// Close sidebar when nav item is clicked (mobile)
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if (window.innerWidth <= 768) {
+      document.querySelector('.sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('open');
+    }
+  });
+});
 
 // Auto-load
 scan();
