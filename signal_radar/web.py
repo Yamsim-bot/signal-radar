@@ -279,6 +279,44 @@ def api_chat():
     return jsonify({'answer': 'I couldn\'t understand your question. Try: "Why is EURUSD neutral?" or "Show me GBPJPY details"'})
 
 
+@app.route('/api/instruments')
+def api_instruments():
+    """Return all instruments for dropdowns."""
+    symbols = get_symbols()
+    result = []
+    for sym in symbols:
+        spec = INSTRUMENTS[sym]
+        pip_factor = spec.get('pip_factor', 0.0001)
+        contract_size = spec.get('contract_size', 1000)
+        # Vantage-style commission per standard lot RT
+        cat = spec.get('category', '')
+        if cat == 'major':
+            comm_per_lot = 6.00  # $6 RT standard lot
+        elif cat == 'cross':
+            comm_per_lot = 8.00
+        elif cat == 'index':
+            comm_per_lot = 2.00
+        elif cat == 'commodity':
+            comm_per_lot = 5.00
+        elif cat == 'stock':
+            comm_per_lot = 3.00
+        elif cat == 'crypto':
+            comm_per_lot = 10.00  # 0.1% on ~$10k = $10
+        else:
+            comm_per_lot = 6.00
+        result.append({
+            'symbol': sym,
+            'name': spec.get('description', sym),
+            'category': cat,
+            'category_label': CATEGORY_LABELS.get(cat, cat),
+            'pip_factor': pip_factor,
+            'contract_size': contract_size,
+            'digits': spec.get('digits', 5),
+            'commission_per_lot': comm_per_lot,
+            'is_crypto': spec.get('crypto', False),
+        })
+    return jsonify({'instruments': result})
+
 @app.route('/api/calculator', methods=['POST'])
 def api_calculator():
     """Position calculator: pips, fees, risk per trade."""
@@ -296,6 +334,23 @@ def api_calculator():
     pip_factor = spec.get('pip_factor', 0.0001) if spec else 0.0001
     contract_size = spec.get('contract_size', 1000) if spec else 1000
     digits = spec.get('digits', 5) if spec else 5
+    cat = spec.get('category', '')
+
+    # Per-instrument commission (standard lot RT)
+    if cat == 'major':
+        comm_per_lot = 6.00
+    elif cat == 'cross':
+        comm_per_lot = 8.00
+    elif cat == 'index':
+        comm_per_lot = 2.00
+    elif cat == 'commodity':
+        comm_per_lot = 5.00
+    elif cat == 'stock':
+        comm_per_lot = 3.00
+    elif cat == 'crypto':
+        comm_per_lot = 10.00
+    else:
+        comm_per_lot = 6.00
 
     # Pip calculations
     if entry_price > 0 and stop_loss > 0:
@@ -311,14 +366,14 @@ def api_calculator():
     # Pip value
     pip_value = pip_value_usd(symbol, entry_price if entry_price > 0 else 1.0)
 
-    # Commission (Vantage Cent Raw ECN: $0.06 RT per cent lot)
-    commission = round(lot_size * 0.06 * 2, 2)  # round trip
+    # Commission (scaled from standard lot to user's lot size)
+    commission_rt = round(comm_per_lot * lot_size, 2)
 
     # Risk in USD
-    risk_usd = round(sl_pips * pip_value * lot_size + commission, 2)
+    risk_usd = round(sl_pips * pip_value * lot_size + commission_rt, 2)
 
     # Reward in USD
-    reward_usd = round(tp_pips * pip_value * lot_size - commission, 2)
+    reward_usd = round(tp_pips * pip_value * lot_size - commission_rt, 2)
 
     # Risk/Reward
     rr = round(reward_usd / risk_usd, 2) if risk_usd > 0 else 0
@@ -326,27 +381,44 @@ def api_calculator():
     # % of account at risk
     risk_pct_of_account = round(risk_usd / account_balance * 100, 2) if account_balance > 0 else 0
 
-    # Recommended lot size for 2% risk
+    # Recommended lot size for target risk %
     if sl_pips > 0 and pip_value > 0:
-        recommended_lot = round(account_balance * (risk_pct / 100) / (sl_pips * pip_value + commission / lot_size), 2)
+        risk_per_lot = sl_pips * pip_value + comm_per_lot
+        if risk_per_lot > 0:
+            recommended_lot = round(account_balance * (risk_pct / 100) / risk_per_lot, 2)
+        else:
+            recommended_lot = lot_size
     else:
         recommended_lot = lot_size
 
+    # Swap/funding fee (crypto = 0.01% daily, forex = swap points)
+    is_crypto = spec.get('crypto', False)
+    swap_fee = 0.0
+    if is_crypto:
+        swap_fee = round(entry_price * lot_size * 0.0001, 2) if entry_price > 0 else 0
+    else:
+        swap_fee = round(commission_rt * 0.05, 2)  # ~5% of commission for overnight
+
     return jsonify({
         'symbol': symbol,
+        'commodity': spec.get('description', symbol),
         'pip_factor': pip_factor,
         'contract_size': contract_size,
         'digits': digits,
+        'entry_price': entry_price,
         'pip_value_usd': round(pip_value, 4),
         'sl_pips': sl_pips,
         'tp_pips': tp_pips,
-        'commission': commission,
+        'commission_per_lot': comm_per_lot,
+        'commission': commission_rt,
+        'swap_fee_daily': swap_fee,
         'risk_usd': risk_usd,
         'reward_usd': reward_usd,
         'risk_reward_ratio': rr,
         'risk_pct_of_account': risk_pct_of_account,
         'recommended_lot_size': recommended_lot,
         'max_loss_5pct': round(account_balance * 0.05, 2),
+        'max_loss_2pct': round(account_balance * 0.02, 2),
     })
 
 

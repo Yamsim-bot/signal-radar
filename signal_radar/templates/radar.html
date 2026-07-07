@@ -171,6 +171,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
                     background:var(--card); color:var(--text); font-size:14px; }
 .chat-input input:focus { outline:none; border-color:var(--cyan); }
 
+/* Calculator Symbol Search */
+.calc-symbol-wrap { position:relative; }
+.calc-dropdown {
+  position:absolute; top:100%; left:0; right:0; max-height:220px; overflow-y:auto;
+  background:var(--card); border:1px solid var(--border); border-radius:6px;
+  z-index:200; display:none;
+}
+.calc-dropdown-item {
+  padding:8px 12px; cursor:pointer; font-size:13px; display:flex; justify-content:space-between;
+  border-bottom:1px solid var(--border); transition:background .15s;
+}
+.calc-dropdown-item:hover, .calc-dropdown-item.active { background:var(--blue-bg); }
+.calc-dropdown-item .cat-tag { font-size:10px; color:var(--text-dim); padding:1px 6px; border-radius:4px; background:var(--border); }
+.calc-dropdown-item .cat-tag.crypto { color:var(--yellow); border-color:var(--yellow); }
 /* Calculator */
 .calc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:800px; margin:0 auto; }
 .calc-form label { display:block; font-size:12px; color:var(--text-dim); margin:8px 0 3px; }
@@ -375,23 +389,17 @@ Welcome! I can analyze any trading instrument in our database. Try asking:
 <div id="tab-calculator" class="tab-content">
   <div class="header">
     <h1>🧮 Position Size Calculator</h1>
-    <div class="subtitle">Compute pips, fees, and risk for any forex pair</div>
+    <div class="subtitle">Compute pips, fees, and risk for any instrument</div>
   </div>
   <div class="calc-grid">
     <div class="calc-form">
-      <label>Symbol</label>
-      <select id="calc-symbol">
-        <option value="EURUSD">EURUSD</option>
-        <option value="GBPUSD">GBPUSD</option>
-        <option value="USDJPY">USDJPY</option>
-        <option value="USDCHF">USDCHF</option>
-        <option value="USDCAD">USDCAD</option>
-        <option value="AUDUSD">AUDUSD</option>
-        <option value="NZDUSD">NZDUSD</option>
-        <option value="GBPJPY">GBPJPY</option>
-        <option value="EURJPY">EURJPY</option>
-        <option value="XAUUSD">XAUUSD</option>
-      </select>
+      <label>Symbol <span style="color:var(--text-dim);font-size:11px">(type to search)</span></label>
+      <div class="calc-symbol-wrap">
+        <input type="text" id="calc-symbol-search" placeholder="Search symbol..." autocomplete="off"
+               oninput="filterCalcSymbols(this.value)" onfocus="showCalcDropdown()" onblur="setTimeout(hideCalcDropdown,200)">
+        <input type="hidden" id="calc-symbol" value="EURUSD">
+        <div class="calc-dropdown" id="calc-dropdown"></div>
+      </div>
       <label>Account Balance ($)</label>
       <input type="number" id="calc-balance" value="500" step="50">
       <label>Risk %</label>
@@ -399,11 +407,11 @@ Welcome! I can analyze any trading instrument in our database. Try asking:
       <label>Lot Size</label>
       <input type="number" id="calc-lot" value="0.01" step="0.01" min="0.01">
       <label>Entry Price</label>
-      <input type="number" id="calc-entry" step="0.00001" placeholder="e.g. 1.08500">
+      <input type="number" id="calc-entry" step="any" placeholder="e.g. 1.08500">
       <label>Stop Loss</label>
-      <input type="number" id="calc-sl" step="0.00001" placeholder="e.g. 1.08000">
+      <input type="number" id="calc-sl" step="any" placeholder="e.g. 1.08000">
       <label>Take Profit</label>
-      <input type="number" id="calc-tp" step="0.00001" placeholder="e.g. 1.09200">
+      <input type="number" id="calc-tp" step="any" placeholder="e.g. 1.09200">
       <button class="btn btn-primary" onclick="calcPosition()" style="margin-top:10px;width:100%;padding:10px">
         Calculate
       </button>
@@ -434,16 +442,7 @@ Welcome! I can analyze any trading instrument in our database. Try asking:
     <div class="journal-form">
       <h3 style="margin-bottom:8px;font-size:14px">Add Trade</h3>
       <label>Symbol</label>
-      <select id="j-symbol">
-        <option value="EURUSD">EURUSD</option>
-        <option value="GBPUSD">GBPUSD</option>
-        <option value="USDJPY">USDJPY</option>
-        <option value="GBPJPY">GBPJPY</option>
-        <option value="XAUUSD">XAUUSD</option>
-        <option value="US30">US30</option>
-        <option value="AAPL">AAPL</option>
-        <option value="TSLA">TSLA</option>
-      </select>
+      <select id="j-symbol"></select>
       <label>Direction</label>
       <select id="j-direction"><option>Buy</option><option>Sell</option></select>
       <label>Entry Price</label>
@@ -809,6 +808,61 @@ async function ask(msg) {
 // ══════════════════════════════════════════════
 //  Position Calculator
 // ══════════════════════════════════════════════
+let allInstruments = [];
+
+async function loadInstruments() {
+  try {
+    const res = await fetch('/api/instruments');
+    const data = await res.json();
+    allInstruments = data.instruments;
+    buildCalcDropdown(allInstruments);
+    // Populate journal dropdown
+    const jSel = document.getElementById('j-symbol');
+    jSel.innerHTML = allInstruments.map(i => `<option value="${i.symbol}">${i.symbol} — ${i.name}</option>`).join('');
+  } catch (e) { console.error('loadInstruments', e); }
+}
+
+function buildCalcDropdown(list) {
+  const dd = document.getElementById('calc-dropdown');
+  dd.innerHTML = list.map(i => `
+    <div class="calc-dropdown-item" data-sym="${i.symbol}"
+         onclick="selectCalcSymbol('${i.symbol}', '${i.name}', '${i.category}')">
+      <span><strong>${i.symbol}</strong> <span style="font-size:11px;color:var(--text-dim)">${i.name}</span></span>
+      <span class="cat-tag${i.is_crypto ? ' crypto' : ''}">${i.category_label}</span>
+    </div>
+  `).join('');
+}
+
+function filterCalcSymbols(val) {
+  const dd = document.getElementById('calc-dropdown');
+  if (!val) { buildCalcDropdown(allInstruments); dd.style.display = 'block'; return; }
+  const q = val.toUpperCase();
+  const filtered = allInstruments.filter(i =>
+    i.symbol.includes(q) || i.name.toUpperCase().includes(q) || i.category.toUpperCase().includes(q)
+  );
+  buildCalcDropdown(filtered);
+  dd.style.display = 'block';
+}
+
+function showCalcDropdown() {
+  const dd = document.getElementById('calc-dropdown');
+  if (!dd.innerHTML) buildCalcDropdown(allInstruments);
+  dd.style.display = 'block';
+}
+
+function hideCalcDropdown() {
+  document.getElementById('calc-dropdown').style.display = 'none';
+}
+
+function selectCalcSymbol(sym, name, cat) {
+  document.getElementById('calc-symbol').value = sym;
+  document.getElementById('calc-symbol-search').value = `${sym} — ${name}`;
+  document.getElementById('calc-dropdown').style.display = 'none';
+  // Auto-fill entry price for crypto from category hint
+  const step = allInstruments.find(i => i.symbol === sym)?.digits === 2 ? '0.01' : '0.00001';
+  document.getElementById('calc-entry').step = step;
+}
+
 async function calcPosition() {
   const data = {
     symbol: document.getElementById('calc-symbol').value,
@@ -828,19 +882,24 @@ async function calcPosition() {
   const r = await res.json();
 
   document.getElementById('calc-results').innerHTML = `
-    <h3 style="font-size:15px;margin-bottom:10px">${r.symbol} — Results</h3>
+    <h3 style="font-size:15px;margin-bottom:10px">${r.symbol} — ${r.commodity || ''}</h3>
     <div class="calc-result-item"><span>Pip Factor</span><span>${r.pip_factor}</span></div>
     <div class="calc-result-item"><span>Contract Size</span><span>${r.contract_size}</span></div>
     <div class="calc-result-item"><span>Pip Value (USD)</span><span>$${r.pip_value_usd}</span></div>
     <div class="calc-result-item"><span>SL Distance</span><span>${r.sl_pips} pips</span></div>
     <div class="calc-result-item"><span>TP Distance</span><span>${r.tp_pips} pips</span></div>
-    <div class="calc-result-item"><span>Commission (RT)</span><span>$${r.commission}</span></div>
+    <div class="calc-result-item"><span>Commission (RT)</span><span>$${r.commission} @ $${r.commission_per_lot}/lot</span></div>
+    <div class="calc-result-item"><span>Swap Fee (daily)</span><span>$${r.swap_fee_daily}</span></div>
     <div class="calc-result-item"><span>Risk (USD)</span><span style="color:var(--red);font-weight:700">$${r.risk_usd}</span></div>
     <div class="calc-result-item"><span>Reward (USD)</span><span style="color:var(--green);font-weight:700">$${r.reward_usd}</span></div>
     <div class="calc-result-item"><span>Risk/Reward</span><span style="font-weight:700">1:${r.risk_reward_ratio}</span></div>
     <div class="calc-result-item"><span>Risk (% of acc)</span><span>${r.risk_pct_of_account}%</span></div>
-    <div class="calc-result-item"><span>Recommended Lot (${r.risk_pct_of_account_raw || 2}% risk)</span><span style="color:var(--cyan);font-weight:700">${r.recommended_lot_size}</span></div>
+    <div class="calc-result-item"><span>Recommended Lot (${data.risk_pct}% risk)</span><span style="color:var(--cyan);font-weight:700">${r.recommended_lot_size}</span></div>
+    <div class="calc-result-item" style="border-bottom:none"><span>Max Loss (2%)</span><span style="color:var(--red)">$${r.max_loss_2pct}</span></div>
     <div class="calc-result-item" style="border-bottom:none;font-weight:700"><span>Max Loss (5%)</span><span style="color:var(--red)">$${r.max_loss_5pct}</span></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:8px">
+      Fees: $${r.commission} RT commission + $${r.swap_fee_daily}/day swap (if held overnight)
+    </div>
   `;
 }
 
@@ -1046,6 +1105,7 @@ function renderCentralBanks(events) {
 scan();
 loadJournal();
 loadNews();
+loadInstruments();
 </script>
 </body>
 </html>
