@@ -22,7 +22,7 @@ JOURNAL_FILE = Path(__file__).parent / "trading_journal.json"
 # Radar result cache (avoids re-running full scan per BUDDY question)
 _radar_cache = None
 _radar_cache_time = None
-_RADAR_CACHE_TTL = timedelta(seconds=60)
+_RADAR_CACHE_TTL = timedelta(seconds=120)
 
 
 def _get_cached_radar():
@@ -36,6 +36,20 @@ def _get_cached_radar():
     _radar_cache = radar_scan(cfg)
     _radar_cache_time = now
     return _radar_cache
+
+
+def _warm_cache():
+    """Pre-warm the radar cache in background so the first visitor doesn't wait."""
+    import time
+    time.sleep(3)
+    try:
+        _get_cached_radar()
+    except Exception:
+        pass
+
+
+import threading as _thr
+_thr.Thread(target=_warm_cache, daemon=True).start()
 
 
 def _load_journal():
@@ -143,12 +157,8 @@ def api_news():
 
 @app.route('/api/scan')
 def api_scan():
-    """Run radar scan, return JSON. Updates the BUDDY cache."""
-    cfg = Config()
-    result = radar_scan(cfg)
-    global _radar_cache, _radar_cache_time
-    _radar_cache = result
-    _radar_cache_time = datetime.now(timezone.utc)
+    """Run radar scan, return JSON. Uses cache for 60s."""
+    result = _get_cached_radar()
     data = {
         'timestamp': result.timestamp,
         'market_sentiment': result.market_sentiment,
