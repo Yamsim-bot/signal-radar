@@ -19,6 +19,24 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 # Journal file
 JOURNAL_FILE = Path(__file__).parent / "trading_journal.json"
 
+# Radar result cache (avoids re-running full scan per BUDDY question)
+_radar_cache = None
+_radar_cache_time = None
+_RADAR_CACHE_TTL = timedelta(seconds=60)
+
+
+def _get_cached_radar():
+    """Return cached radar result if fresh, otherwise run a new scan."""
+    global _radar_cache, _radar_cache_time
+    now = datetime.now(timezone.utc)
+    if _radar_cache is not None and _radar_cache_time is not None:
+        if now - _radar_cache_time < _RADAR_CACHE_TTL:
+            return _radar_cache
+    cfg = Config()
+    _radar_cache = radar_scan(cfg)
+    _radar_cache_time = now
+    return _radar_cache
+
 
 def _load_journal():
     if JOURNAL_FILE.exists():
@@ -125,9 +143,12 @@ def api_news():
 
 @app.route('/api/scan')
 def api_scan():
-    """Run radar scan, return JSON."""
+    """Run radar scan, return JSON. Updates the BUDDY cache."""
     cfg = Config()
     result = radar_scan(cfg)
+    global _radar_cache, _radar_cache_time
+    _radar_cache = result
+    _radar_cache_time = datetime.now(timezone.utc)
     data = {
         'timestamp': result.timestamp,
         'market_sentiment': result.market_sentiment,
@@ -286,9 +307,8 @@ def api_chat():
         'none': 'Wala',
     }
 
-    # Run radar to get current data
-    cfg = Config()
-    result = radar_scan(cfg)
+    # Use cached radar data (fast — avoids re-scanning for every question)
+    result = _get_cached_radar()
     question_lower = translated
 
     # Find mentioned symbols
