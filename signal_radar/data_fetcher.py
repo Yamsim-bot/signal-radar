@@ -35,7 +35,21 @@ def resolve_symbol_mt5(base: str) -> Optional[str]:
 
 
 def fetch_bars(symbol: str, bars: int = 200, timeframe: str = "M5") -> Optional[pd.DataFrame]:
-    """Fetch bars from MT5, with CSV cache fallback."""
+    """Fetch bars from MT5, Binance (crypto), or CSV cache fallback."""
+
+    # Route crypto to Binance API
+    spec = INSTRUMENTS.get(symbol, {})
+    if spec.get('crypto'):
+        df = fetch_crypto_bars(symbol, bars)
+        if df is not None and len(df) > 10:
+            _save_cache(df, symbol, timeframe)
+            return df
+        df = _load_cache(symbol, timeframe)
+        if df is not None:
+            return df
+        return generate_sample_data(symbol, bars)
+
+    # Fallback to MT5 for forex/indices/commodities/stocks
     from .config import Config
     mt5_tf = 5  # default M5
     try:
@@ -95,6 +109,44 @@ def _save_cache(df: pd.DataFrame, symbol: str, timeframe: str):
     df.to_csv(_cache_path(symbol, timeframe))
 
 
+def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
+    """Fetch crypto OHLCV data from Binance public API."""
+    import requests as _requests
+    spec = INSTRUMENTS.get(symbol, {})
+    binance_pair = spec.get('binance_pair', symbol.replace('USD', 'USDT'))
+
+    # Map timeframe to Binance interval
+    interval_map = {'M1': '1m', 'M5': '5m', 'M15': '15m', 'M30': '30m',
+                    'H1': '1h', 'H4': '4h', 'D1': '1d'}
+    interval = '15m'  # default for detailed analysis
+
+    try:
+        url = f"https://api.binance.com/api/v3/klines"
+        params = {'symbol': binance_pair, 'interval': interval, 'limit': min(bars, 500)}
+        resp = _requests.get(url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if not data or len(data) < 10:
+            return None
+
+        rows = []
+        for k in data:
+            rows.append({
+                'open': float(k[1]),
+                'high': float(k[2]),
+                'low': float(k[3]),
+                'close': float(k[4]),
+                'volume': float(k[5]),
+            })
+
+        times = pd.to_datetime([int(k[0]) for k in data], unit='ms')
+        df = pd.DataFrame(rows, index=pd.DatetimeIndex(times))
+        return df
+    except Exception:
+        return None
+
+
 def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
                    symbols: Optional[list[str]] = None) -> dict[str, pd.DataFrame]:
     """Fetch bars for all instruments. Returns dict of symbol -> DataFrame."""
@@ -119,6 +171,10 @@ def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
         'XAUUSD': 2350.0, 'XAGUSD': 29.5, 'XTIUSD': 78.0, 'XBRUSD': 82.0,
         'US30': 39000, 'SP500': 5400, 'NAS100': 19500, 'DAX40': 18200, 'FTSE100': 8200, 'JP225': 39500,
         'AAPL': 210, 'TSLA': 250, 'GOOG': 175, 'AMZN': 185, 'MSFT': 430,
+        # Crypto
+        'BTCUSD': 58000, 'ETHUSD': 3100, 'SOLUSD': 145, 'XRPUSD': 0.52,
+        'ADAUSD': 0.45, 'DOGEUSD': 0.12, 'AVAXUSD': 28, 'LINKUSD': 13.5,
+        'DOTUSD': 6.2, 'LTCUSD': 72, 'SUIUSD': 1.85, 'APTUSD': 7.5,
     }.get(symbol, 100.0)
 
     pip = spec.get('pip_factor', 0.01) if spec else 0.01

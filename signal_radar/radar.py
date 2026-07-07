@@ -311,12 +311,19 @@ def _compute_fundamental_score(
     """Compute fundamental score for one instrument."""
     score = 0.0
 
+    # Crypto: use overall market sentiment + risk, no CB/COT data
+    if instr.get('crypto'):
+        score += fund_result.overall_score * 0.3
+        # Crypto thrives on risk appetite
+        if fund_result.risk == 'bullish':
+            score += 20
+        elif fund_result.risk == 'bearish':
+            score -= 20
+        return float(max(-100, min(100, score)))
+
     # CB stance contribution
     base = symbol[:3]
     quote = symbol[3:]
-
-    cb_base = next((cb for cb in fund_result.central_bank_stances if cb.currency == base), None)
-    cb_quote = next((cb for cb in fund_result.central_bank_stances if cb.currency == quote), None)
 
     if cb_base and cb_quote:
         # Rate differential direction
@@ -364,6 +371,39 @@ def _compute_sentiment_score(symbol: str, sent_result) -> float:
 
     # Adjust based on currency-specific keyword mentions
     all_text = ' '.join(h.title.lower() for h in sent_result.headlines)
+
+    # Crypto-specific sentiment
+    instr = INSTRUMENTS.get(symbol, {})
+    if instr.get('crypto'):
+        # Crypto names to search for
+        crypto_names = {
+            'BTCUSD': 'bitcoin', 'ETHUSD': 'ethereum', 'SOLUSD': 'solana',
+            'XRPUSD': 'xrp', 'ADAUSD': 'cardano', 'DOGEUSD': 'dogecoin',
+            'AVAXUSD': 'avalanche', 'LINKUSD': 'chainlink', 'DOTUSD': 'polkadot',
+            'LTCUSD': 'litecoin', 'SUIUSD': 'sui', 'APTUSD': 'aptos',
+        }
+        name = crypto_names.get(symbol, base.lower())
+
+        # Check for positive/negative crypto news
+        crypto_bullish = any(f'{name} rally' in all_text or f'{name} surge' in all_text
+                              or f'{name} jumps' in all_text or f'{name} gains' in all_text
+                              for _ in [1])
+        crypto_bearish = any(f'{name} crash' in all_text or f'{name} drop' in all_text
+                              or f'{name} falls' in all_text or f'{name} slump' in all_text
+                              for _ in [1])
+
+        if crypto_bullish and not crypto_bearish:
+            score += 25
+        elif crypto_bearish and not crypto_bullish:
+            score -= 25
+
+        # Crypto is ultra-high beta — amplified risk sentiment
+        if sent_result.risk_on_count > sent_result.risk_off_count:
+            score += 20
+        elif sent_result.risk_off_count > sent_result.risk_on_count:
+            score -= 20
+
+        return float(max(-100, min(100, score)))
 
     # Currency-specific keywords
     base_positive = any(f'{base.lower()} rally' in all_text or f'{base.lower()} gains' in all_text for _ in [1])

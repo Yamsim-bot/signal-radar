@@ -37,6 +37,11 @@ RSS_FEEDS = [
     ('Investing.com', 'https://www.investing.com/rss/news.rss'),
     ('DailyFX', 'https://www.dailyfx.com/feeds/rss/news'),
     ('Bloomberg', 'https://www.bloomberg.com/feed/podcast/etsy-marketplace.xml'),
+    # Crypto news
+    ('CoinDesk', 'https://www.coindesk.com/arc/outboundfeeds/rss/'),
+    ('CoinTelegraph', 'https://cointelegraph.com/rss'),
+    ('Decrypt', 'https://decrypt.co/feed'),
+    ('CryptoNews', 'https://cryptonews.com/news/feed/'),
 ]
 
 # Keyword categories for trading sentiment
@@ -64,6 +69,21 @@ RISK_OFF_KEYWORDS = [
     'risk-off', 'crash', 'correction', 'bear market', 'recession',
     'pessimism', 'contraction', 'slowdown', 'default', 'downgrade',
     'volatility', 'uncertainty', 'crisis', 'emergency',
+]
+
+# Crypto-specific keywords
+CRYPTO_BULLISH_KEYWORDS = [
+    'bitcoin rally', 'ethereum surge', 'crypto rally', 'altcoin boom',
+    'defi growth', 'nft boom', 'blockchain adoption', 'institutional adoption',
+    'bitcoin etf', 'halving', 'bull run', 'tokenization', 'web3',
+    'layer 2', 'staking', 'yield farming', 'hodl', 'moon',
+]
+
+CRYPTO_BEARISH_KEYWORDS = [
+    'bitcoin crash', 'crypto crash', 'crypto winter', 'bear market',
+    'regulation crackdown', 'sec lawsuit', 'exchange hack', 'rug pull',
+    'sell-off', 'liquidation', 'ban', 'scam', 'pump and dump',
+    'volatility', 'dump', 'fud',
 ]
 
 
@@ -253,7 +273,13 @@ def _calc_relevance(title: str) -> float:
                         'cad', 'chf', 'cpi', 'gdp', 'nfp', 'fed', 'ecb', 'boe',
                         'boj', 'rba', 'rbnz', 'stock', 'index', 'commodity',
                         'oil', 'gold', 'bond', 'yield', 'rate', 'inflation',
-                        'market', 'trading', 'bull', 'bear', 'rally', 'crash']
+                        'market', 'trading', 'bull', 'bear', 'rally', 'crash',
+                        # Crypto keywords
+                        'bitcoin', 'ethereum', 'crypto', 'blockchain', 'altcoin',
+                        'defi', 'nft', 'web3', 'solana', 'xrp', 'cardano',
+                        'dogecoin', 'avalanche', 'chainlink', 'polkadot',
+                        'binance', 'coinbase', 'halving', 'btc', 'eth', 'usdt',
+                        'token', 'mining', 'staking', 'layer 2']
     title_lower = title.lower()
     matches = sum(1 for kw in trading_keywords if kw in title_lower)
     # Scale: 3+ keywords = very relevant, 0 = low relevance

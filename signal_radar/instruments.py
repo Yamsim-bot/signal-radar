@@ -245,8 +245,95 @@ INSTRUMENTS = {
     },
 }
 
+    # ═══════ CRYPTO ═══════
+    'BTCUSD': {
+        'category': 'crypto', 'pip_factor': 0.1, 'contract_size': 1,
+        'digits': 2, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 5.0,
+        'description': 'Bitcoin vs USD', 'currency': 'USD',
+        'binance_pair': 'BTCUSDT', 'crypto': True,
+    },
+    'ETHUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 2, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 0.5, 'margin_pct': 5.0,
+        'description': 'Ethereum vs USD', 'currency': 'USD',
+        'binance_pair': 'ETHUSDT', 'crypto': True,
+    },
+    'SOLUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Solana vs USD', 'currency': 'USD',
+        'binance_pair': 'SOLUSDT', 'crypto': True,
+    },
+    'XRPUSD': {
+        'category': 'crypto', 'pip_factor': 0.0001, 'contract_size': 1,
+        'digits': 4, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 0.5, 'margin_pct': 10.0,
+        'description': 'XRP vs USD', 'currency': 'USD',
+        'binance_pair': 'XRPUSDT', 'crypto': True,
+    },
+    'ADAUSD': {
+        'category': 'crypto', 'pip_factor': 0.0001, 'contract_size': 1,
+        'digits': 4, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 0.5, 'margin_pct': 10.0,
+        'description': 'Cardano vs USD', 'currency': 'USD',
+        'binance_pair': 'ADAUSDT', 'crypto': True,
+    },
+    'DOGEUSD': {
+        'category': 'crypto', 'pip_factor': 0.0001, 'contract_size': 1,
+        'digits': 5, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 0.5, 'margin_pct': 10.0,
+        'description': 'Dogecoin vs USD', 'currency': 'USD',
+        'binance_pair': 'DOGEUSDT', 'crypto': True,
+    },
+    'AVAXUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Avalanche vs USD', 'currency': 'USD',
+        'binance_pair': 'AVAXUSDT', 'crypto': True,
+    },
+    'LINKUSD': {
+        'category': 'crypto', 'pip_factor': 0.001, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Chainlink vs USD', 'currency': 'USD',
+        'binance_pair': 'LINKUSDT', 'crypto': True,
+    },
+    'DOTUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Polkadot vs USD', 'currency': 'USD',
+        'binance_pair': 'DOTUSDT', 'crypto': True,
+    },
+    'LTCUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 2, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Litecoin vs USD', 'currency': 'USD',
+        'binance_pair': 'LTCUSDT', 'crypto': True,
+    },
+    'SUIUSD': {
+        'category': 'crypto', 'pip_factor': 0.001, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Sui vs USD', 'currency': 'USD',
+        'binance_pair': 'SUIUSDT', 'crypto': True,
+    },
+    'APTUSD': {
+        'category': 'crypto', 'pip_factor': 0.01, 'contract_size': 1,
+        'digits': 3, 'sessions': {'Crypto': (0, 24)},
+        'typical_spread': 1.0, 'margin_pct': 10.0,
+        'description': 'Aptos vs USD', 'currency': 'USD',
+        'binance_pair': 'APTUSDT', 'crypto': True,
+    },
+}
+
 INSTRUMENT_LIST = sorted(INSTRUMENTS.keys(), key=lambda s: (
-    {'major': 0, 'cross': 1, 'index': 2, 'commodity': 3, 'stock': 4}[INSTRUMENTS[s]['category']],
+    {'major': 0, 'cross': 1, 'index': 2, 'commodity': 3, 'stock': 4, 'crypto': 5}[INSTRUMENTS[s]['category']],
     s,
 ))
 
@@ -256,6 +343,7 @@ CATEGORIES = {
     'index': 'Indices',
     'commodity': 'Commodities & CFDs',
     'stock': 'Stocks',
+    'crypto': 'Cryptocurrencies',
 }
 
 # Alias used by CLI
@@ -276,6 +364,10 @@ def best_session_str(symbol: str) -> str:
 
     if not sessions:
         return 'Any time'
+
+    # Crypto trades 24/7 — show peak volatility window
+    if spec.get('crypto'):
+        return '24/7 — Peak 13-22 GMT'
 
     # Prime = London/NY overlap = 13-17 GMT
     has_london = 'London' in sessions
