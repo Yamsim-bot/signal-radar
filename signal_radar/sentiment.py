@@ -71,19 +71,14 @@ RSS_FEEDS = [
     ('Investing.com', 'https://www.investing.com/rss/news.rss'),
     ('DailyFX', 'https://www.dailyfx.com/feeds/rss/news'),
     ('Bloomberg', 'https://www.bloomberg.com/feed/podcast/etsy-marketplace.xml'),
-    # NEW: FXStreet (live forex news & analysis)
+    # Forex sources
     ('FXStreet', 'https://www.fxstreet.com/rss/news'),
-    # NEW: TradingView (market ideas & analysis)
     ('TradingView', 'https://www.tradingview.com/feed/'),
-    # Crypto
-    ('CoinDesk', 'https://www.coindesk.com/arc/outboundfeeds/rss/'),
-    ('CoinTelegraph', 'https://cointelegraph.com/rss'),
-    ('Decrypt', 'https://decrypt.co/feed'),
-    ('CryptoNews', 'https://cryptonews.com/news/feed/'),
 ]
 
 # Web-scraped sources (approaches that need requests/bs4)
 SCRAPED_SOURCES = {
+    'Finviz': 'https://finviz.com/news.ashx',
     'FXStreet': 'https://www.fxstreet.com/rss/news',
     'CME Group': 'https://www.cmegroup.com/content/cme-group/feeds/market-news/rss.xml',
     'ForexFactory': 'https://www.forexfactory.com/news',
@@ -119,20 +114,6 @@ RISK_OFF_KEYWORDS = [
     'volatility', 'uncertainty', 'crisis', 'emergency',
 ]
 
-CRYPTO_BULLISH_KEYWORDS = [
-    'bitcoin rally', 'ethereum surge', 'crypto rally', 'altcoin boom',
-    'defi growth', 'nft boom', 'blockchain adoption', 'institutional adoption',
-    'bitcoin etf', 'halving', 'bull run', 'tokenization', 'web3',
-    'layer 2', 'staking', 'yield farming', 'hodl', 'moon',
-]
-
-CRYPTO_BEARISH_KEYWORDS = [
-    'bitcoin crash', 'crypto crash', 'crypto winter', 'bear market',
-    'regulation crackdown', 'sec lawsuit', 'exchange hack', 'rug pull',
-    'sell-off', 'liquidation', 'ban', 'scam', 'pump and dump',
-    'volatility', 'dump', 'fud',
-]
-
 # Commodity / Oil keywords
 COMMODITY_BULLISH_KEYWORDS = [
     'oil rally', 'crude surge', 'supply cut', 'production cut',
@@ -160,10 +141,6 @@ SOURCE_CREDIBILITY = {
     'OPEC': 0.85,
     'myFXbook': 0.60,
     'Finviz': 0.75,
-    'CoinDesk': 0.80,
-    'CoinTelegraph': 0.70,
-    'Decrypt': 0.65,
-    'CryptoNews': 0.60,
 }
 
 
@@ -669,12 +646,6 @@ def _calc_relevance(title: str) -> float:
         'technical', 'analysis', 'fibonacci', 'support', 'resistance',
         'breakout', 'retracement', 'divergence', 'candle', 'pattern',
         'entry', 'target', 'stop loss', 'take profit', 'signal',
-        # Crypto
-        'bitcoin', 'ethereum', 'crypto', 'blockchain', 'altcoin',
-        'defi', 'nft', 'web3', 'solana', 'xrp', 'cardano',
-        'dogecoin', 'avalanche', 'chainlink', 'polkadot',
-        'binance', 'coinbase', 'halving', 'btc', 'eth', 'usdt',
-        'token', 'mining', 'staking', 'layer 2',
     ]
     title_lower = title.lower()
     matches = sum(1 for kw in trading_keywords if kw in title_lower)
@@ -864,17 +835,18 @@ def _generate_sample_headlines() -> list[NewsHeadline]:
         # Finviz
         ('Finviz', 'NFP expectations: 200K job additions forecast for May'),
         ('Finviz', 'AAPL upgrades target on AI product cycle optimism'),
-        ('Finviz', 'Bitcoin volatility ahead of halving event'),
+        ('Finviz', 'US Dollar holds steady as Fed signals data-dependent approach'),
+        ('Finviz', 'Crude oil supply concerns intensify on Middle East tensions'),
         # Bloomberg
         ('Bloomberg', 'China stimulus measures boost commodity demand outlook'),
         ('Bloomberg', 'ECB officials push back against rapid rate cut expectations'),
-        # NEW: FXStreet
+        # FXStreet
         ('FXStreet', 'EURUSD technical: key support at 1.1050 holds, bounce expected'),
         ('FXStreet', 'GBPUSD finds resistance at 1.2900 ahead of BOE testimony'),
         ('FXStreet', 'Gold technical analysis: bulls eye $2,420 breakout'),
-        # NEW: TradingView
+        # TradingView
         ('TradingView', 'SP500 reaching new highs — trend continuation or reversal?'),
-        ('TradingView', 'BTCUSD analysis: institutional accumulation suggests upside'),
+        ('TradingView', 'GBPJPY bullish flag pattern suggests breakout to 194'),
         ('TradingView', 'XAUUSD: triangle breakout to the upside confirmed'),
         # CME Group
         ('CME Group', 'Fed Funds futures price in 25bp cut by September'),
