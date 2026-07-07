@@ -265,6 +265,40 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
     if symbols is None:
         symbols = get_symbols()
 
+# ── Live price cache ──
+_LIVE_PRICE_CACHE: dict[str, dict[str, float]] = {}
+_LIVE_PRICE_CACHE_AT: dict[str, float] = {}
+_LIVE_PRICE_CACHE_TTL = 30  # seconds
+
+
+def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
+    """Fetch live current prices for all instruments.
+
+    Two strategies:
+      1. Forex (majors + crosses) → Frankfurter API (free, no key, fast)
+      2. Stocks/indices/commodities → Yahoo Finance batch download
+
+    Results are cached for 30s so repeated calls are instant.
+    Total blocking time capped at ~3s (Frankfurter + gold-api fast path;
+    Yahoo batches only run if cache is stale AND time permits).
+    """
+    from .instruments import get_symbols
+
+    if symbols is None:
+        symbols = get_symbols()
+
+    import time as _time
+    _start = _time.time()
+    _MAX_BUDGET = 2.5  # total seconds this function may block
+
+    # ═══ Check cache first (instant) ═══
+    _cache_key = 'all'
+    _now = _time.time()
+    cached = _LIVE_PRICE_CACHE.get(_cache_key)
+    cached_at = _LIVE_PRICE_CACHE_AT.get(_cache_key, 0)
+    if cached is not None and _now - cached_at < _LIVE_PRICE_CACHE_TTL:
+        return cached
+
     prices: dict[str, float] = {}
 
     # ── Phase 1: Forex via Frankfurter API (single call, ~300-500ms) ──
@@ -287,104 +321,118 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
         except Exception:
             pass  # Non-fatal — fall back to OHLC sample close
 
-    # ── Phase 2: Precious metals via gold-api.com (spot price, not futures) ──
-    # Yahoo's GC=F gives futures price which can differ from spot by $10-15.
-    precious = [s for s in symbols if s in ('XAUUSD', 'XAGUSD')]
-    if precious:
-        metal_map = {'XAUUSD': 'XAU', 'XAGUSD': 'XAG'}
-        try:
-            import requests as _req
-            for sym in precious:
-                metal = metal_map[sym]
-                resp = _req.get(f'https://api.gold-api.com/price/{metal}', timeout=5)
-                if resp.status_code == 200:
-                    data = resp.json()
-                    price = data.get('price')
-                    if price:
-                        prices[sym] = float(price)
-        except Exception:
-            pass  # Fall back to Yahoo futures
-
-    # ── Phase 3: Non-forex via Yahoo Finance (individual downloads by batch) ──
-    non_forex = [s for s in symbols if s not in prices]
-    if non_forex:
-        # Group by category for better batch reliability
-        yahoo_map = {
-            'AAPL': 'AAPL', 'TSLA': 'TSLA', 'GOOG': 'GOOG',
-            'AMZN': 'AMZN', 'MSFT': 'MSFT',
-            'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
-            'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
-            'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
-        }
-
-        def _yahoo_batch(syms):
-            """Download a batch of Yahoo symbols and return {sym: price}."""
-            result = {}
-            if not syms:
-                return result
+    # ── Phase 2: Precious metals via gold-api.com (spot price) ──
+    if _time.time() - _start < _MAX_BUDGET:
+        precious = [s for s in symbols if s in ('XAUUSD', 'XAGUSD')]
+        if precious:
+            metal_map = {'XAUUSD': 'XAU', 'XAGUSD': 'XAG'}
             try:
-                import yfinance as yf
-                import socket
-                old_to = socket.getdefaulttimeout()
-                socket.setdefaulttimeout(10)
-                try:
-                    df = yf.download(
-                        ' '.join(syms),
-                        period='2d',
-                        interval='15m',
-                        group_by='ticker',
-                        progress=False,
-                        auto_adjust=False,
-                    )
-                    if df is not None and not df.empty:
-                        if hasattr(df.columns, 'levels') and len(df.columns.levels) > 1:
-                            for ysym in syms:
-                                try:
-                                    result[ysym] = float(df[ysym]['Close'].iloc[-1])
-                                except (KeyError, TypeError, IndexError, ValueError):
-                                    pass
-                        else:
-                            try:
-                                close_col = next(
-                                    (c for c in df.columns if isinstance(c, str) and c.lower() == 'close'),
-                                    None,
-                                )
-                                if close_col:
-                                    result[syms[0]] = float(df[close_col].iloc[-1])
-                            except (KeyError, TypeError, IndexError, ValueError):
-                                pass
-                finally:
-                    socket.setdefaulttimeout(old_to)
+                import requests as _req
+                import concurrent.futures as _cf
+                with _cf.ThreadPoolExecutor(max_workers=2) as _pool:
+                    _futures = {
+                        sym: _pool.submit(
+                            _req.get, f'https://api.gold-api.com/price/{metal_map[sym]}',
+                            timeout=5,
+                        ) for sym in precious
+                    }
+                    for sym, _fut in _futures.items():
+                        try:
+                            _resp = _fut.result()
+                            if _resp.status_code == 200:
+                                _price = _resp.json().get('price')
+                                if _price:
+                                    prices[sym] = float(_price)
+                        except Exception:
+                            pass
             except Exception:
                 pass
-            return result
 
-        # Separate Yahoo symbols into compatible batches
-        yahoo_sym_list = [yahoo_map.get(s, s) for s in non_forex]
-        # Categorize: stocks, US indices, non-US indices, commodities
-        stocks = [s for s in yahoo_sym_list if s in ('AAPL','TSLA','GOOG','AMZN','MSFT')]
-        us_idx = [s for s in yahoo_sym_list if s in ('^DJI','^GSPC','^IXIC')]
-        eu_idx = [s for s in yahoo_sym_list if s in ('^GDAXI','^FTSE','^N225')]
-        futs = [s for s in yahoo_sym_list if '=F' in s]
+    # ── Phase 3: Yahoo Finance — only if time budget allows ──
+    if _time.time() - _start < _MAX_BUDGET:
+        non_forex = [s for s in symbols if s not in prices]
+        if non_forex:
+            yahoo_map = {
+                'AAPL': 'AAPL', 'TSLA': 'TSLA', 'GOOG': 'GOOG',
+                'AMZN': 'AMZN', 'MSFT': 'MSFT',
+                'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
+                'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
+                'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
+            }
 
-        for batch in [stocks, us_idx, eu_idx, futs]:
-            batch_results = _yahoo_batch(batch)
-            # Map results back to our symbols
-            rev_map = {v: k for k, v in yahoo_map.items()}
-            for ysym, yprice in batch_results.items():
-                our_sym = rev_map.get(ysym, ysym)
-                if our_sym in non_forex:
-                    prices[our_sym] = yprice
+            def _yahoo_batch(syms):
+                """Download a batch of Yahoo symbols and return {sym: price}."""
+                result = {}
+                if not syms:
+                    return result
+                try:
+                    import yfinance as yf
+                    import socket
+                    old_to = socket.getdefaulttimeout()
+                    socket.setdefaulttimeout(4)
+                    try:
+                        df = yf.download(
+                            ' '.join(syms),
+                            period='2d',
+                            interval='15m',
+                            group_by='ticker',
+                            progress=False,
+                            auto_adjust=False,
+                        )
+                        if df is not None and not df.empty:
+                            if hasattr(df.columns, 'levels') and len(df.columns.levels) > 1:
+                                for ysym in syms:
+                                    try:
+                                        result[ysym] = float(df[ysym]['Close'].iloc[-1])
+                                    except (KeyError, TypeError, IndexError, ValueError):
+                                        pass
+                            else:
+                                try:
+                                    close_col = next(
+                                        (c for c in df.columns if isinstance(c, str) and c.lower() == 'close'),
+                                        None,
+                                    )
+                                    if close_col:
+                                        result[syms[0]] = float(df[close_col].iloc[-1])
+                                except (KeyError, TypeError, IndexError, ValueError):
+                                    pass
+                    finally:
+                        socket.setdefaulttimeout(old_to)
+                except Exception:
+                    pass
+                return result
 
-        # Retry any symbols that returned NaN — download individually
-        failed = [s for s in non_forex if s not in prices or not prices.get(s) or str(prices.get(s)) == 'nan']
-        for sym in failed:
-            ysym = yahoo_map.get(sym, sym)
-            result = _yahoo_batch([ysym])
-            if result:
-                prices[sym] = result.get(ysym, result.get(sym))
-            if prices.get(sym) and str(prices[sym]) != 'nan':
-                pass  # recovered!
+            # Separate Yahoo symbols into compatible batches
+            yahoo_sym_list = [yahoo_map.get(s, s) for s in non_forex]
+            stocks = [s for s in yahoo_sym_list if s in ('AAPL','TSLA','GOOG','AMZN','MSFT')]
+            us_idx = [s for s in yahoo_sym_list if s in ('^DJI','^GSPC','^IXIC')]
+            eu_idx = [s for s in yahoo_sym_list if s in ('^GDAXI','^FTSE','^N225')]
+            futs = [s for s in yahoo_sym_list if '=F' in s]
+
+            for batch in [stocks, us_idx, eu_idx, futs]:
+                if _time.time() - _start >= _MAX_BUDGET:
+                    break  # out of time — skip remaining batches
+                batch_results = _yahoo_batch(batch)
+                rev_map = {v: k for k, v in yahoo_map.items()}
+                for ysym, yprice in batch_results.items():
+                    our_sym = rev_map.get(ysym, ysym)
+                    if our_sym in non_forex:
+                        prices[our_sym] = yprice
+
+            # Individual retries — only if time allows
+            if _time.time() - _start < _MAX_BUDGET:
+                failed = [s for s in non_forex if s not in prices or not prices.get(s) or str(prices.get(s)) == 'nan']
+                for sym in failed:
+                    if _time.time() - _start >= _MAX_BUDGET:
+                        break
+                    ysym = yahoo_map.get(sym, sym)
+                    result = _yahoo_batch([ysym])
+                    if result:
+                        prices[sym] = result.get(ysym, result.get(sym))
+
+    # ═══ Save to cache ═══
+    _LIVE_PRICE_CACHE[_cache_key] = prices
+    _LIVE_PRICE_CACHE_AT[_cache_key] = _time.time()
 
     return prices
 
