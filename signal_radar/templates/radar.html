@@ -676,23 +676,27 @@ body {
       <div class="journal-form">
         <h3 style="margin-bottom:10px;font-size:14px;color:var(--accent-light)">Add Trade</h3>
         <label>Symbol</label>
-        <select id="j-symbol"></select>
+        <select id="j-symbol" onchange="autoCalcPnL()"></select>
         <label>Direction</label>
-        <select id="j-direction"><option>Buy</option><option>Sell</option></select>
+        <select id="j-direction" onchange="autoCalcPnL()"><option>Buy</option><option>Sell</option></select>
         <label>Entry Price</label>
-        <input type="number" id="j-entry" step="0.00001">
+        <input type="number" id="j-entry" step="0.00001" oninput="autoCalcPnL()">
         <label>Exit Price</label>
-        <input type="number" id="j-exit" step="0.00001">
+        <input type="number" id="j-exit" step="0.00001" oninput="autoCalcPnL()">
         <label>Lot Size</label>
-        <input type="number" id="j-lot" value="0.01" step="0.01">
+        <input type="number" id="j-lot" value="0.01" step="0.01" oninput="autoCalcPnL()">
         <label>Stop Loss</label>
         <input type="number" id="j-sl" step="0.00001">
         <label>Take Profit</label>
         <input type="number" id="j-tp" step="0.00001">
+        <label>Entry Reason</label>
+        <select id="j-entry-reason"></select>
+        <label>Exit Reason</label>
+        <select id="j-exit-reason"></select>
         <label>Result</label>
         <select id="j-result"><option value="open">Open</option><option value="win">Win</option><option value="loss">Loss</option></select>
-        <label>P&L ($)</label>
-        <input type="number" id="j-pnl" step="0.01">
+        <label>P&L ($) <span id="j-pnl-preview" style="font-size:11px;color:var(--text-muted)"></span></label>
+        <input type="number" id="j-pnl" step="0.01" oninput="document.getElementById('j-pnl-preview').textContent='(manual)'">
         <label>Notes</label>
         <textarea id="j-notes" placeholder="Entry reason, notes..."></textarea>
         <button class="btn btn-accent" onclick="addJournalEntry()" style="margin-top:10px;width:100%;padding:9px;font-size:14px">➕ Add Entry</button>
@@ -713,7 +717,82 @@ body {
 
 <script>
 // ══════════════════════════════════════════════
-//  Sidebar navigation
+//  Instrument data for P&L calculation
+// ══════════════════════════════════════════════
+const INSTRUMENTS = {{ instruments | tojson | safe }};
+
+function calcPnL(symbol, direction, entry, exit, lotSize) {
+  if (!entry || !exit || !lotSize) return 0;
+  const spec = INSTRUMENTS[symbol];
+  if (!spec) return Math.round((exit - entry) * lotSize * 1000 * 100) / 100;
+  const pip = spec.pip_factor;
+  const contract = spec.contract_size;
+  const price = (entry + exit) / 2;
+  let pipVal;
+  if (spec.currency === 'USD') pipVal = pip * contract;
+  else if (spec.currency === 'JPY') pipVal = pip * contract / price;
+  else pipVal = pip * contract / price;
+  let pips = (exit - entry) / pip;
+  if (direction === 'Sell') pips = -pips;
+  return Math.round(pips * pipVal * lotSize * 100) / 100;
+}
+
+const ENTRY_REASONS = [
+  ['', 'Select reason...'],
+  ['trend', 'Trend following'],
+  ['breakout', 'Breakout'],
+  ['pullback', 'Pullback / Retracement'],
+  ['support', 'Support / Resistance'],
+  ['pattern', 'Chart pattern'],
+  ['indicator', 'Indicator signal'],
+  ['news', 'News / Fundamental'],
+  ['sentiment', 'Market sentiment'],
+];
+
+const EXIT_REASONS = [
+  ['', 'Select reason...'],
+  ['tp', 'Take Profit hit'],
+  ['sl', 'Stop Loss hit'],
+  ['manual_profit', 'Manual (profit target)'],
+  ['manual_loss', 'Manual (cut loss)'],
+  ['reversal', 'Reversal signal'],
+  ['time', 'Time-based exit'],
+  ['news', 'News event'],
+];
+
+// Populate reason dropdowns
+function populateReasonDropdowns() {
+  const entrySel = document.getElementById('j-entry-reason');
+  const exitSel = document.getElementById('j-exit-reason');
+  ENTRY_REASONS.forEach(r => { const o = document.createElement('option'); o.value = r[0]; o.textContent = r[1]; entrySel.appendChild(o); });
+  EXIT_REASONS.forEach(r => { const o = document.createElement('option'); o.value = r[0]; o.textContent = r[1]; exitSel.appendChild(o); });
+}
+
+// Live P&L preview
+function autoCalcPnL() {
+  const sym = document.getElementById('j-symbol').value;
+  const dir = document.getElementById('j-direction').value;
+  const entry = parseFloat(document.getElementById('j-entry').value) || 0;
+  const exit = parseFloat(document.getElementById('j-exit').value) || 0;
+  const lot = parseFloat(document.getElementById('j-lot').value) || 0;
+  const pnl = calcPnL(sym, dir, entry, exit, lot);
+  const preview = document.getElementById('j-pnl-preview');
+  if (pnl && document.getElementById('j-pnl').value === '') {
+    preview.textContent = 'auto: ' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+    preview.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    preview.textContent = '';
+  }
+}
+
+// Populate symbol dropdown
+function populateSymbolDropdown() {
+  const sel = document.getElementById('j-symbol');
+  const keys = Object.keys(INSTRUMENTS);
+  const order = {'major':0,'cross':1,'index':2,'commodity':3,'stock':4};
+  keys.sort((a,b) => (order[INSTRUMENTS[a]?.category]||9) - (order[INSTRUMENTS[b]?.category]||9) || a.localeCompare(b));
+  keys.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s + ' — ' + (INSTRUMENTS[s]?.description || ''); sel.appendChild(o); });
+}
 // ══════════════════════════════════════════════
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1060,13 +1139,17 @@ function renderJournal(entries) {
   const container = document.getElementById('journal-entries');
   if (entries.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>'; return; }
   const reversed = [...entries].reverse();
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Pair</th><th style="text-align:left;padding:6px">Dir</th><th style="text-align:right;padding:6px">P&L</th><th style="text-align:left;padding:6px">Result</th><th></th></tr>';
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Pair</th><th style="text-align:left;padding:6px">Dir</th><th style="text-align:left;padding:6px">Entry Reason</th><th style="text-align:left;padding:6px">Exit Reason</th><th style="text-align:right;padding:6px">P&amp;L</th><th style="text-align:left;padding:6px">Result</th><th></th></tr>';
   reversed.forEach((e, i) => {
     const idx = entries.length - 1 - i;
+    const entryReason = e.entry_reason ? ENTRY_REASONS.find(r => r[0] === e.entry_reason)?.[1] || e.entry_reason : '';
+    const exitReason = e.exit_reason ? EXIT_REASONS.find(r => r[0] === e.exit_reason)?.[1] || e.exit_reason : '';
     html += `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.date?e.date.slice(5,10):''}</td>
       <td style="padding:6px"><b>${e.symbol}</b></td>
       <td style="padding:6px">${e.direction}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${entryReason}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${exitReason}</td>
       <td style="padding:6px;text-align:right;font-family:JetBrains Mono;color:${(e.pnl||0)>=0?'var(--green)':'var(--red)'}">${e.pnl?(e.pnl>=0?'+':'')+'$'+e.pnl:'-'}</td>
       <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result}</span></td>
       <td style="padding:6px"><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
@@ -1082,10 +1165,14 @@ async function addJournalEntry() {
     lot_size: document.getElementById('j-lot').value, stop_loss: document.getElementById('j-sl').value,
     take_profit: document.getElementById('j-tp').value, result: document.getElementById('j-result').value,
     pnl: document.getElementById('j-pnl').value, notes: document.getElementById('j-notes').value,
+    entry_reason: document.getElementById('j-entry-reason').value,
+    exit_reason: document.getElementById('j-exit-reason').value,
     date: new Date().toISOString().slice(0,16).replace('T',' '),
   };
   await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
   ['j-entry','j-exit','j-sl','j-tp','j-pnl','j-notes'].forEach(id => document.getElementById(id).value = '');
+  ['j-entry-reason','j-exit-reason'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  document.getElementById('j-pnl-preview').textContent = '';
   loadJournal();
 }
 async function deleteJournalEntry(index) {
@@ -1254,6 +1341,8 @@ scan();
 loadJournal();
 loadNews();
 loadInstruments();
+populateReasonDropdowns();
+populateSymbolDropdown();
 </script>
 </body>
 </html>

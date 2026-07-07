@@ -665,6 +665,57 @@ def api_calculator():
     })
 
 
+def _calc_pnl(symbol: str, direction: str, entry: float, exit: float, lot_size: float) -> float:
+    """Auto-calculate P&L from trade params using instrument specs."""
+    from .instruments import INSTRUMENTS, pip_value_usd
+    if not entry or not exit or not lot_size:
+        return 0.0
+    spec = INSTRUMENTS.get(symbol.upper())
+    if not spec:
+        return round((exit - entry) * lot_size * 1000, 2)
+    pip = spec.get('pip_factor', 0.0001)
+    contract = spec.get('contract_size', 1000)
+    price = (entry + exit) / 2
+    pv = pip_value_usd(symbol.upper(), price)
+    pips = (exit - entry) / pip
+    if direction.lower() == 'sell':
+        pips = -pips
+    return round(pips * pv * lot_size, 2)
+
+
+ENTRY_REASONS = [
+    ('', 'Select reason...'),
+    ('trend', 'Trend following'),
+    ('breakout', 'Breakout'),
+    ('pullback', 'Pullback / Retracement'),
+    ('support', 'Support / Resistance'),
+    ('pattern', 'Chart pattern'),
+    ('indicator', 'Indicator signal'),
+    ('news', 'News / Fundamental'),
+    ('sentiment', 'Market sentiment'),
+]
+
+EXIT_REASONS = [
+    ('', 'Select reason...'),
+    ('tp', 'Take Profit hit'),
+    ('sl', 'Stop Loss hit'),
+    ('manual_profit', 'Manual (profit target)'),
+    ('manual_loss', 'Manual (cut loss)'),
+    ('reversal', 'Reversal signal'),
+    ('time', 'Time-based exit'),
+    ('news', 'News event'),
+]
+
+
+@app.route('/api/instruments')
+def api_instruments():
+    """Return instrument specs for frontend P&L calculation."""
+    from .instruments import INSTRUMENTS
+    slim = {sym: {k: spec[k] for k in ('pip_factor','contract_size','currency','category') if k in spec}
+            for sym, spec in INSTRUMENTS.items()}
+    return jsonify(slim)
+
+
 @app.route('/api/journal', methods=['GET', 'POST'])
 def api_journal():
     """Trading journal CRUD."""
@@ -686,19 +737,36 @@ def api_journal():
         _save_journal([])
         return jsonify({'ok': True})
 
+    # Auto-calculate P&L if not manually provided
+    manual_pnl = data.get('pnl')
+    entry_price = float(data.get('entry_price', 0))
+    exit_price = float(data.get('exit_price', 0))
+    lot_size = float(data.get('lot_size', 0.01))
+
+    if manual_pnl and float(manual_pnl) != 0:
+        pnl = float(manual_pnl)
+    else:
+        pnl = _calc_pnl(
+            data.get('symbol', ''),
+            data.get('direction', 'Buy'),
+            entry_price, exit_price, lot_size,
+        )
+
     # Add entry
     entry = {
         'symbol': data.get('symbol', '').upper(),
         'direction': data.get('direction', 'Buy'),
-        'entry_price': float(data.get('entry_price', 0)),
-        'exit_price': float(data.get('exit_price', 0)),
-        'lot_size': float(data.get('lot_size', 0.01)),
+        'entry_price': entry_price,
+        'exit_price': exit_price,
+        'lot_size': lot_size,
         'stop_loss': float(data.get('stop_loss', 0)),
         'take_profit': float(data.get('take_profit', 0)),
         'date': data.get('date', datetime.now().strftime('%Y-%m-%d %H:%M')),
         'notes': data.get('notes', ''),
-        'pnl': float(data.get('pnl', 0)),
+        'pnl': pnl,
         'result': data.get('result', 'open'),
+        'entry_reason': data.get('entry_reason', ''),
+        'exit_reason': data.get('exit_reason', ''),
         'id': datetime.now().timestamp(),
     }
     entries.append(entry)
