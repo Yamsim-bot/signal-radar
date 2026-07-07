@@ -11,7 +11,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 @dataclass
 class Config:
     # Data fetching
-    mt5_bars: int = 80          # bars per symbol (80 = ~6.5h M5, enough for ADX/trend analysis)
+    mt5_bars: int = 60          # bars per symbol (60 M5 bars = 5h, enough for ADX/trend)
     cache_expiry_hours: int = 2
     use_cache: bool = True
 

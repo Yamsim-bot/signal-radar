@@ -72,7 +72,7 @@ def scan(cfg: Config = Config()) -> RadarResult:
     all_data = fetch_all_bars(cfg.mt5_bars)
 
     # Run fundamental/sentiment/calendar once (shared across instruments)
-    fund_result = fundamental_analyze()
+    fund_result = fundamental_analyze(quick=True)
     cal_result = calendar_analyze()
     sent_result = sentiment_analyze(quick=True)  # instant — sample headlines
 
@@ -175,7 +175,7 @@ def _analyze_instrument(
     df_ta = compute_all(df, cfg)
 
     # Multi-TF
-    multi_tf = compute_multi_tf(df) if len(df) >= 100 else {}
+    multi_tf = compute_multi_tf(df) if len(df) >= 60 else {}
 
     # Market Structure
     ms = ms_analyze(df_ta, cfg)

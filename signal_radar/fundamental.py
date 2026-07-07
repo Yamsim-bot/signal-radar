@@ -102,8 +102,13 @@ STOCK_SEASONALITY = {
 }
 
 
-def analyze(now: Optional[datetime] = None) -> FundamentalResult:
-    """Complete fundamental analysis across all instruments."""
+def analyze(now: Optional[datetime] = None, quick: bool = False) -> FundamentalResult:
+    """Complete fundamental analysis across all instruments.
+
+    Args:
+        now: Optional timestamp override.
+        quick: If True, skip live COT fetching for instant results.
+    """
     if now is None:
         now = datetime.now(timezone.utc)
 
@@ -113,10 +118,8 @@ def analyze(now: Optional[datetime] = None) -> FundamentalResult:
     # Rate differentials for major pairs
     rate_diffs = _rate_differentials(cb_stances)
 
-    # COT data (fetched or sample)
-    cot_data = _get_cot_data()
-    if not cot_data:
-        cot_data = _generate_sample_cot()
+    # COT data — skip live fetch in quick mode
+    cot_data = _generate_sample_cot() if quick else (_get_cot_data() or _generate_sample_cot())
 
     # Risk sentiment
     risk_score, risk_sent = _risk_sentiment(cot_data, cb_stances)
