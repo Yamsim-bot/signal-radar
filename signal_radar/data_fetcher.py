@@ -172,7 +172,7 @@ def fetch_yahoo_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
         # Short timeout: if Yahoo is slow, skip and fall back to cache
         import socket
         orig_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(8)
+        socket.setdefaulttimeout(3)
         try:
             df = yf.download(yahoo_sym, period=period, interval='15m', progress=False, auto_adjust=False)
         finally:
@@ -213,7 +213,7 @@ def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
     try:
         url = f"https://api.binance.com/api/v3/klines"
         params = {'symbol': binance_pair, 'interval': interval, 'limit': min(bars, 500)}
-        resp = _requests.get(url, params=params, timeout=10)
+        resp = _requests.get(url, params=params, timeout=5)
         if resp.status_code != 200:
             return None
         data = resp.json()
@@ -251,12 +251,12 @@ def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
             with lock:
                 result[sym] = df
 
-    # Use thread pool for parallel fetching (max 8 concurrent workers)
+    # Use thread pool for parallel fetching (max 15 concurrent workers)
     from concurrent.futures import ThreadPoolExecutor, as_completed
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=15) as pool:
         futures = [pool.submit(_fetch_one, sym) for sym in symbols]
         # Wait for all to complete (with overall timeout)
-        for f in as_completed(futures, timeout=120):
+        for f in as_completed(futures, timeout=60):
             try:
                 f.result()
             except Exception:
