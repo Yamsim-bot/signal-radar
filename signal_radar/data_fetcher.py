@@ -250,21 +250,148 @@ def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
     return result
 
 
+def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
+    """Fetch live current prices for all instruments.
+
+    Two strategies:
+      1. Forex (majors + crosses) → Frankfurter API (free, no key, fast)
+      2. Stocks/indices/commodities → Yahoo Finance batch download
+
+    Returns dict of symbol -> current price (best effort, may be partial).
+    Total time: ~1-2s for all symbols (single Frankfurter call + one Yahoo batch call).
+    """
+    from .instruments import get_symbols
+
+    if symbols is None:
+        symbols = get_symbols()
+
+    prices: dict[str, float] = {}
+
+    # ── Phase 1: Forex via Frankfurter API (single call, ~300-500ms) ──
+    forex_symbols = [s for s in symbols if INSTRUMENTS[s].get('category') in ('major', 'cross')]
+    if forex_symbols:
+        try:
+            import requests as _req
+            resp = _req.get(
+                'https://api.frankfurter.app/latest?from=USD',
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                rates = data.get('rates', {})
+                rates['USD'] = 1.0
+                for sym in forex_symbols:
+                    base, quote = sym[:3], sym[3:]
+                    if base in rates and quote in rates:
+                        prices[sym] = rates[quote] / rates[base]
+        except Exception:
+            pass  # Non-fatal — fall back to OHLC sample close
+
+    # ── Phase 2: Non-forex via Yahoo Finance (individual downloads by batch) ──
+    non_forex = [s for s in symbols if s not in prices]
+    if non_forex:
+        # Group by category for better batch reliability
+        yahoo_map = {
+            'AAPL': 'AAPL', 'TSLA': 'TSLA', 'GOOG': 'GOOG',
+            'AMZN': 'AMZN', 'MSFT': 'MSFT',
+            'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
+            'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
+            'XAUUSD': 'GC=F', 'XAGUSD': 'SI=F',
+            'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
+        }
+
+        def _yahoo_batch(syms):
+            """Download a batch of Yahoo symbols and return {sym: price}."""
+            result = {}
+            if not syms:
+                return result
+            try:
+                import yfinance as yf
+                import socket
+                old_to = socket.getdefaulttimeout()
+                socket.setdefaulttimeout(10)
+                try:
+                    df = yf.download(
+                        ' '.join(syms),
+                        period='2d',
+                        interval='15m',
+                        group_by='ticker',
+                        progress=False,
+                        auto_adjust=False,
+                    )
+                    if df is not None and not df.empty:
+                        if hasattr(df.columns, 'levels') and len(df.columns.levels) > 1:
+                            for ysym in syms:
+                                try:
+                                    result[ysym] = float(df[ysym]['Close'].iloc[-1])
+                                except (KeyError, TypeError, IndexError, ValueError):
+                                    pass
+                        else:
+                            try:
+                                close_col = next(
+                                    (c for c in df.columns if isinstance(c, str) and c.lower() == 'close'),
+                                    None,
+                                )
+                                if close_col:
+                                    result[syms[0]] = float(df[close_col].iloc[-1])
+                            except (KeyError, TypeError, IndexError, ValueError):
+                                pass
+                finally:
+                    socket.setdefaulttimeout(old_to)
+            except Exception:
+                pass
+            return result
+
+        # Separate Yahoo symbols into compatible batches
+        yahoo_sym_list = [yahoo_map.get(s, s) for s in non_forex]
+        # Categorize: stocks, US indices, non-US indices, commodities
+        stocks = [s for s in yahoo_sym_list if s in ('AAPL','TSLA','GOOG','AMZN','MSFT')]
+        us_idx = [s for s in yahoo_sym_list if s in ('^DJI','^GSPC','^IXIC')]
+        eu_idx = [s for s in yahoo_sym_list if s in ('^GDAXI','^FTSE','^N225')]
+        futs = [s for s in yahoo_sym_list if '=F' in s]
+
+        for batch in [stocks, us_idx, eu_idx, futs]:
+            batch_results = _yahoo_batch(batch)
+            # Map results back to our symbols
+            rev_map = {v: k for k, v in yahoo_map.items()}
+            for ysym, yprice in batch_results.items():
+                our_sym = rev_map.get(ysym, ysym)
+                if our_sym in non_forex:
+                    prices[our_sym] = yprice
+
+        # Retry any symbols that returned NaN — download individually
+        failed = [s for s in non_forex if s not in prices or not prices.get(s) or str(prices.get(s)) == 'nan']
+        for sym in failed:
+            ysym = yahoo_map.get(sym, sym)
+            result = _yahoo_batch([ysym])
+            if result:
+                prices[sym] = result.get(ysym, result.get(sym))
+            if prices.get(sym) and str(prices[sym]) != 'nan':
+                pass  # recovered!
+
+    return prices
+
+
 def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
     """Generate synthetic OHLC data for development/testing when MT5 is down."""
     spec = INSTRUMENTS.get(symbol, {})
     base_price = {
-        'EURUSD': 1.08, 'GBPUSD': 1.28, 'USDJPY': 150.0, 'USDCHF': 0.88,
-        'USDCAD': 1.36, 'AUDUSD': 0.67, 'NZDUSD': 0.61,
-        'GBPJPY': 192.0, 'EURJPY': 162.0, 'EURGBP': 0.84, 'EURCHF': 0.95,
-        'AUDJPY': 100.0, 'CHFJPY': 170.0, 'NZDJPY': 91.0, 'GBPAUD': 1.91, 'EURAUD': 1.61,
-        'XAUUSD': 2350.0, 'XAGUSD': 29.5, 'XTIUSD': 78.0, 'XBRUSD': 82.0,
-        'US30': 39000, 'SP500': 5400, 'NAS100': 19500, 'DAX40': 18200, 'FTSE100': 8200, 'JP225': 39500,
-        'AAPL': 210, 'TSLA': 250, 'GOOG': 175, 'AMZN': 185, 'MSFT': 430,
-        # Crypto
-        'BTCUSD': 58000, 'ETHUSD': 3100, 'SOLUSD': 145, 'XRPUSD': 0.52,
-        'ADAUSD': 0.45, 'DOGEUSD': 0.12, 'AVAXUSD': 28, 'LINKUSD': 13.5,
-        'DOTUSD': 6.2, 'LTCUSD': 72, 'SUIUSD': 1.85, 'APTUSD': 7.5,
+        # Forex Majors (July 2026)
+        'EURUSD': 1.143, 'GBPUSD': 1.339, 'USDJPY': 161.9, 'USDCHF': 0.806,
+        'USDCAD': 1.422, 'AUDUSD': 0.695, 'NZDUSD': 0.569,
+        # Forex Crosses (July 2026)
+        'GBPJPY': 216.7, 'EURJPY': 185.1, 'EURGBP': 0.854, 'EURCHF': 0.922,
+        'AUDJPY': 112.5, 'CHFJPY': 200.8, 'NZDJPY': 92.1, 'GBPAUD': 1.927,
+        'EURAUD': 1.646, 'AUDNZD': 1.221, 'NZDCAD': 0.809, 'AUDCAD': 0.988,
+        'GBPCAD': 1.903, 'GBPCHF': 1.079, 'EURNZD': 2.009, 'EURCAD': 1.626,
+        'CADCHF': 0.567,
+        # Commodities (July 2026)
+        'XAUUSD': 4157.0, 'XAGUSD': 61.4, 'XTIUSD': 70.6, 'XBRUSD': 74.3,
+        # Indices (July 2026)
+        'US30': 52930, 'SP500': 7519, 'NAS100': 25960, 'DAX40': 25492,
+        'FTSE100': 10687, 'JP225': 68410,
+        # Stocks (July 2026)
+        'AAPL': 313, 'TSLA': 406, 'GOOG': 366, 'AMZN': 245, 'MSFT': 393,
     }.get(symbol, 100.0)
 
     pip = spec.get('pip_factor', 0.01) if spec else 0.01

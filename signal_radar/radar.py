@@ -8,7 +8,7 @@ import pandas as pd
 
 from .config import Config
 from .instruments import INSTRUMENTS, get_symbols, INSTRUMENT_LIST
-from .data_fetcher import fetch_bars, fetch_all_bars
+from .data_fetcher import fetch_bars, fetch_all_bars, fetch_live_prices
 from .indicators import compute_all, compute_multi_tf
 from .market_structure import analyze as ms_analyze
 from .areas_of_value import analyze as aov_analyze
@@ -70,6 +70,16 @@ def scan(cfg: Config = Config()) -> RadarResult:
 
     # Fetch data for all symbols
     all_data = fetch_all_bars(cfg.mt5_bars)
+
+    # Patch live prices into the last bar of each DataFrame
+    # Uses Frankfurter API for forex (fast, free) + Yahoo batch for stocks/indices/commodities
+    live_prices = fetch_live_prices(list(all_data.keys()))
+    for sym, price in live_prices.items():
+        if sym in all_data and price and price > 0:
+            try:
+                all_data[sym].loc[all_data[sym].index[-1], 'close'] = price
+            except (KeyError, IndexError):
+                pass  # Non-fatal — keep sample close
 
     # Run fundamental/sentiment/calendar once (shared across instruments)
     fund_result = fundamental_analyze(quick=True)
