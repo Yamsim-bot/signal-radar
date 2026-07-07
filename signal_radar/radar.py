@@ -1,4 +1,4 @@
-"""Signal Radar Engine — weighted scoring combining TA + FA + Sentiment."""
+"""Yams Radar Engine — weighted scoring combining TA + FA + Sentiment."""
 
 from datetime import datetime, timezone
 from dataclasses import dataclass, field

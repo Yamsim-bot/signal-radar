@@ -59,7 +59,7 @@ def _factor_bar(value: float, length: int = 10) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Signal Radar — Multi-Asset Trading Bias Scanner',
+        description='Yams Radar — Multi-Asset Trading Bias Scanner',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             'Examples:\n'
@@ -112,7 +112,7 @@ def main():
     cfg = Config()
 
     print(_bold('\n' + '=' * 62))
-    print(_bold('          SIGNAL RADAR — Multi-Asset Scanner'))
+    print(_bold('           YAMS RADAR — Multi-Asset Scanner'))
     print(_bold('=' * 62))
 
     from . import instruments as instr_mod
@@ -311,7 +311,7 @@ def main():
     # Filter hint
     shown_desc = f' (filtered to {shown}/{total})' if shown < total else ''
     print(f'\n  {_dim(f"Showing {shown} instruments{shown_desc}")}')
-    print(f'  {_dim("Usage: python -m signal_radar.cli --help for filter options")}')
+    print(f'  {_dim("Usage: python -m signal_radar.cli --help")}')
 
     # Legend
     print(f'\n  {_bold("Legend:")}')

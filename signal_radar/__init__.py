@@ -1,4 +1,4 @@
-"""Signal Radar — Multi-Asset Trading Bias System."""
+"""Yams Radar — Multi-Asset Trading Bias System."""
 __version__ = "1.0.0"
 
 from .instruments import INSTRUMENTS, INSTRUMENT_LIST

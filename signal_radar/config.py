@@ -1,4 +1,4 @@
-"""Configuration for Signal Radar system."""
+"""Configuration for Yams Radar system."""
 
 from pathlib import Path
 from dataclasses import dataclass, field

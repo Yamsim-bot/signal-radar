@@ -265,7 +265,7 @@ def api_chat():
 
     # ── Translations ──
     T = {} if not is_tagalog else {
-        'welcome': 'Maligayang pagdating! Ako ang Signal Radar assistant.',
+        'welcome': 'Maligayang pagdating! Ako ang Yams Radar assistant.',
         'loading': 'Kinukuha ang pinakabagong datos ng merkado...',
         'market_overview': '✅ Pangkalahatang Merkado',
         'sentiment': 'Sentimyento',
@@ -718,7 +718,7 @@ if __name__ == '__main__':
     except Exception:
         lan_ip = '127.0.0.1'
     print('=' * 50)
-    print('   Signal Radar - Web Dashboard')
+    print('   Yams Radar - Web Dashboard')
     print(f'   Local:   http://127.0.0.1:{port}')
     if port == 5000:
         print(f'   Network: http://{lan_ip}:{port}')
