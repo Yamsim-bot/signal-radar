@@ -739,9 +739,21 @@ async function scan() {
   calDiv.style.display = 'none';
   loading.style.display = 'block';
   status.textContent = '⟳ Scanning...';
+  loading.innerHTML = '<div class="spinner"></div><div style="color:var(--text-dim)">⟳ Scanning market data...</div><div id="scan-progress" style="font-size:11px;color:var(--text-muted);margin-top:4px"></div>';
 
   try {
-    const res = await fetch('/api/scan');
+    const startTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s max
+    // Update progress periodically
+    const progressInterval = setInterval(() => {
+      const elapsed = Math.round((Date.now() - startTime) / 1000);
+      document.getElementById('scan-progress').textContent = `${elapsed}s elapsed — fetching data from multiple sources...`;
+    }, 2000);
+
+    const res = await fetch('/api/scan', { signal: controller.signal });
+    clearTimeout(timeoutId);
+    clearInterval(progressInterval);
     const data = await res.json();
 
     // Market banner
