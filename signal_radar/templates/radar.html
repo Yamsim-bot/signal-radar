@@ -1047,8 +1047,17 @@ function filterCalcSymbols(val) {
   const dd = document.getElementById('calc-dropdown');
   if (!val) { buildCalcDropdown(allInstruments); dd.style.display = 'block'; return; }
   const q = val.toUpperCase();
-  buildCalcDropdown(allInstruments.filter(i => i.symbol.includes(q) || i.name.toUpperCase().includes(q) || i.category.toUpperCase().includes(q)));
+  const filtered = allInstruments.filter(i => i.symbol.includes(q) || i.name.toUpperCase().includes(q) || i.category.toUpperCase().includes(q));
+  buildCalcDropdown(filtered);
   dd.style.display = 'block';
+  // Auto-select if exact symbol match
+  const exact = allInstruments.find(i => i.symbol === q);
+  if (exact) {
+    document.getElementById('calc-symbol').value = exact.symbol;
+    document.getElementById('calc-symbol-search').value = `${exact.symbol} — ${exact.name}`;
+    dd.style.display = 'none';
+    fetchCalcLivePrice(exact.symbol);
+  }
 }
 function showCalcDropdown() { const dd = document.getElementById('calc-dropdown'); if (!dd.innerHTML) buildCalcDropdown(allInstruments); dd.style.display = 'block'; }
 function hideCalcDropdown() { document.getElementById('calc-dropdown').style.display = 'none'; }
