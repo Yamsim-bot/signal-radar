@@ -67,22 +67,13 @@ class SentimentResult:
 
 RSS_FEEDS = [
     ('ForexLive', 'https://www.forexlive.com/feed/news/'),
-    ('ForexLive', 'https://www.forexlive.com/feed/technical-analysis/'),
-    ('Investing.com', 'https://www.investing.com/rss/news.rss'),
-    ('DailyFX', 'https://www.dailyfx.com/feeds/rss/news'),
-    ('Bloomberg', 'https://www.bloomberg.com/feed/podcast/etsy-marketplace.xml'),
-    # Forex sources
     ('FXStreet', 'https://www.fxstreet.com/rss/news'),
-    ('TradingView', 'https://www.tradingview.com/feed/'),
+    ('Investing.com', 'https://www.investing.com/rss/news.rss'),
 ]
 
 # Web-scraped sources (approaches that need requests/bs4)
 SCRAPED_SOURCES = {
     'Finviz': 'https://finviz.com/news.ashx',
-    'FXStreet': 'https://www.fxstreet.com/rss/news',
-    'CME Group': 'https://www.cmegroup.com/content/cme-group/feeds/market-news/rss.xml',
-    'ForexFactory': 'https://www.forexfactory.com/news',
-    'OPEC': 'https://www.opec.org/opec_web/en/press_releases/',
     'myFXbook': 'https://www.myfxbook.com/community/outlook',
 }
 
@@ -130,17 +121,11 @@ COMMODITY_BEARISH_KEYWORDS = [
 # ─── Source credibility weights (0-1) ───────────────────────────────────
 # Based on: specificity, timeliness, editorial quality
 SOURCE_CREDIBILITY = {
-    'ForexLive': 0.85,
-    'DailyFX': 0.80,
-    'FXStreet': 0.85,
-    'Investing.com': 0.75,
-    'Bloomberg': 0.90,
-    'TradingView': 0.60,   # user-generated, varies in quality
-    'CME Group': 0.90,
-    'ForexFactory': 0.80,
-    'OPEC': 0.85,
-    'myFXbook': 0.60,
-    'Finviz': 0.75,
+    'ForexLive': 0.90,
+    'FXStreet': 0.90,
+    'Investing.com': 0.85,
+    'Finviz': 0.85,
+    'myFXbook': 0.75,
 }
 
 
@@ -816,50 +801,41 @@ def _trending_topics(headlines: list[NewsHeadline]) -> list[str]:
 
 
 def _generate_sample_headlines() -> list[NewsHeadline]:
-    """Generate sample news headlines for development with multi-source coverage."""
+    """Generate sample news headlines with multi-source coverage of trusted sources."""
     now = datetime.now(timezone.utc).isoformat()
     samples = [
-        # ForexLive
+        # ForexLive — trusted forex news
         ('ForexLive', 'Fed signals patience on rate cuts as inflation remains sticky'),
         ('ForexLive', 'EURUSD extends decline on stronger US data'),
         ('ForexLive', 'Gold hits new all-time high above $2,400 on geopolitical tensions'),
         ('ForexLive', 'AUDUSD rises on RBA hawkish hold, iron ore rebound'),
-        # DailyFX
-        ('DailyFX', 'GBPUSD technical setup suggests further upside toward 1.30'),
-        ('DailyFX', 'BoJ intervention fears cap USDJPY at 152 level'),
-        ('DailyFX', 'Crude oil slides on demand concerns, OPEC+ supply outlook'),
-        # Investing.com
-        ('Investing.com', 'Wall Street rallies on tech earnings, S&P 500 hits record'),
-        ('Investing.com', 'US Dollar Index holds steady ahead of CPI release'),
-        ('Investing.com', 'Treasury yields dip as market prices in September rate cut'),
-        # Finviz
-        ('Finviz', 'NFP expectations: 200K job additions forecast for May'),
-        ('Finviz', 'AAPL upgrades target on AI product cycle optimism'),
-        ('Finviz', 'US Dollar holds steady as Fed signals data-dependent approach'),
-        ('Finviz', 'Crude oil supply concerns intensify on Middle East tensions'),
-        # Bloomberg
-        ('Bloomberg', 'China stimulus measures boost commodity demand outlook'),
-        ('Bloomberg', 'ECB officials push back against rapid rate cut expectations'),
-        # FXStreet
+        ('ForexLive', 'USDJPY tests 152 as BoJ holds steady'),
+        ('ForexLive', 'GBPUSD steady ahead of UK GDP data'),
+        ('ForexLive', 'Crude oil extends losses on demand concerns'),
+        # FXStreet — trusted forex technical/fundamental analysis
         ('FXStreet', 'EURUSD technical: key support at 1.1050 holds, bounce expected'),
         ('FXStreet', 'GBPUSD finds resistance at 1.2900 ahead of BOE testimony'),
         ('FXStreet', 'Gold technical analysis: bulls eye $2,420 breakout'),
-        # TradingView
-        ('TradingView', 'SP500 reaching new highs — trend continuation or reversal?'),
-        ('TradingView', 'GBPJPY bullish flag pattern suggests breakout to 194'),
-        ('TradingView', 'XAUUSD: triangle breakout to the upside confirmed'),
-        # CME Group
-        ('CME Group', 'Fed Funds futures price in 25bp cut by September'),
-        ('CME Group', 'Soybean futures rally on weather concerns'),
-        # ForexFactory
-        ('ForexFactory', 'AUDNZD volatile on RBA vs RBNZ policy divergence'),
-        ('ForexFactory', 'USDCHF steady ahead of SNB rate decision'),
-        # OPEC
-        ('OPEC', 'OPEC+ agrees to maintain production cuts through Q3'),
-        ('OPEC', 'Crude oil demand growth forecast revised higher'),
-        # myFXbook
-        ('myFXbook', 'Community outlook: 65% bearish on USD into NFP week'),
-        ('myFXbook', 'EURUSD sentiment turns bullish above 1.1200'),
+        ('FXStreet', 'USDJPY technical: BoJ intervention risks cap upside'),
+        ('FXStreet', 'AUDUSD: RBA minutes support further upside'),
+        ('FXStreet', 'NZDUSD bears target 0.6200 on weak NZ data'),
+        ('FXStreet', 'GBPJPY bullish flag pattern suggests breakout to 194'),
+        ('FXStreet', 'Copper prices extend rally on China stimulus hopes'),
+        # Investing.com — trusted economic news
+        ('Investing.com', 'Wall Street rallies on tech earnings, S&P 500 holds near highs'),
+        ('Investing.com', 'US Dollar Index holds steady ahead of CPI release'),
+        ('Investing.com', 'Treasury yields dip as market prices in September rate cut'),
+        ('Investing.com', 'Fed officials push back on rapid rate cut expectations'),
+        ('Investing.com', 'European equities mixed amid growth concerns'),
+        # Finviz — trusted market data
+        ('Finviz', 'NFP expectations signal steady labor market'),
+        ('Finviz', 'AAPL upgrades target on AI product cycle optimism'),
+        ('Finviz', 'Crude oil supply concerns persist on geopolitical risks'),
+        ('Finviz', 'SP500 momentum remains positive on rate cut hopes'),
+        # myFXbook — community outlook data
+        ('myFXbook', 'EURUSD retail positioning shifts bullish above 1.1200'),
+        ('myFXbook', 'GBPUSD retail traders heavily short near 1.2900 resistance'),
+        ('myFXbook', 'Gold longs dominate myFXbook community outlook'),
     ]
     return [
         NewsHeadline(source=s, title=t, url='', published=now,

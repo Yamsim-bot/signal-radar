@@ -16,9 +16,10 @@ class Config:
     use_cache: bool = True
 
     # Scoring weights (sum = 1.0)
-    weight_technical: float = 0.50
-    weight_fundamental: float = 0.30
-    weight_sentiment: float = 0.20
+    weight_technical: float = 0.40
+    weight_fundamental: float = 0.25
+    weight_sentiment: float = 0.15
+    weight_confluence: float = 0.20  # myFXbook, FXStreet, Finviz external data
 
     # Technical analysis
     adx_period: int = 14

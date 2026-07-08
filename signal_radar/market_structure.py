@@ -37,6 +37,13 @@ def analyze(df: pd.DataFrame, cfg: Config = Config()) -> MarketStructureResult:
     low = df['low'].values
     times = df.index
 
+    # Extract ADX / DI + EMA data from DataFrame (computed by indicators.py)
+    adx = df['adx'].values if 'adx' in df.columns else None
+    plus_di = df['plus_di'].values if 'plus_di' in df.columns else None
+    minus_di = df['minus_di'].values if 'minus_di' in df.columns else None
+    ema_fast = df['ema_fast'].values if 'ema_fast' in df.columns else None
+    ema_slow = df['ema_slow'].values if 'ema_slow' in df.columns else None
+
     # Detect swing points
     raw_swings = _detect_swings(high, low, cfg.swing_lookback)
     swing_highs = []
@@ -54,7 +61,7 @@ def analyze(df: pd.DataFrame, cfg: Config = Config()) -> MarketStructureResult:
             ))
 
     # Trend scoring
-    trend_score = _calc_trend_score(close, high, low, swing_highs, swing_lows, cfg)
+    trend_score = _calc_trend_score(close, high, low, swing_highs, swing_lows, adx, plus_di, minus_di, ema_fast, ema_slow, cfg)
     if trend_score > 30:
         trend_direction = 'uptrend'
     elif trend_score < -30:
@@ -113,24 +120,40 @@ def _detect_swings(high: np.ndarray, low: np.ndarray, lookback: int = 10) -> lis
 
 
 def _calc_trend_score(close: np.ndarray, high: np.ndarray, low: np.ndarray,
-                       swing_highs: list, swing_lows: list, cfg: Config) -> float:
-    """Compute trend score from -100 to +100."""
+                       swing_highs: list, swing_lows: list,
+                       adx: np.ndarray | None = None,
+                       plus_di: np.ndarray | None = None,
+                       minus_di: np.ndarray | None = None,
+                       ema_fast: np.ndarray | None = None,
+                       ema_slow: np.ndarray | None = None,
+                       cfg: Config = Config()) -> float:
+    """Compute trend score from -100 to +100 using EMA50 crossover, swing structure, and ADX/DI."""
     n = len(close)
     if n < 50:
         return 0
 
-    # Price vs EMAs (weight: 30%)
-    ema_f = close  # computed externally; use simple SMA for speed
-    ema_s = close
-    if n >= cfg.ema_slow:
-        ema_s = np.mean(close[-cfg.ema_slow:])
-    if n >= cfg.ema_fast:
-        ema_f = np.mean(close[-cfg.ema_fast:])
+    # ── Price vs EMA50 (weight: 30%) ──
+    # Use actual EMA values from the indicators module if available
+    if ema_slow is not None and not np.isnan(ema_slow[-1]):
+        ema_s = float(ema_slow[-1])
+    else:
+        ema_s = float(np.mean(close[-cfg.ema_slow:]))
+    if ema_fast is not None and not np.isnan(ema_fast[-1]):
+        ema_f = float(ema_fast[-1])
+    else:
+        ema_f = float(np.mean(close[-cfg.ema_fast:]))
 
-    price_vs_sma50 = (close[-1] - ema_s) / max(ema_s, 1) * 100
-    score = np.clip(price_vs_sma50 * 3, -30, 30)
+    # Price relative to slow EMA — trend bias
+    price_vs_ema50 = (close[-1] - ema_s) / max(ema_s, 1) * 100
+    score = np.clip(price_vs_ema50 * 3, -30, 30)
 
-    # Higher highs / higher lows (weight: 30%)
+    # Fast vs slow EMA crossover — adds conviction
+    if ema_f > ema_s:
+        score += 5   # bullish crossover
+    elif ema_f < ema_s:
+        score -= 5   # bearish crossover
+
+    # ── Higher highs / higher lows (weight: 30%) ──
     if len(swing_highs) >= 2 and len(swing_lows) >= 2:
         last_hh = swing_highs[-2:]
         last_ll = swing_lows[-2:]
@@ -142,16 +165,35 @@ def _calc_trend_score(close: np.ndarray, high: np.ndarray, low: np.ndarray,
             ll_slope = (last_ll[-1].price - last_ll[-2].price) / (last_ll[-1].idx - last_ll[-2].idx) * 100
         score += np.clip((hh_slope + ll_slope) * 2, -30, 30)
 
-    # ADX trend strength (weight: 25%)
-    # Use last 3 ADX values if available
-    if 'adx' in close.__class__.__name__.lower():
-        pass  # will be added by caller
-    score += np.clip(np.random.randn() * 5, -10, 10)  # placeholder
-
-    # ADX/DI direction (weight: 15%)
-    if 'adx' in globals():
+    # ── ADX trend strength (weight: 25%) ──
+    if adx is not None and not np.all(np.isnan(adx)):
+        last_adx = float(adx[-1])
+        if not np.isnan(last_adx):
+            if last_adx > 25:
+                # Strong trend — amplify existing direction
+                score += 15  # trending = reliable
+            elif last_adx > 20:
+                score += 5   # developing trend
+            else:
+                score -= 8   # weak/no trend = ranging
+        # DI direction (weight: 15%)
+        if plus_di is not None and minus_di is not None:
+            last_pdi = float(plus_di[-1])
+            last_mdi = float(minus_di[-1])
+            if not (np.isnan(last_pdi) or np.isnan(last_mdi)):
+                if last_pdi > last_mdi:
+                    score += 16  # bullish DI cross
+                elif last_mdi > last_pdi:
+                    score -= 16  # bearish DI cross
+                # Magnify by ADX strength
+                adx_val = last_adx if not np.isnan(last_adx) else 0
+                if adx_val > 30:
+                    score *= 1.3  # strong conviction
+                elif adx_val > 25:
+                    score *= 1.15
+    else:
+        # Fallback when no ADX data — small bias from price action only
         pass
-    score += np.clip(np.random.randn() * 3, -15, 15)  # placeholder filled by radar
 
     return float(np.clip(score, -100, 100))
 

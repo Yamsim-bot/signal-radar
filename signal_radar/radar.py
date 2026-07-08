@@ -16,6 +16,7 @@ from .timing import analyze as timing_analyze
 from .calendar import analyze as calendar_analyze
 from .sentiment import analyze as sentiment_analyze
 from .fundamental import analyze as fundamental_analyze, FundamentalBreakdown
+from .confluence import fetch_all as confluence_fetch_all, fetch_pivots
 
 
 @dataclass
@@ -23,6 +24,9 @@ class BiasExplanation:
     technical_score: float       # -100 to +100
     fundamental_score: float     # -100 to +100
     sentiment_score: float       # -100 to +100
+    confluence_score: float      # -100 to +100 (retail sentiment contrarian + pivot positioning)
+    myfxbook_signal: str         # 'bullish','bearish','neutral' or 'N/A'
+    retail_long_pct: float       # myFXbook % long, for UI display
     trend_direction: str
     trend_strength: str
     session_quality: str
@@ -86,6 +90,11 @@ def scan(cfg: Config = Config()) -> RadarResult:
     cal_result = calendar_analyze()
     sent_result = sentiment_analyze(quick=True)  # instant — sample headlines
 
+    # Confluence data from myFXbook, FXStreet, Finviz (quick, non-blocking)
+    all_syms = get_symbols()
+    confluence_data = confluence_fetch_all(all_syms)
+    pivot_data = fetch_pivots(all_syms)
+
     # Per-instrument analysis
     instruments = []
     for symbol in get_symbols():
@@ -99,7 +108,8 @@ def scan(cfg: Config = Config()) -> RadarResult:
             from .data_fetcher import generate_sample_data
             df = generate_sample_data(symbol)
 
-        result = _analyze_instrument(symbol, instr, df, fund_result, cal_result, sent_result, cfg)
+        result = _analyze_instrument(symbol, instr, df, fund_result, cal_result, sent_result,
+                                       confluence_data.get(symbol), pivot_data.get(symbol), cfg)
         instruments.append(result)
 
     # Sort by bias score (strongest bullish first)
@@ -178,6 +188,8 @@ def _analyze_instrument(
     fund_result: 'FundamentalResult',
     cal_result: 'CalendarResult',
     sent_result: 'SentimentResult',
+    confluence_entry,
+    pivot_entry,
     cfg: Config,
 ) -> InstrumentRadar:
     """Run full TA + blend with FA/sentiment for one instrument."""
@@ -207,11 +219,22 @@ def _analyze_instrument(
     # --- Sentiment Score per symbol ---
     sent_score = _compute_sentiment_score(symbol, sent_result)
 
+    # --- Price change ---
+    close = df['close'].values
+    current_price = float(close[-1])
+    change_pct = float((close[-1] - close[-len(close) // 20]) / close[-len(close) // 20] * 100) if len(close) > 20 else 0.0
+
+    # --- Confluence Score (retail contrarian + pivot positioning) ---
+    conf_score, myfxbook_signal, retail_long_pct = _compute_confluence_score(
+        confluence_entry, pivot_entry, current_price
+    )
+
     # --- Blended Score ---
     blended = (
         tech_score * cfg.weight_technical
         + fund_score * cfg.weight_fundamental
         + sent_score * cfg.weight_sentiment
+        + conf_score * cfg.weight_confluence
     )
     blended = float(max(-100, min(100, blended)))
 
@@ -223,11 +246,6 @@ def _analyze_instrument(
 
     # --- Strength 1-10 ---
     strength = _signal_strength(bias, blended, confidence)
-
-    # --- Price change ---
-    close = df['close'].values
-    current_price = float(close[-1])
-    change_pct = float((close[-1] - close[-len(close) // 20]) / close[-len(close) // 20] * 100) if len(close) > 20 else 0.0
 
     # --- Fundamental Breakdown ---
     fund_breakdown = fund_result.breakdowns.get(symbol, None)
@@ -250,6 +268,9 @@ def _analyze_instrument(
             technical_score=round(tech_score, 1),
             fundamental_score=round(fund_score, 1),
             sentiment_score=round(sent_score, 1),
+            confluence_score=round(conf_score, 1),
+            myfxbook_signal=myfxbook_signal,
+            retail_long_pct=round(retail_long_pct, 1),
             trend_direction=ms.trend_direction,
             trend_strength=ms.trend_strength,
             session_quality=timing.session_quality,
@@ -445,6 +466,39 @@ def _compute_sentiment_score(symbol: str, sent_result) -> float:
             score += 10
 
     return float(max(-100, min(100, score)))
+
+
+def _compute_confluence_score(confluence_entry, pivot_entry, price: float) -> tuple[float, str, float]:
+    """Compute confluence score from myFXbook retail sentiment + pivot positioning.
+
+    Returns (score: -100 to +100, myfxbook_signal: str, retail_long_pct: float).
+    Retail sentiment is used as a contrarian indicator — extreme retail positioning
+    often signals reversals.
+
+    Pivot positioning adds a second layer: price above pivot = bullish, below = bearish.
+    """
+    score = 0.0
+    myfxbook_signal = 'N/A'
+    retail_long_pct = 50.0
+
+    if confluence_entry is not None:
+        # Contrarian retail sentiment
+        contrarian = confluence_entry.contrarian_score()
+        score += contrarian
+
+        # Pivot position
+        pvt_score = confluence_entry.pivot_score(price)
+        score += pvt_score * 0.5  # half weight vs retail sentiment
+
+        # Pass through for UI display
+        if confluence_entry.myfxbook is not None:
+            myfxbook_signal = confluence_entry.myfxbook.signal
+            retail_long_pct = confluence_entry.myfxbook.long_pct
+        elif confluence_entry.fxstreet_sentiment is not None:
+            myfxbook_signal = confluence_entry.fxstreet_sentiment.signal
+            retail_long_pct = confluence_entry.fxstreet_sentiment.long_pct
+
+    return float(max(-100, min(100, score))), myfxbook_signal, retail_long_pct
 
 
 def _bias_from_score(score: float) -> tuple[str, float]:
