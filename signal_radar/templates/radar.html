@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://s3.tradingview.com/tv.js" defer></script>
 <style>
 :root {
   --accent: #22c55e;
@@ -14,30 +15,35 @@
   --accent-dark: #16a34a;
   --accent-darkest: rgba(5, 46, 22, 0.8);
   --accent-glow: rgba(34, 197, 94, 0.15);
-  --bg-primary: #080a0b;
-  --bg-secondary: #0d0f12;
-  --bg-card: rgba(13, 15, 18, 0.7);
-  --bg-card-hover: rgba(20, 25, 22, 0.85);
-  --bg-card-alt: #111316;
-  --border: rgba(255, 255, 255, 0.05);
+  --bg-primary: #06080a;
+  --bg-secondary: #0b0d10;
+  --bg-card: rgba(15, 18, 22, 0.75);
+  --bg-card-hover: rgba(22, 28, 30, 0.85);
+  --bg-card-alt: #0e1114;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-light: rgba(255, 255, 255, 0.03);
   --border-accent: rgba(34, 197, 94, 0.15);
-  --text: #e8eaed;
-  --text-dim: #9aa0a6;
-  --text-muted: #5f6368;
+  --text: #eaecf0;
+  --text-dim: #9aa2ae;
+  --text-muted: #5f6670;
   --green: #22c55e;
-  --green-bg: rgba(34, 197, 94, 0.10);
+  --green-bg: rgba(34, 197, 94, 0.08);
   --red: #ef4444;
-  --red-bg: rgba(239, 68, 68, 0.10);
+  --red-bg: rgba(239, 68, 68, 0.08);
   --yellow: #facc15;
-  --yellow-bg: rgba(250, 204, 21, 0.10);
+  --yellow-bg: rgba(250, 204, 21, 0.08);
   --blue: #60a5fa;
-  --blue-bg: rgba(96, 165, 250, 0.10);
+  --blue-bg: rgba(96, 165, 250, 0.08);
   --cyan: #22d3ee;
-  --cyan-bg: rgba(34, 211, 238, 0.10);
+  --cyan-bg: rgba(34, 211, 238, 0.08);
   --purple: #a78bfa;
-  --purple-bg: rgba(167, 139, 250, 0.10);
+  --purple-bg: rgba(167, 139, 250, 0.08);
   --sidebar-w: 220px;
+  --radius: 10px;
+  --radius-sm: 6px;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --shadow-card: 0 0 0 1px rgba(255,255,255,0.03), 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-raise: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(34,197,94,0.08);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -63,47 +69,50 @@ body {
   overflow-y: auto;
 }
 .sidebar-logo {
-  padding: 20px 18px 16px;
+  padding: 22px 18px 18px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .sidebar-logo .logo-icon {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  border-radius: 8px;
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--accent-light), var(--accent-dark));
+  border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 800; color: #000;
+  font-size: 14px; font-weight: 800; color: #000;
+  box-shadow: 0 2px 8px rgba(34,197,94,0.25);
 }
 .sidebar-logo .logo-text {
-  font-size: 14px; font-weight: 700; color: var(--text);
+  font-size: 15px; font-weight: 700; color: var(--text);
+  letter-spacing: -0.01em;
 }
 .sidebar-logo .logo-sub {
-  font-size: 10px; color: var(--text-dim);
-  font-weight: 400;
+  font-size: 9px; color: var(--text-muted);
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px;
 }
-.sidebar-nav { padding: 10px 12px; flex: 1; }
+.sidebar-nav { padding: 10px 10px; flex: 1; }
 .nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 12px; border-radius: 8px;
+  padding: 10px 12px; border-radius: 8px;
   font-size: 13px; font-weight: 500; color: var(--text-dim);
-  cursor: pointer; transition: all .15s;
+  cursor: pointer; transition: all .2s;
   border: none; background: none; width: 100%; text-align: left;
+  margin-bottom: 2px;
 }
-.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
 .nav-item.active {
-  background: var(--accent-darkest);
+  background: linear-gradient(135deg, var(--accent-darkest), rgba(5, 46, 22, 0.4));
   color: var(--accent-light);
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
-.nav-item .nav-icon { font-size: 16px; width: 22px; text-align: center; }
+.nav-item .nav-icon { font-size: 15px; width: 22px; text-align: center; }
 .nav-item .nav-badge {
   margin-left: auto; font-size: 10px; padding: 1px 6px;
   border-radius: 4px; background: var(--accent-darkest); color: var(--accent-light);
 }
 .sidebar-footer {
-  padding: 12px; border-top: 1px solid var(--border);
+  padding: 14px; border-top: 1px solid var(--border);
   font-size: 11px; color: var(--text-muted);
   text-align: center;
 }
@@ -136,10 +145,45 @@ body {
 /* ═══ Glass Cards ═══ */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+/* ═══ TradingView Mini Widget ═══ */
+.tv-mini-wrap {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 6px 0;
+}
+.tv-mini-wrap .tv-widget {
+  width: 100%; height: 340px;
+  border: none;
+}
+
+/* ═══ Live P&L indicators ═══ */
+.pnl-positive { color: var(--green); font-weight: 700; }
+.pnl-negative { color: var(--red); font-weight: 700; }
+.pnl-neutral { color: var(--text-dim); }
+.open-trade-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 700;
+  background: rgba(96,165,250,0.15); color: var(--blue);
+}
+.edit-trade-btn {
+  padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim); font-size: 11px;
+  cursor: pointer; transition: all .15s;
+}
+.edit-trade-btn:hover { background: var(--bg-card-hover); color: var(--text); border-color: var(--accent); }
+.autorefresh-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 600; margin-left: 8px;
+  background: var(--accent-darkest); color: var(--accent-light);
 }
 
 /* ═══ Filters Row ═══ */
@@ -206,6 +250,8 @@ body {
 .instr-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .instr-table tr:last-child td { border-bottom: none; }
 .instr-table tr:hover { background: var(--bg-card-hover); cursor: pointer; }
+.chart-btn { display:inline-block;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:14px;opacity:0.5;transition:all 0.15s; }
+.chart-btn:hover { opacity:1;background:var(--accent-darkest);transform:scale(1.15); }
 
 /* Bias pills */
 .bias-pill {
@@ -238,19 +284,20 @@ body {
 .detail-row { display: none; }
 .detail-row.open { display: table-row; }
 .detail-cell {
-  padding: 14px 16px !important;
-  background: rgba(0,0,0,0.15);
+  padding: 16px 20px !important;
+  background: rgba(0,0,0,0.2);
 }
-.detail-inner { max-width: 800px; font-size: 12px; line-height: 1.6; }
+.detail-inner { max-width: 100%; font-size: 12px; line-height: 1.6; }
 .detail-grid {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 8px 0;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin: 8px 0;
 }
 .detail-item {
-  display: flex; justify-content: space-between; padding: 4px 8px;
-  border-radius: 4px; background: rgba(255,255,255,0.03);
+  display: flex; justify-content: space-between; padding: 6px 10px;
+  border-radius: var(--radius-sm); background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-light);
 }
-.detail-label { color: var(--text-dim); }
-.detail-value { font-weight: 600; }
+.detail-label { color: var(--text-dim); font-size: 11px; }
+.detail-value { font-weight: 600; font-family: var(--font-mono); font-size: 12px; }
 
 /* Factor bars */
 .factor-bar { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
@@ -379,6 +426,22 @@ body {
   display: none; position: fixed; inset: 0; z-index: 180;
   background: rgba(0,0,0,0.5);
 }
+
+/* ═══ Coach Workspace ═══ */
+.coach-layout { display:grid;grid-template-columns:260px 1fr;gap:14px;min-height:calc(100vh - 100px) }
+.coach-sidebar { display:flex;flex-direction:column;gap:10px }
+.coach-chat { display:flex;flex-direction:column;gap:10px }
+.coach-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px }
+.coach-card h4 { font-size:12px;color:var(--accent-light);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px }
+.term-period-btn, .term-chart-btn { padding:3px 10px;font-size:11px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:4px;cursor:pointer;transition:all .15s;font-family:inherit }
+.term-period-btn:hover, .term-chart-btn:hover { border-color:var(--accent);color:var(--text) }
+.coach-mate-item { padding:8px 10px;border-radius:var(--radius-sm);background:var(--bg-secondary);border:1px solid var(--border);margin-bottom:6px;font-size:12px }
+.coach-mate-item .label { color:var(--text-muted);font-size:10px;text-transform:uppercase }
+.coach-mate-item .value { color:var(--text);font-weight:600 }
+.quick-btn { padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-dim);cursor:pointer;font-size:12px;text-align:left;transition:all .2s;width:100% }
+.quick-btn:hover { border-color:var(--accent);color:var(--text);background:var(--accent-glow) }
+.coach-ref-tag { display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;margin:2px;background:var(--accent-darkest);color:var(--accent-light);border:1px solid var(--border-accent) }
+
 @media(max-width:768px) {
   .hamburger { display: flex; }
   .sidebar {
@@ -392,6 +455,10 @@ body {
   .overview { gap: 8px; }
   .instr-wrapper { border-radius: 0; margin-left: -12px; margin-right: -12px; }
   .detail-grid { grid-template-columns: 1fr; }
+  #tab-terminal > div[style*="grid-template-columns:repeat(4"] { grid-template-columns: repeat(2,1fr) !important; }
+  #tab-terminal > div[style*="grid-template-columns:repeat(6"] { grid-template-columns: repeat(3,1fr) !important; }
+  #tab-terminal > div[style*="grid-template-columns:1fr 1fr"][style*="gap:12px"] { grid-template-columns: 1fr !important; }
+  #tab-terminal > div[style*="grid-template-columns:2fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
   .tab-content { padding: 12px; }
   .topbar { padding: 10px 12px; }
   .market-score { font-size: 20px; }
@@ -428,26 +495,44 @@ body {
     </div>
   </div>
   <nav class="sidebar-nav">
-    <button class="nav-item active" data-tab="radar">
-      <span class="nav-icon">📡</span> Radar
+    <button class="nav-item" data-tab="terminal">
+      <span class="nav-icon">💻</span> Terminal
+      <span class="nav-badge" id="terminal-badge" style="display:none">•</span>
+    </button>
+    <button class="nav-item" data-tab="journal">
+      <span class="nav-icon">📓</span> Trading Journal
     </button>
     <button class="nav-item" data-tab="news">
-      <span class="nav-icon">📰</span> News
+      <span class="nav-icon">📰</span> News / Calendar
       <span class="nav-badge" id="news-badge">•</span>
     </button>
     <button class="nav-item" data-tab="chat">
-      <span class="nav-icon">🤖</span> Let me explain, BUDDY!
+      <span class="nav-icon">🔥</span> Trade Coach
     </button>
     <button class="nav-item" data-tab="calculator">
       <span class="nav-icon">🧮</span> Calculator
     </button>
-    <button class="nav-item" data-tab="journal">
-      <span class="nav-icon">📓</span> Journal
+    <button class="nav-item active" data-tab="radar">
+      <span class="nav-icon">📡</span> Radar
     </button>
   </nav>
   <div class="sidebar-footer">
-    Yams Radar v2.0<br>
-    Data: Yahoo • Binance • RSS
+    <div style="color:var(--text-dim);font-size:10px;margin-bottom:6px">
+      Yams Radar v2.0
+    </div>
+    <div class="sidebar-user" id="sidebar-user" style="display:none">
+      <span style="color:var(--text-dim);font-size:11px" id="user-name">admin</span>
+      <span id="user-role-badge" style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px;background:rgba(34,197,94,0.15);color:var(--green)">ADMIN</span>
+      <div style="display:flex;gap:4px;margin-top:2px;flex-wrap:wrap">
+        <a href="/setup-2fa" class="user-link" style="color:var(--text-muted);font-size:10px;text-decoration:none">🔐 2FA</a>
+        <span style="color:var(--text-muted);font-size:10px">·</span>
+        {% if role == 'admin' %}
+        <a href="/admin/users" class="user-link" style="color:var(--accent-light);font-size:10px;text-decoration:none">👥 Users</a>
+        <span style="color:var(--text-muted);font-size:10px">·</span>
+        {% endif %}
+        <a href="/logout" class="user-link" style="color:var(--text-muted);font-size:10px;text-decoration:none">🚪 Logout</a>
+      </div>
+    </div>
   </div>
 </aside>
 
@@ -465,6 +550,7 @@ body {
     </div>
     <div class="topbar-right">
       <span style="font-size:12px;color:var(--text-dim)" id="scan-status"></span>
+      <button class="btn btn-sm btn-ghost" onclick="refreshRadar()" title="Refresh radar data" style="margin-left:8px;padding:4px 10px;font-size:13px">🔄 Home</button>
     </div>
   </div>
 
@@ -522,6 +608,7 @@ body {
               <th>Chg%</th>
               <th>Trend</th>
               <th>Entry</th>
+              <th style="width:44px;text-align:center">📊</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -553,9 +640,37 @@ body {
       <div class="overview-item"><span class="overview-label">Risk Off</span><span class="overview-value" style="color:var(--red)" id="news-risk-off">0</span></div>
     </div>
 
+    <!-- ═══ Calendar Filter Bar ═══ -->
+    <div class="glass-panel" style="padding:10px 14px;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:var(--text-dim);font-weight:600">Filter:</span>
+      <select id="cal-filter-impact" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
+        <option value="all">All Impact</option>
+        <option value="High">🔴 High</option>
+        <option value="Medium">🟡 Medium</option>
+        <option value="Low">⚪ Low</option>
+      </select>
+      <select id="cal-filter-currency" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
+        <option value="all">All Currencies</option>
+        <option value="USD">🇺🇸 USD</option>
+        <option value="EUR">🇪🇺 EUR</option>
+        <option value="GBP">🇬🇧 GBP</option>
+        <option value="JPY">🇯🇵 JPY</option>
+        <option value="AUD">🇦🇺 AUD</option>
+        <option value="CAD">🇨🇦 CAD</option>
+        <option value="NZD">🇳🇿 NZD</option>
+        <option value="CHF">🇨🇭 CHF</option>
+      </select>
+      <select id="cal-filter-status" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
+        <option value="all">All Status</option>
+        <option value="beat">✅ Beat</option>
+        <option value="miss">❌ Miss</option>
+        <option value="inline">➡️ Inline</option>
+        <option value="upcoming">⏳ Upcoming</option>
+      </select>
+      <span style="font-size:11px;color:var(--text-muted)" id="cal-filter-count">Showing all</span>
+    </div>
+
     <div class="news-grid">
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📅 Economic Calendar</h3>
         <div id="news-calendar"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
       </div>
       <div class="glass-panel" style="padding:14px">
@@ -564,54 +679,77 @@ body {
       </div>
     </div>
 
-    <div class="news-grid">
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">🏛️ Central Bank Events</h3>
-        <div id="news-cb"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
-      </div>
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">🔥 Trending Topics</h3>
-        <div id="news-trending"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
-      </div>
-    </div>
-
-    <div class="news-grid">
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📊 Source Sentiment</h3>
-        <div id="news-sources"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
-      </div>
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">⚠️ Cross-Source Signals</h3>
-        <div id="news-crossref"><div style="color:var(--text-dim);font-size:13px">Loading...</div></div>
-      </div>
-    </div>
   </div>
 
-  <!-- ════ TAB 3: CHAT ════ -->
+  <!-- ════ TAB 3: TRADE COACH ════ -->
   <div id="tab-chat" class="tab-content">
-    <div class="glass-panel" style="max-width:700px;margin:0 auto;padding:20px">
-      <div class="chat-messages" id="chat-messages">
-        <div class="chat-msg chat-bot">
-🤖 **Let me explain, BUDDY!** at your service! I can analyze any trading instrument. Try asking:
-
-• "Why is EURUSD neutral?"
-• "Show me GBPJPY details"
-• "What's the strongest buy right now?"
-• "How are the commodities doing?"
-• "Salamat! Kamusta ang merkado?" (Tagalog support 🎉)
+    <div class="coach-layout">
+      <!-- Left sidebar: MATE Reference -->
+      <div class="coach-sidebar">
+        <div class="coach-card">
+          <h4>📋 MATE Framework</h4>
+          <div class="coach-mate-item">
+            <div class="label">📌 Market Direction</div>
+            <div class="value" id="coach-mate-m">--</div>
+          </div>
+          <div class="coach-mate-item">
+            <div class="label">🎯 Area of Value</div>
+            <div class="value" id="coach-mate-a">--</div>
+          </div>
+          <div class="coach-mate-item">
+            <div class="label">⏰ Timing</div>
+            <div class="value" id="coach-mate-t">--</div>
+          </div>
+          <div class="coach-mate-item">
+            <div class="label">🚪 Exit Strategy</div>
+            <div class="value" id="coach-mate-e">--</div>
+          </div>
         </div>
+
+<!-- Mood removed -->
+
+<!-- Quick Actions + Session removed -->
       </div>
-      <div class="chip-group" id="chat-suggestions">
-        <span class="chip" onclick="ask('Show me the strongest buy signals')">🔥 Strongest buys</span>
-        <span class="chip" onclick="ask('Why is EURUSD neutral?')">❓ EURUSD</span>
-        <span class="chip" onclick="ask('What is the market sentiment overall?')">📊 Market overall</span>
-        <span class="chip" onclick="ask('Tell me about GBPJPY')">💷 GBPJPY</span>
-        <span class="chip" onclick="ask('How are stocks doing?')">📈 Stocks</span>
-      </div>
-      <div class="chat-input">
-        <input type="text" id="chat-input" placeholder="Ask about a pair, e.g. 'Why is XAUUSD bearish?'"
-               onkeydown="if(event.key==='Enter')sendChat()">
-        <button class="btn btn-accent" onclick="sendChat()">Send</button>
+
+      <!-- Right side: Chat -->
+      <div class="coach-chat">
+        <div class="glass-panel" style="padding:20px;flex:1;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <h3 style="font-size:14px;color:var(--accent-light);font-weight:600">🤖 BUDDY Trade Coach</h3>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm btn-ghost" onclick="toggleCoachLang()" id="coach-lang-btn" style="font-size:11px">🇵🇭 Tagalog</button>
+              <button class="btn btn-sm btn-ghost" onclick="clearChat()" style="font-size:11px">🗑️ Clear</button>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages" style="flex:1;min-height:300px;max-height:450px;overflow-y:auto">
+            <div class="chat-msg chat-bot">
+🤖 **BUDDY Trade Coach** at your service! I follow the **MATE framework** to help you trade smarter.
+
+• *"Market overview"* — see all instruments at a glance
+• *"What's my MT5 balance?"* — check account + open positions
+• *"Trading psychology tips"* — master your mindset
+• *"Explain candlestick patterns"* — learn hammer, doji, engulfing
+• *"Trading sessions now"* — which markets are open?
+• *"How to calculate position size?"* — risk management
+• *"Paano mag trade ng GBPJPY?"* — Tagalog support 🇵🇭
+            </div>
+          </div>
+          <div class="chip-group" id="chat-suggestions" style="margin:8px 0">
+            <span class="chip" onclick="ask('Market overview')">📊 Market</span>
+            <span class="chip" onclick="ask('What is my MT5 balance?')">🏦 Account</span>
+            <span class="chip" onclick="ask('Show me best setups')">🔥 Setups</span>
+            <span class="chip" onclick="ask('Trading sessions now')">🌍 Sessions</span>
+            <span class="chip" onclick="ask('Explain candlestick patterns')">🕯️ Candles</span>
+            <span class="chip" onclick="ask('Trading psychology tips')">🧠 Mindset</span>
+            <span class="chip" onclick="ask('What are Fibonacci levels?')">🔢 Fib</span>
+            <span class="chip" onclick="ask('Run pre-trade checklist')">📋 Pre-Trade</span>
+          </div>
+          <div class="chat-input">
+            <input type="text" id="chat-input" placeholder="Ask BUDDY Trade Coach..."
+                   onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn btn-accent" onclick="sendChat()">Send</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -673,33 +811,140 @@ body {
     </div>
 
     <div class="journal-grid">
-      <div class="journal-form">
-        <h3 style="margin-bottom:10px;font-size:14px;color:var(--accent-light)">Add Trade</h3>
-        <label>Symbol</label>
-        <select id="j-symbol" onchange="autoCalcPnL()"></select>
-        <label>Direction</label>
-        <select id="j-direction" onchange="autoCalcPnL()"><option>Buy</option><option>Sell</option></select>
-        <label>Entry Price</label>
-        <input type="number" id="j-entry" step="0.00001" oninput="autoCalcPnL()">
-        <label>Exit Price</label>
-        <input type="number" id="j-exit" step="0.00001" oninput="autoCalcPnL()">
-        <label>Lot Size</label>
-        <input type="number" id="j-lot" value="0.01" step="0.01" oninput="autoCalcPnL()">
-        <label>Stop Loss</label>
-        <input type="number" id="j-sl" step="0.00001">
-        <label>Take Profit</label>
-        <input type="number" id="j-tp" step="0.00001">
-        <label>Entry Reason</label>
-        <select id="j-entry-reason"></select>
-        <label>Exit Reason</label>
-        <select id="j-exit-reason"></select>
-        <label>Result</label>
-        <select id="j-result"><option value="open">Open</option><option value="win">Win</option><option value="loss">Loss</option></select>
-        <label>P&L ($) <span id="j-pnl-preview" style="font-size:11px;color:var(--text-muted)"></span></label>
-        <input type="number" id="j-pnl" step="0.01" oninput="document.getElementById('j-pnl-preview').textContent='(manual)'">
-        <label>Notes</label>
-        <textarea id="j-notes" placeholder="Entry reason, notes..."></textarea>
-        <button class="btn btn-accent" onclick="addJournalEntry()" style="margin-top:10px;width:100%;padding:9px;font-size:14px">➕ Add Entry</button>
+      <div class="journal-form glass-panel" style="padding:16px">
+        <h3 style="margin-bottom:12px;font-size:14px;color:var(--accent-light)">📝 Add Trade Entry</h3>
+
+        <!-- PART 1: Trade Info -->
+        <div style="margin-bottom:12px">
+          <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Part 1 — Trade Info</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Symbol</label>
+              <select id="j-symbol" onchange="autoCalcPnL()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit"></select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Trade Title</label>
+              <input type="text" id="j-title" placeholder="e.g. GBPJPY breakout" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Trade Status</label>
+              <select id="j-trade-status" onchange="toggleTradeStatus()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+                <option value="closed">Closed</option>
+                <option value="ongoing">Ongoing</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Position</label>
+              <select id="j-position" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+                <option value="Long">Long 📈</option>
+                <option value="Short">Short 📉</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Risk Amount ($)</label>
+              <input type="number" id="j-risk" step="0.01" placeholder="e.g. 25" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Lot Size</label>
+              <input type="number" id="j-lot" value="0.01" step="0.01" oninput="autoCalcPnL()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Entry Price</label>
+              <input type="number" id="j-entry" step="0.00001" oninput="autoCalcPnL()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Exit Price</label>
+              <input type="number" id="j-exit" step="0.00001" oninput="autoCalcPnL()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Stop Loss</label>
+              <input type="number" id="j-sl" step="0.00001" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Take Profit</label>
+              <input type="number" id="j-tp" step="0.00001" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Date Opened</label>
+              <input type="datetime-local" id="j-date-opened" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+            <div id="j-date-closed-wrap">
+              <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Date Closed</label>
+              <input type="datetime-local" id="j-date-closed" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <!-- PART 2: Chart Evidence -->
+        <div style="margin-bottom:12px">
+          <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Part 2 — Chart Evidence</h4>
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Chart Screenshot URL</label>
+            <input type="url" id="j-chart-img" placeholder="https://i.imgur.com/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          </div>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">TradingView Chart Link</label>
+            <input type="url" id="j-chart-link" placeholder="https://www.tradingview.com/chart/..." style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          </div>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Entry Reason</label>
+            <textarea id="j-entry-reason" placeholder="Why did you enter? (e.g. Break of structure, retest of support)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit;resize:vertical;min-height:50px"></textarea>
+          </div>
+        </div>
+
+        <!-- PART 3: Psychology & Reflection (mood removed) -->
+        <div style="margin-bottom:12px">
+          <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Part 3 — Psychology & Reflection</h4>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Reflection Tags</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="chip" onclick="toggleReflectionTag(this,'followed_plan')">✅ Followed Plan</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'deviated')">⚠️ Deviated</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'good_entry')">🎯 Good Entry</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'bad_entry')">❌ Bad Entry</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'cut_early')">✂️ Cut Early</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'held_too_long')">⏳ Held Too Long</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'fomo')">🔥 FOMO</span>
+              <span class="chip" onclick="toggleReflectionTag(this,'revenge')">🔁 Revenge</span>
+            </div>
+            <input type="hidden" id="j-reflection-tags" value="[]">
+          </div>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Notes (voice typing supported 🎤)</label>
+            <textarea id="j-notes" placeholder="What happened? What did you learn?" rows="3" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit;resize:vertical"></textarea>
+          </div>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Exit Reason</label>
+            <textarea id="j-exit-reason" placeholder="Why did you exit?" rows="2" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit;resize:vertical"></textarea>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Result</label>
+            <select id="j-result" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+              <option value="open">Open / Ongoing</option>
+              <option value="win">Win ✅</option>
+              <option value="loss">Loss ❌</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">P&L ($) <span id="j-pnl-preview" style="font-size:10px;color:var(--text-muted)"></span></label>
+            <input type="number" id="j-pnl" step="0.01" oninput="document.getElementById('j-pnl-preview').textContent='(manual)'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          </div>
+        </div>
+
+        <button class="btn btn-accent" onclick="addJournalEntry()" style="margin-top:6px;width:100%;padding:9px;font-size:13px">➕ Add Trade Entry</button>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
@@ -713,6 +958,195 @@ body {
     </div>
   </div>
 
+  <!-- ════ TAB 6: MT5 TERMINAL ════ -->
+  <div id="tab-terminal" class="tab-content">
+
+    <!-- ════ Connection Banner ════ -->
+    <div class="glass-panel" style="padding:10px 14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+          <span>Status: <strong id="term-status" style="color:var(--red)">🔴 Disconnected</strong></span>
+          <span style="color:var(--text-dim);font-size:12px" id="term-account-display">Account: --</span>
+          <span style="color:var(--text-dim);font-size:12px" id="term-server-display">Server: --</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" style="background:rgba(99,102,241,0.12);color:var(--accent-light);border:1px solid rgba(99,102,241,0.25);padding:4px 12px;font-size:11px" onclick="toggleSyncPanel()">🔗 Sync Broker</button>
+          <button class="btn btn-sm btn-ghost" onclick="disconnectBroker()" id="btn-term-disconnect" style="display:none;font-size:11px">🔌 Disconnect</button>
+          <button class="btn btn-sm btn-ghost" onclick="refreshTerminal()" style="font-size:11px">⟳ Refresh</button>
+        </div>
+      </div>
+      <div id="sync-panel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:600px">
+          <input type="text" id="sync-broker-name" value="Vantage" placeholder="Broker" style="padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          <input type="text" id="sync-server" placeholder="Server" style="padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          <input type="text" id="sync-login" placeholder="Login ID" style="padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          <input type="password" id="sync-password" placeholder="Password" style="padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+          <select id="sync-account-type" style="padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            <option value="demo">Demo</option>
+            <option value="live">Live</option>
+          </select>
+          <div style="display:flex;gap:4px;align-items:center">
+            <button class="btn btn-accent" onclick="connectSavedBroker()" style="padding:5px 12px;font-size:11px">Connect</button>
+            <button class="btn btn-sm" style="background:rgba(99,102,241,0.1);color:var(--accent-light);padding:5px 12px;font-size:11px" onclick="saveBrokerOnly()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="loadSavedBrokerConfig()" style="font-size:11px">Load</button>
+          </div>
+        </div>
+        <div id="sync-result" style="font-size:11px;margin-top:6px;color:var(--text-muted)"></div>
+      </div>
+    </div>
+
+    <!-- ════ Period Selector ════ -->
+    <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text-dim);margin-right:8px;align-self:center">Period:</span>
+      <button class="btn btn-sm term-period-btn" data-period="today" onclick="setTermPeriod('today')" style="background:var(--accent);color:#000">Today</button>
+      <button class="btn btn-sm term-period-btn" data-period="7d" onclick="setTermPeriod('7d')">7D</button>
+      <button class="btn btn-sm term-period-btn" data-period="30d" onclick="setTermPeriod('30d')">30D</button>
+      <button class="btn btn-sm term-period-btn" data-period="90d" onclick="setTermPeriod('90d')">90D</button>
+      <button class="btn btn-sm term-period-btn" data-period="all" onclick="setTermPeriod('all')">All</button>
+    </div>
+
+    <!-- ════ Big Stats Cards ════ -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px">
+      <div class="glass-panel" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">Net P&amp;L</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)" id="term-pnl-big">$0</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="term-closed-count">0 closed trades</div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">Win Rate</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)" id="term-wr-big">0%</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="term-wl-count">0 wins · 0 losses</div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">Profit Factor</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)" id="term-pf-big">0</div>
+        <div style="font-size:11px;color:var(--text-muted)">Healthy</div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:2px">Account Growth</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)" id="term-growth-big">+0%</div>
+        <div style="font-size:11px;color:var(--text-muted)" id="term-growth-since">since --</div>
+      </div>
+    </div>
+
+    <!-- ════ Detailed Stats Row ════ -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px">
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Avg Win</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)" id="term-avg-win">$0</div>
+        <div style="font-size:10px;color:var(--text-muted)">per trade</div>
+      </div>
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Avg Loss</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red)" id="term-avg-loss">$0</div>
+        <div style="font-size:10px;color:var(--text-muted)">per trade</div>
+      </div>
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">RR Ratio</div>
+        <div style="font-size:16px;font-weight:700" id="term-rr">0</div>
+        <div style="font-size:10px;color:var(--text-muted)">win/loss ratio</div>
+      </div>
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Expectancy</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)" id="term-expectancy">$0</div>
+        <div style="font-size:10px;color:var(--text-muted)">per trade</div>
+      </div>
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Best Streak</div>
+        <div style="font-size:16px;font-weight:700;color:var(--green)" id="term-best-streak">0W</div>
+        <div style="font-size:10px;color:var(--text-muted)">consecutive wins</div>
+      </div>
+      <div class="glass-panel" style="padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase">Worst Streak</div>
+        <div style="font-size:16px;font-weight:700;color:var(--red)" id="term-worst-streak">0L</div>
+        <div style="font-size:10px;color:var(--text-muted)">consecutive losses</div>
+      </div>
+    </div>
+
+    <!-- ════ Charts Row ════ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="glass-panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h3 style="font-size:13px;color:var(--accent-light);font-weight:600">📈 Cumulative Performance</h3>
+          <div style="display:flex;gap:3px">
+            <button class="btn btn-sm term-chart-btn" data-chart="cum" data-mode="live" onclick="setChartMode('cum','live')" style="background:var(--accent);color:#000;font-size:10px;padding:2px 8px">Live</button>
+            <button class="btn btn-sm term-chart-btn" data-chart="cum" data-mode="amount" onclick="setChartMode('cum','amount')" style="font-size:10px;padding:2px 8px">Amount</button>
+            <button class="btn btn-sm term-chart-btn" data-chart="cum" data-mode="rmultiple" onclick="setChartMode('cum','rmultiple')" style="font-size:10px;padding:2px 8px">R-Multiple</button>
+            <button class="btn btn-sm term-chart-btn" data-chart="cum" data-mode="percent" onclick="setChartMode('cum','percent')" style="font-size:10px;padding:2px 8px">%</button>
+          </div>
+        </div>
+        <div id="term-chart-cumulative" style="height:160px;position:relative">
+          <svg id="chart-cum-svg" width="100%" height="160" style="overflow:visible"></svg>
+        </div>
+      </div>
+      <div class="glass-panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h3 style="font-size:13px;color:var(--accent-light);font-weight:600">📊 Daily Net P&amp;L</h3>
+        </div>
+        <div id="term-chart-daily" style="height:160px;position:relative">
+          <svg id="chart-daily-svg" width="100%" height="160" style="overflow:visible"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ Bottom: Positions + Calendar + Summary ════ -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <!-- Open Positions -->
+      <div class="glass-panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h3 style="font-size:13px;color:var(--accent-light);font-weight:600">📊 Open Positions</h3>
+          <span style="font-size:12px;font-weight:600" id="term-open-count">0 live</span>
+        </div>
+        <div style="max-height:200px;overflow-y:auto" id="term-positions">
+          <div style="color:var(--text-dim);text-align:center;padding:20px;font-size:12px">No open positions at last sync</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Float Total: <span id="term-float-total">--</span></div>
+      </div>
+
+      <!-- Trading Calendar -->
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:13px;color:var(--accent-light);font-weight:600;margin-bottom:8px">📅 Trading Calendar</h3>
+        <div id="term-calendar" style="font-size:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <button class="btn-cal-nav" onclick="calNav(-1)" style="background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;padding:2px 8px;border-radius:4px;font-size:13px;line-height:1">◀</button>
+            <div style="font-weight:600;color:var(--text)" id="term-cal-month">Jul · 2026</div>
+            <button class="btn-cal-nav" onclick="calNav(1)" style="background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;padding:2px 8px;border-radius:4px;font-size:13px;line-height:1">▶</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse;text-align:center;font-size:11px">
+            <thead><tr style="color:var(--text-dim);font-size:10px">
+              <th style="padding:2px">S</th><th style="padding:2px">M</th><th style="padding:2px">T</th><th style="padding:2px">W</th><th style="padding:2px">T</th><th style="padding:2px">F</th><th style="padding:2px">S</th>
+            </tr></thead>
+            <tbody id="term-cal-body"></tbody>
+          </table>
+          <!-- Day detail popup -->
+          <div id="term-cal-daypop" style="display:none;margin-top:6px;padding:6px 8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:11px;max-height:100px;overflow-y:auto"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text-muted)">
+            <span>Net: <strong id="term-cal-net" style="color:var(--green)">+$0</strong></span>
+            <span>Best: <strong id="term-cal-best">--</strong></span>
+            <span>Worst: <strong id="term-cal-worst">--</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Sidebar -->
+      <div class="glass-panel" style="padding:14px">
+        <h3 style="font-size:13px;color:var(--accent-light);font-weight:600;margin-bottom:10px">📋 Summary</h3>
+        <div style="font-size:12px;display:flex;flex-direction:column;gap:8px">
+          <div><span style="color:var(--text-dim)">Max Drawdown $</span><br><strong style="color:var(--red)" id="term-max-dd">-$0.00</strong><span style="font-size:10px;color:var(--text-muted)"> 0.0% of peak</span></div>
+          <div><span style="color:var(--text-dim)">Daily Drawdown</span><br><strong id="term-daily-dd">--</strong></div>
+          <div><span style="color:var(--text-dim)">Total Trades</span><br><strong id="term-total-trades">0</strong> <span style="font-size:10px;color:var(--text-muted)" id="term-open-closed">0 open · 0 closed</span></div>
+          <div><span style="color:var(--text-dim)">Trading Days</span><br><strong id="term-trading-days">0</strong> <span style="font-size:10px;color:var(--text-muted)">days with closed trades</span></div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <button class="btn btn-sm btn-ghost" onclick="syncMT5Trades(90)" id="btn-sync-trades" style="width:100%;font-size:11px">⟳ Sync again today</button>
+          <div id="sync-trades-status" style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center"></div>
+          <div style="margin-top:4px;text-align:center"><a href="#" onclick="diagMT5();return false" style="font-size:9px;color:var(--text-muted);text-decoration:none">⚙ diagnostic</a></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </main>
 
 <script>
@@ -720,6 +1154,29 @@ body {
 //  Instrument data for P&L calculation
 // ══════════════════════════════════════════════
 const INSTRUMENTS = {{ instruments | tojson | safe }};
+
+// ─── TradingView symbol mapping ──────────────────────────────────────────
+function tvSymbol(sym) {
+  const tv = {
+    'EURUSD': 'FX:EURUSD','GBPUSD': 'FX:GBPUSD','USDJPY': 'FX:USDJPY','USDCHF': 'FX:USDCHF',
+    'USDCAD': 'FX:USDCAD','AUDUSD': 'FX:AUDUSD','NZDUSD': 'FX:NZDUSD',
+    'GBPJPY': 'FX:GBPJPY','EURJPY': 'FX:EURJPY','EURGBP': 'FX:EURGBP','EURCHF': 'FX:EURCHF',
+    'AUDJPY': 'FX:AUDJPY','CHFJPY': 'FX:CHFJPY','NZDJPY': 'FX:NZDJPY',
+    'GBPAUD': 'FX:GBPAUD','EURAUD': 'FX:EURAUD','AUDNZD': 'FX:AUDNZD',
+    'NZDCAD': 'FX:NZDCAD','AUDCAD': 'FX:AUDCAD','GBPCAD': 'FX:GBPCAD',
+    'GBPCHF': 'FX:GBPCHF','EURNZD': 'FX:EURNZD','EURCAD': 'FX:EURCAD','CADCHF': 'FX:CADCHF',
+    'US30': 'TVC:DJI','SP500': 'TVC:SPX','NAS100': 'NASDAQ:IXIC',
+    'DAX40': 'X:DAX','FTSE100': 'X:UKX','JP225': 'X:N225',
+    'XAUUSD': 'XAUUSD','XAGUSD': 'XAGUSD','XTIUSD': 'USOIL','XBRUSD': 'UKOIL',
+    'AAPL': 'NASDAQ:AAPL','TSLA': 'NASDAQ:TSLA','GOOG': 'NASDAQ:GOOG',
+    'AMZN': 'NASDAQ:AMZN','MSFT': 'NASDAQ:MSFT',
+    'BTCUSD': 'BITSTAMP:BTCUSD','ETHUSD': 'BITSTAMP:ETHUSD',
+  };
+  return tv[sym] || (sym.includes('USD') ? 'FX:' + sym : sym);
+}
+function openChart(sym) {
+  window.open('https://www.tradingview.com/chart/?symbol=' + tvSymbol(sym), '_blank');
+}
 
 function calcPnL(symbol, direction, entry, exit, lotSize) {
   if (!entry || !exit || !lotSize) return 0;
@@ -809,9 +1266,13 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    // Title mapping — BUDDY is the chat tab's display name
-    const titles = { 'radar': 'Radar', 'news': 'News', 'chat': 'Let me explain, BUDDY!', 'calculator': 'Calculator', 'journal': 'Journal' };
+    // Title mapping
+    const titles = { 'radar': 'Radar', 'news': 'News', 'chat': 'Let me explain, BUDDY!', 'calculator': 'Calculator', 'journal': 'Journal', 'terminal': 'Terminal' };
     document.getElementById('page-title').textContent = titles[btn.dataset.tab] || btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1);
+    // Init terminal tab on first click
+    if (btn.dataset.tab === 'terminal') {
+      refreshTerminal();
+    }
   });
 });
 
@@ -895,6 +1356,12 @@ function renderCalendarEvents(cal) {
   }).join('');
 }
 
+function refreshRadar() {
+  window._lastData = null;
+  document.querySelectorAll('.detail-row.open').forEach(r => r.classList.remove('open'));
+  scan();
+}
+
 function renderTable(instruments) {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
@@ -912,7 +1379,7 @@ function renderTable(instruments) {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-dim)">No matching instruments</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim)">No matching instruments</td></tr>';
     return;
   }
 
@@ -924,7 +1391,7 @@ function renderTable(instruments) {
   catOrder.forEach(cat => {
     const group = filtered.filter(i => i.category === cat);
     if (group.length === 0) return;
-    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="9" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
+    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="10" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
     group.forEach(i => {
       const isBull = i.bias === 'Strong Buy' || i.bias === 'Buy';
       const isBear = i.bias === 'Strong Sell' || i.bias === 'Sell';
@@ -947,11 +1414,12 @@ function renderTable(instruments) {
         <td class="${chgCls}" style="font-family:'JetBrains Mono',monospace">${chgSign}${i.change_pct}%</td>
         <td style="font-size:11px">${i.trend_direction}</td>
         <td class="${entryCls}">${i.entry_timing}</td>
+        <td style="text-align:center"><span class="chart-btn" onclick="event.stopPropagation();openChart('${i.symbol}')" title="Open TradingView">📊</span></td>
       </tr>`;
 
       const detailId = `detail-${i.symbol}`;
       html += `<tr class="detail-row" id="${detailId}">
-        <td colspan="9" class="detail-cell">
+        <td colspan="10" class="detail-cell">
           <div class="detail-inner">
             <b style="color:var(--accent-light)">Why ${i.bias}?</b><br>${i.explanation}
             <div class="detail-grid">
@@ -977,7 +1445,37 @@ function renderTable(instruments) {
         html += `<div class="factor-bar factor-total"><span class="factor-label">Total</span><div class="factor-track"><div class="factor-fill" style="width:${50+i.breakdown.total/2}%;background:${i.breakdown.total>=0?'var(--green)':'var(--red)'}"></div></div><span class="factor-score" style="color:${i.breakdown.total>=0?'var(--green)':'var(--red)'}">${i.breakdown.total>0?'+':''}${i.breakdown.total}</span></div>`;
         html += `</div>`;
       }
-      html += `</div></td></tr>`;
+      // TradingView mini chart widget
+      const tvSymEncoded = tvSymbol(i.symbol);
+      html += `<div style="margin-top:12px;display:flex;gap:12px;align-items:start;flex-wrap:wrap">
+        <div class="tv-mini-wrap" style="flex:1;min-width:280px">
+          <div class="tv-widget" id="tv-widget-${i.symbol}"></div>
+          <script>
+          if (typeof TradingView !== 'undefined') {
+            try {
+              new TradingView.widget({
+                container_id: "tv-widget-${i.symbol}",
+                symbol: "${tvSymEncoded}",
+                interval: "60",
+                width: "100%",
+                height: "340",
+                theme: "dark",
+                style: "1",
+                toolbar_bg: "#0b0d10",
+                enable_publishing: false,
+                hide_side_toolbar: true,
+                allow_symbol_change: false,
+                save_image: false,
+                locale: "en",
+                autosize: false,
+                hide_volume: true,
+              });
+            } catch(e) {}
+          }
+          <\/script>
+        </div>
+        <a href="https://www.tradingview.com/chart/?symbol=${tvSymEncoded}" target="_blank" rel="noopener" class="btn btn-sm btn-ghost" style="text-decoration:none" onclick="event.stopPropagation()">📊 Full Chart</a>
+      </div></div></td></tr>`;
     });
   });
   tbody.innerHTML = html;
@@ -1002,6 +1500,7 @@ async function sendChat() {
   input.value = '';
   await ask(msg);
 }
+let chatContext = '';
 async function ask(msg) {
   const container = document.getElementById('chat-messages');
   const userDiv = document.createElement('div');
@@ -1015,9 +1514,36 @@ async function ask(msg) {
   container.appendChild(loadingDiv);
   container.scrollTop = container.scrollHeight;
   try {
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: msg }) });
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: msg, context: chatContext })
+    });
     const data = await res.json();
-    loadingDiv.textContent = data.answer;
+    loadingDiv.innerHTML = data.answer.replace(/\n/g, '<br>');
+    chatContext = data.context || '';
+
+    // Show suggestion chips
+    const chipGroup = document.getElementById('chat-suggestions');
+    chipGroup.innerHTML = '';
+    if (data.suggestions && data.suggestions.length > 0) {
+      data.suggestions.forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = s;
+        chip.onclick = () => ask(s);
+        chipGroup.appendChild(chip);
+      });
+    } else {
+      // Default chips
+      ['Market overview','Show me EURUSD','Compare XAUUSD and EURUSD'].forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = s;
+        chip.onclick = () => ask(s);
+        chipGroup.appendChild(chip);
+      });
+    }
   } catch (e) { loadingDiv.textContent = '⚠️ Error: ' + e.message; }
   container.scrollTop = container.scrollHeight;
 }
@@ -1159,40 +1685,80 @@ function renderJournal(entries) {
   const container = document.getElementById('journal-entries');
   if (entries.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>'; return; }
   const reversed = [...entries].reverse();
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Pair</th><th style="text-align:left;padding:6px">Dir</th><th style="text-align:left;padding:6px">Entry Reason</th><th style="text-align:left;padding:6px">Exit Reason</th><th style="text-align:right;padding:6px">P&amp;L</th><th style="text-align:left;padding:6px">Result</th><th></th></tr>';
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Title / Pair</th><th style="text-align:left;padding:6px">Pos</th><th style="text-align:left;padding:6px">Entry</th><th style="text-align:left;padding:6px">Exit</th><th style="text-align:right;padding:6px">P&amp;L</th><th style="text-align:left;padding:6px">Result</th><th style="text-align:left;padding:6px">Mood</th><th></th></tr>';
   reversed.forEach((e, i) => {
     const idx = entries.length - 1 - i;
-    const entryReason = e.entry_reason ? ENTRY_REASONS.find(r => r[0] === e.entry_reason)?.[1] || e.entry_reason : '';
-    const exitReason = e.exit_reason ? EXIT_REASONS.find(r => r[0] === e.exit_reason)?.[1] || e.exit_reason : '';
+    const pos = e.position || e.direction || '';
+    const dateStr = e.date_opened || e.date || '';
+    const title = e.trade_title || e.symbol || '';
+    const moodEmoji = {calm:'😌',confident:'💪',anxious:'😰',greedy:'🤑',fearful:'😨',focused:'🎯'}[e.mood] || '';
+    const tags = Array.isArray(e.reflection_tags) ? e.reflection_tags.slice(0,2).join(', ') : '';
+    const statusBadge = e.trade_status === 'ongoing' ? '<span class="badge badge-yellow" style="font-size:10px">Ongoing</span>' : '';
     html += `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.date?e.date.slice(5,10):''}</td>
-      <td style="padding:6px"><b>${e.symbol}</b></td>
-      <td style="padding:6px">${e.direction}</td>
-      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${entryReason}</td>
-      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${exitReason}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${dateStr?dateStr.slice(5,10):''}</td>
+      <td style="padding:6px"><b>${title}</b> ${statusBadge}</td>
+      <td style="padding:6px;color:${pos==='Long'?'var(--green)':'var(--red)'}">${pos==='Long'?'📈':'📉'}${pos}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.entry_reason?e.entry_reason.slice(0,30):''}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.exit_reason?e.exit_reason.slice(0,30):''}</td>
       <td style="padding:6px;text-align:right;font-family:JetBrains Mono;color:${(e.pnl||0)>=0?'var(--green)':'var(--red)'}">${e.pnl?(e.pnl>=0?'+':'')+'$'+e.pnl:'-'}</td>
-      <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result}</span></td>
+      <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result||'open'}</span></td>
+      <td style="padding:6px;font-size:14px">${moodEmoji}</td>
       <td style="padding:6px"><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
     </tr>`;
   });
   html += '</table>';
   container.innerHTML = html;
 }
+/* ═══ TMT Journal Helpers ═══ */
+let j_tags = [];
+
+function toggleReflectionTag(el, tag) {
+  if (j_tags.includes(tag)) {
+    j_tags = j_tags.filter(t => t !== tag);
+    el.style.borderColor = 'var(--border)';
+  } else {
+    j_tags.push(tag);
+    el.style.borderColor = 'var(--accent)';
+  }
+  document.getElementById('j-reflection-tags').value = JSON.stringify(j_tags);
+}
+
+function toggleTradeStatus() {
+  const status = document.getElementById('j-trade-status').value;
+  const closedWrap = document.getElementById('j-date-closed-wrap');
+  if (closedWrap) closedWrap.style.display = status === 'closed' ? 'block' : 'none';
+}
+
 async function addJournalEntry() {
   const data = {
-    symbol: document.getElementById('j-symbol').value, direction: document.getElementById('j-direction').value,
-    entry_price: document.getElementById('j-entry').value, exit_price: document.getElementById('j-exit').value,
-    lot_size: document.getElementById('j-lot').value, stop_loss: document.getElementById('j-sl').value,
-    take_profit: document.getElementById('j-tp').value, result: document.getElementById('j-result').value,
-    pnl: document.getElementById('j-pnl').value, notes: document.getElementById('j-notes').value,
+    symbol: document.getElementById('j-symbol').value,
+    trade_title: document.getElementById('j-title').value || document.getElementById('j-symbol').value + ' ' + document.getElementById('j-position').value,
+    trade_status: document.getElementById('j-trade-status').value,
+    position: document.getElementById('j-position').value,
+    risk_amount: parseFloat(document.getElementById('j-risk').value) || 0,
+    lot_size: parseFloat(document.getElementById('j-lot').value) || 0.01,
+    entry_price: parseFloat(document.getElementById('j-entry').value) || 0,
+    exit_price: parseFloat(document.getElementById('j-exit').value) || 0,
+    stop_loss: parseFloat(document.getElementById('j-sl').value) || 0,
+    take_profit: parseFloat(document.getElementById('j-tp').value) || 0,
+    date_opened: document.getElementById('j-date-opened').value,
+    date_closed: document.getElementById('j-date-closed').value,
+    result: document.getElementById('j-result').value,
+    pnl: parseFloat(document.getElementById('j-pnl').value) || 0,
     entry_reason: document.getElementById('j-entry-reason').value,
     exit_reason: document.getElementById('j-exit-reason').value,
-    date: new Date().toISOString().slice(0,16).replace('T',' '),
+    notes: document.getElementById('j-notes').value,
+    reflection_tags: j_tags,
+    chart_screenshot: document.getElementById('j-chart-img').value,
+    chart_link: document.getElementById('j-chart-link').value,
   };
   await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-  ['j-entry','j-exit','j-sl','j-tp','j-pnl','j-notes'].forEach(id => document.getElementById(id).value = '');
-  ['j-entry-reason','j-exit-reason'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['j-entry','j-exit','j-sl','j-tp','j-pnl','j-notes','j-chart-img','j-chart-link','j-title','j-risk'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('j-pnl-preview').textContent = '';
+  j_tags = [];
   loadJournal();
 }
 async function deleteJournalEntry(index) {
@@ -1203,6 +1769,20 @@ async function clearJournal() {
   if (!confirm('Delete all journal entries?')) return;
   await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'clear' }) });
   loadJournal();
+}
+
+/* ═══ Coach Workspace JS (mood + session removed) ═══ */
+function toggleCoachLang() {
+  const btn = document.getElementById('coach-lang-btn');
+  const isTL = btn.textContent.includes('Tagalog');
+  btn.textContent = isTL ? '🇺🇸 English' : '🇵🇭 Tagalog';
+  try { sessionStorage.setItem('coach_lang', isTL ? 'en' : 'tl'); } catch(e) {}
+  ask('Hello');
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="chat-msg chat-bot">Chat cleared. Ask me anything!</div>';
 }
 
 // ══════════════════════════════════════════════
@@ -1223,33 +1803,81 @@ async function loadNews() {
 
     renderNewsCalendar(data.calendar_events);
     renderHeadlines(data.headlines);
-    renderCentralBanks(data.central_bank_events);
-
-    const trending = document.getElementById('news-trending');
-    if (data.trending_topics && data.trending_topics.length > 0) {
-      trending.innerHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap">' + data.trending_topics.map(t => `<span class="chip" style="cursor:default">${t}</span>`).join('') + '</div>';
-    } else { trending.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No trending topics</div>'; }
-
-    renderSourceBreakdown(data.source_breakdown, data.source_accuracy);
-    renderCrossReferences(data.cross_references);
+    // Central bank events, trending topics, source sentiment & cross-refs removed
   } catch (e) { document.getElementById('news-calendar').innerHTML = '<div style="color:var(--red);padding:20px">Error: '+e.message+'</div>'; }
 }
 
+let _allCalendarEvents = [];
+
 function renderNewsCalendar(events) {
+  _allCalendarEvents = events || [];
+  applyCalendarFilters();
+}
+
+function applyCalendarFilters() {
   const container = document.getElementById('news-calendar');
-  if (!events || events.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No upcoming events</div>'; return; }
-  let html = '<div style="display:flex;flex-direction:column;gap:6px">';
-  events.forEach(e => {
+  const impactFilter = document.getElementById('cal-filter-impact').value;
+  const currencyFilter = document.getElementById('cal-filter-currency').value;
+  const statusFilter = document.getElementById('cal-filter-status').value;
+
+  let filtered = [..._allCalendarEvents];
+  if (impactFilter !== 'all') filtered = filtered.filter(e => e.impact === impactFilter);
+  if (currencyFilter !== 'all') filtered = filtered.filter(e => e.currency === currencyFilter);
+
+  // Status filtering
+  if (statusFilter === 'beat') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) > parseFloat(e.forecast));
+  else if (statusFilter === 'miss') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) < parseFloat(e.forecast));
+  else if (statusFilter === 'inline') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) === parseFloat(e.forecast));
+  else if (statusFilter === 'upcoming') filtered = filtered.filter(e => !e.actual || e.actual === '');
+
+  document.getElementById('cal-filter-count').textContent = `Showing ${filtered.length}/${_allCalendarEvents.length}`;
+
+  if (!filtered || filtered.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No matching events</div>';
+    return;
+  }
+
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)">' +
+    '<th style="text-align:left;padding:5px">Time</th>' +
+    '<th style="text-align:left;padding:5px">Impact</th>' +
+    '<th style="text-align:left;padding:5px">Currency</th>' +
+    '<th style="text-align:left;padding:5px">Event</th>' +
+    '<th style="text-align:right;padding:5px">Actual</th>' +
+    '<th style="text-align:right;padding:5px">Forecast</th>' +
+    '<th style="text-align:right;padding:5px">Previous</th>' +
+    '<th style="text-align:left;padding:5px">Status</th></tr>';
+
+  filtered.forEach(e => {
     const imp = e.impact === 'High' ? 'badge-red' : e.impact === 'Medium' ? 'badge-yellow' : 'badge-gray';
-    html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="color:var(--text-dim);min-width:40px">${e.time.slice(5,10)}</span>
-      <span class="badge ${imp}">${e.impact}</span>
-      <b style="min-width:35px">${e.currency}</b>
-      <span style="flex:1">${e.event}</span>
-    </div>`;
+    // Determine beat/miss/inline
+    let statusBadge = '';
+    if (e.actual && e.forecast && e.actual !== '' && e.forecast !== '') {
+      const a = parseFloat(e.actual), f = parseFloat(e.forecast);
+      if (a > f) statusBadge = '<span style="color:var(--green);font-size:10px">✅ Beat</span>';
+      else if (a < f) statusBadge = '<span style="color:var(--red);font-size:10px">❌ Miss</span>';
+      else statusBadge = '<span style="color:var(--yellow);font-size:10px">➡️ Inline</span>';
+    } else {
+      statusBadge = '<span style="color:var(--text-muted);font-size:10px">⏳</span>';
+    }
+
+    html += `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:5px;color:var(--text-dim);font-size:11px">${e.time ? e.time.slice(5, 16) : ''}</td>
+      <td style="padding:5px"><span class="badge ${imp}" style="font-size:10px">${e.impact || ''}</span></td>
+      <td style="padding:5px"><b>${e.currency || ''}</b></td>
+      <td style="padding:5px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.event || ''}</td>
+      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:${e.actual ? 'var(--text)' : 'var(--text-muted)'}">${e.actual || '--'}</td>
+      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:var(--text-dim)">${e.forecast || '--'}</td>
+      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:var(--text-dim)">${e.previous || '--'}</td>
+      <td style="padding:5px">${statusBadge}</td>
+    </tr>`;
   });
-  html += '</div>';
+  html += '</table>';
   container.innerHTML = html;
+}
+
+function filterCalendar() {
+  applyCalendarFilters();
 }
 
 function renderHeadlines(headlines) {
@@ -1269,75 +1897,657 @@ function renderHeadlines(headlines) {
   container.innerHTML = html;
 }
 
-function renderCentralBanks(events) {
-  const container = document.getElementById('news-cb');
-  if (!events || events.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No CB events scheduled</div>'; return; }
-  let html = '<div style="display:flex;flex-direction:column;gap:6px">';
-  events.forEach(e => {
-    html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-      <span><span class="badge badge-accent">${e.currency}</span> ${e.event}</span>
-      <span style="color:var(--text-dim)">${e.time.slice(5,10)}</span>
+
+// ══════════════════════════════════════════════
+//  MT5 Terminal
+// ══════════════════════════════════════════════
+// ─── State ────────────────────────────────────────────────
+let _termPeriod = 'today';
+let _cumChartMode = 'live';
+let _journalCache = [];
+let _allJournalData = [];
+
+// ─── Period Selector ──────────────────────────────────────
+function setTermPeriod(period) {
+  _termPeriod = period;
+  document.querySelectorAll('.term-period-btn').forEach(b => {
+    b.style.background = b.dataset.period === period ? 'var(--accent)' : 'transparent';
+    b.style.color = b.dataset.period === period ? '#000' : 'var(--text-dim)';
+  });
+  refreshTerminalStats();
+}
+
+function setChartMode(chart, mode) {
+  if (chart === 'cum') _cumChartMode = mode;
+  document.querySelectorAll(`.term-chart-btn[data-chart="${chart}"]`).forEach(b => {
+    b.style.background = b.dataset.mode === mode ? 'var(--accent)' : 'transparent';
+    b.style.color = b.dataset.mode === mode ? '#000' : 'var(--text-dim)';
+  });
+  renderCumulativeChart();
+}
+
+// ─── Main refresh ─────────────────────────────────────────
+async function refreshTerminal() {
+  try {
+    const res = await fetch('/api/terminal/summary');
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById('term-status').textContent = '🔴 ' + (data.error || 'Offline');
+      document.getElementById('btn-term-disconnect').style.display = 'none';
+      return;
+    }
+    document.getElementById('term-status').textContent = '🟢 Connected';
+    document.getElementById('term-status').style.color = 'var(--green)';
+    document.getElementById('term-account-display').textContent = 'Account: ' + (data.account?.login || '--');
+    document.getElementById('term-server-display').textContent = 'Server: ' + (data.account?.server || '--');
+    document.getElementById('btn-term-disconnect').style.display = 'inline-block';
+
+    // Open positions
+    renderTermPositionsNew(data.positions || []);
+
+    // Load journal data for stats/charts
+    await loadJournalForTerm();
+  } catch (e) {
+    document.getElementById('term-status').textContent = '🔴 Error';
+  }
+}
+
+async function loadJournalForTerm() {
+  try {
+    const res = await fetch('/api/journal');
+    const data = await res.json();
+    // API returns {entries: [...]}
+    _allJournalData = (data && data.entries) || (Array.isArray(data) ? data : []);
+    refreshTerminalStats();
+  } catch(e) {
+    console.error('journal load error', e);
+  }
+}
+
+function getFilteredEntries() {
+  const now = new Date();
+  let cut = null;
+  if (_termPeriod === 'today') { const d = new Date(); d.setHours(0,0,0,0); cut = d; }
+  else if (_termPeriod === '7d') cut = new Date(now.getTime() - 7*86400000);
+  else if (_termPeriod === '30d') cut = new Date(now.getTime() - 30*86400000);
+  else if (_termPeriod === '90d') cut = new Date(now.getTime() - 90*86400000);
+  // all → no filter
+
+  let filtered = _allJournalData.filter(e => e.result === 'win' || e.result === 'loss');
+  if (cut) {
+    filtered = filtered.filter(e => {
+      const dt = new Date(e.date || e.date_opened || e.created_at);
+      return dt >= cut;
+    });
+  }
+  return filtered;
+}
+
+function refreshTerminalStats() {
+  const entries = getFilteredEntries();
+  const wins = entries.filter(e => e.result === 'win');
+  const losses = entries.filter(e => e.result === 'loss');
+  const total = entries.length;
+  const totalPnl = entries.reduce((s,e) => s + parseFloat(e.pnl || 0), 0);
+  const winCount = wins.length;
+  const lossCount = losses.length;
+  const wr = total > 0 ? (winCount / total * 100) : 0;
+  const avgWin = winCount > 0 ? wins.reduce((s,e) => s + parseFloat(e.pnl || 0), 0) / winCount : 0;
+  const avgLoss = lossCount > 0 ? losses.reduce((s,e) => s + parseFloat(e.pnl || 0), 0) / lossCount : 0;
+  const pf = lossCount > 0 ? Math.abs(wins.reduce((s,e) => s + parseFloat(e.pnl || 0), 0) / Math.max(1, Math.abs(losses.reduce((s,e) => s + parseFloat(e.pnl || 0), 0)))) : (winCount > 0 ? 999 : 0);
+  const rr = Math.abs(avgLoss) > 0 ? (avgWin / Math.abs(avgLoss)) : 0;
+  const expectancy = total > 0 ? totalPnl / total : 0;
+
+  // Streaks
+  let bestStreak = 0, worstStreak = 0, curW = 0, curL = 0;
+  entries.sort((a,b) => new Date(a.date || a.date_opened || a.created_at) - new Date(b.date || b.date_opened || b.created_at));
+  entries.forEach(e => {
+    if (e.result === 'win') { curW++; curL=0; bestStreak = Math.max(bestStreak, curW); }
+    else { curL++; curW=0; worstStreak = Math.max(worstStreak, curL); }
+  });
+
+  // Account growth
+  let growthPct = 0;
+  const allClosed = _allJournalData.filter(e => e.result === 'win' || e.result === 'loss');
+  // Sort by date
+  allClosed.sort((a,b) => new Date(a.date || a.date_opened || a.created_at) - new Date(b.date || b.date_opened || b.created_at));
+  const firstDate = allClosed.length > 0 ? (allClosed[0].date || allClosed[0].date_opened || allClosed[0].created_at) : null;
+  // Compute growth: cumulative P&L percentage
+  let peak = 0;
+  let cum = 0;
+  let maxDd = 0;
+  const dailyMap = {};
+  let tradingDays = new Set();
+  allClosed.forEach(e => {
+    cum += parseFloat(e.pnl || 0);
+    const d = (e.date || e.date_opened || e.created_at || '').slice(0,10);
+    tradingDays.add(d);
+    dailyMap[d] = (dailyMap[d] || 0) + parseFloat(e.pnl || 0);
+    if (cum > peak) peak = cum;
+    const dd = peak - cum;
+    if (dd > maxDd) maxDd = dd;
+  });
+  growthPct = allClosed.length > 0 ? (cum / Math.max(1, Math.abs(allClosed[0].pnl || cum || 1))) * 100 : 0;
+  // Better growth estimate: compare total P&L to starting balance assumption
+  // Use first trade as approx starting point
+  const totalAbsPnl = allClosed.reduce((s,e) => s + Math.abs(parseFloat(e.pnl || 0)), 0);
+  const netPnl = allClosed.reduce((s,e) => s + parseFloat(e.pnl || 0), 0);
+  growthPct = totalAbsPnl > 0 ? (netPnl / Math.max(totalAbsPnl * 0.5, 1)) * 100 : 0;
+
+  // Update UI
+  document.getElementById('term-pnl-big').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.abs(totalPnl).toLocaleString(undefined, {maximumFractionDigits:2});
+  document.getElementById('term-pnl-big').style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('term-closed-count').textContent = total + ' closed trades';
+  document.getElementById('term-wr-big').textContent = wr.toFixed(1) + '%';
+  document.getElementById('term-wr-big').style.color = wr >= 50 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('term-wl-count').textContent = winCount + ' wins · ' + lossCount + ' losses';
+  const pfDisplay = pf >= 999 ? '∞' : pf.toFixed(2);
+  document.getElementById('term-pf-big').textContent = pfDisplay;
+  document.getElementById('term-pf-big').style.color = pf >= 1.5 ? 'var(--green)' : pf >= 1 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('term-growth-big').textContent = (growthPct >= 0 ? '+' : '') + growthPct.toFixed(1) + '%';
+  document.getElementById('term-growth-big').style.color = growthPct >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('term-growth-since').textContent = firstDate ? 'since ' + firstDate.slice(0,7) : 'since --';
+
+  document.getElementById('term-avg-win').textContent = '+' + (avgWin ? '$' + avgWin.toLocaleString(undefined, {maximumFractionDigits:0}) : '$0');
+  document.getElementById('term-avg-loss').textContent = (avgLoss ? '$' + avgLoss.toLocaleString(undefined, {maximumFractionDigits:0}) : '$0');
+  document.getElementById('term-avg-loss').style.color = 'var(--red)';
+  document.getElementById('term-rr').textContent = rr.toFixed(2);
+  document.getElementById('term-rr').style.color = rr >= 1.5 ? 'var(--green)' : rr >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('term-expectancy').textContent = (expectancy >= 0 ? '+' : '') + '$' + Math.abs(expectancy).toLocaleString(undefined, {maximumFractionDigits:0});
+  document.getElementById('term-expectancy').style.color = expectancy >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('term-best-streak').textContent = bestStreak + 'W';
+  document.getElementById('term-worst-streak').textContent = worstStreak + 'L';
+
+  // Summary sidebar
+  document.getElementById('term-max-dd').textContent = '-$' + maxDd.toLocaleString(undefined, {maximumFractionDigits:2});
+  document.getElementById('term-total-trades').textContent = total;
+  document.getElementById('term-open-closed').textContent = '0 open · ' + total + ' closed';
+  document.getElementById('term-trading-days').textContent = tradingDays.size;
+
+  // Charts
+  renderCumulativeChart();
+  renderDailyChart(dailyMap);
+
+  // Calendar
+  renderTermCalendar(dailyMap, tradingDays, allClosed);
+}
+
+function renderTermPositionsNew(positions) {
+  const el = document.getElementById('term-positions');
+  document.getElementById('term-open-count').textContent = positions.length + ' live';
+  if (!positions.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:12px">No open positions at last sync</div>';
+    document.getElementById('term-float-total').textContent = '--';
+    return;
+  }
+  let h = `<table style="width:100%;font-size:11px;border-collapse:collapse">
+    <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase">
+      <th style="text-align:left;padding:4px">Sym</th><th style="text-align:left;padding:4px">Type</th><th style="text-align:right;padding:4px">Vol</th><th style="text-align:right;padding:4px">Entry</th><th style="text-align:right;padding:4px">Price</th><th style="text-align:right;padding:4px">Pips</th><th style="text-align:right;padding:4px">Profit</th>
+    </tr></thead><tbody>`;
+  let floatTotal = 0;
+  positions.forEach(p => {
+    const isBuy = p.type === 'Buy';
+    floatTotal += p.profit || 0;
+    h += `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:4px"><b>${p.symbol}</b></td>
+      <td style="padding:4px;color:${isBuy ? 'var(--green)' : 'var(--red)'}">${isBuy ? '▲' : '▼'}</td>
+      <td style="padding:4px;text-align:right">${p.volume}</td>
+      <td style="padding:4px;text-align:right;font-size:10px;color:var(--text-dim)">${p.entry_price}</td>
+      <td style="padding:4px;text-align:right;font-size:10px">${p.current_price}</td>
+      <td style="padding:4px;text-align:right;font-family:JetBrains Mono;color:${p.pips >= 0 ? 'var(--green)' : 'var(--red)'}">${p.pips}</td>
+      <td style="padding:4px;text-align:right;font-weight:700;color:${(p.profit||0) >= 0 ? 'var(--green)' : 'var(--red)'}">$${(p.profit||0).toFixed(2)}</td>
+    </tr>`;
+  });
+  h += '</tbody></table>';
+  el.innerHTML = h;
+  document.getElementById('term-float-total').textContent = (floatTotal >= 0 ? '+' : '') + '$' + floatTotal.toFixed(2);
+}
+
+// ─── Cumulative Performance Chart ─────────────────────────
+function renderCumulativeChart() {
+  const entries = getFilteredEntries();
+  entries.sort((a,b) => new Date(a.date || a.date_opened || a.created_at) - new Date(b.date || b.date_opened || b.created_at));
+  const svg = document.getElementById('chart-cum-svg');
+  const W = 600, H = 150;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  if (entries.length < 2) {
+    svg.innerHTML = '<text x="300" y="75" text-anchor="middle" fill="var(--text-dim)" font-size="12">Not enough data</text>';
+    return;
+  }
+  // Compute cumulative
+  let cum = 0;
+  const points = entries.map((e,i) => {
+    cum += parseFloat(e.pnl || 0);
+    return { x: i, y: cum };
+  });
+  const values = points.map(p => p.y);
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+  const padX = 30, padY = 10;
+  const chartW = W - padX * 2, chartH = H - padY * 2;
+
+  function scaleY(v) { return padY + chartH - ((v - min) / range) * chartH; }
+  function scaleX(i) { return padX + (i / Math.max(points.length-1, 1)) * chartW; }
+
+  // Grid lines
+  let html = '';
+  const gridLines = 4;
+  for (let g = 0; g <= gridLines; g++) {
+    const v = min + (range * g / gridLines);
+    const y = scaleY(v);
+    html += `<line x1="${padX}" y1="${y}" x2="${W-padX}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+    html += `<text x="${padX-4}" y="${y+3}" text-anchor="end" fill="var(--text-dim)" font-size="9">${v >= 0 ? '+' : ''}${v < 1000 ? v.toFixed(0) : (v/1000).toFixed(1)+'k'}</text>`;
+  }
+
+  // Line path
+  const pathD = points.map((p,i) => `${i===0?'M':'L'}${scaleX(i)} ${scaleY(p.y)}`).join(' ');
+  const color = values[values.length-1] >= 0 ? '#22c55e' : '#ef4444';
+  html += `<path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+
+  // Area fill
+  const areaD = pathD + ` L${scaleX(points.length-1)} ${scaleY(0)} L${scaleX(0)} ${scaleY(0)} Z`;
+  html += `<path d="${areaD}" fill="${color}" opacity="0.08"/>`;
+
+  // Gradient + render
+  svg.innerHTML = `<defs>
+    <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0.01"/>
+    </linearGradient>
+  </defs>` + html + `<path d="${areaD}" fill="url(#cumGrad)" opacity="0.5"/>`;
+}
+
+// ─── Daily Net P&L Chart ─────────────────────────────────
+function renderDailyChart(dailyMap) {
+  const svg = document.getElementById('chart-daily-svg');
+  const W = 600, H = 150;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const days = Object.entries(dailyMap).sort((a,b) => a[0].localeCompare(b[0]));
+  if (days.length < 1) {
+    svg.innerHTML = '<text x="300" y="75" text-anchor="middle" fill="var(--text-dim)" font-size="12">No daily data</text>';
+    return;
+  }
+  const values = days.map(d => d[1]);
+  const absMax = Math.max(Math.abs(Math.min(...values)), Math.abs(Math.max(...values)), 1);
+  const padX = 25, padY = 10;
+  const chartW = W - padX * 2, chartH = H - padY * 2;
+  const barW = Math.max(4, Math.min(30, chartW / days.length - 2));
+
+  let html = '';
+  // Zero line
+  const zeroY = padY + chartH / 2;
+  html += `<line x1="${padX}" y1="${zeroY}" x2="${W-padX}" y2="${zeroY}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+
+  days.forEach(([date, val], i) => {
+    const x = padX + (i / days.length) * chartW + (chartW / days.length - barW) / 2;
+    const barH = (Math.abs(val) / absMax) * (chartH / 2);
+    const y = val >= 0 ? zeroY - barH : zeroY;
+    const color = val >= 0 ? '#22c55e' : '#ef4444';
+    html += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(barH, 1)}" fill="${color}" rx="2" opacity="0.8"/>`;
+    // Date label every few
+    if (i % Math.max(1, Math.floor(days.length / 8)) === 0) {
+      html += `<text x="${x + barW/2}" y="${H-2}" text-anchor="end" fill="var(--text-dim)" font-size="8" transform="rotate(-30 ${x+barW/2} ${H-2})">${date.slice(5)}</text>`;
+    }
+  });
+  svg.innerHTML = html;
+}
+
+// ─── Trading Calendar ─────────────────────────────────────
+let _calYear = 0, _calMonth = -1;   // displayed month/year
+let _calData = null;                // {dailyMap, tradingDays, entries} from last render
+
+function calNav(delta) {
+  _calMonth += delta;
+  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  renderTermCalendar(_calData?.dailyMap || {}, _calData?.tradingDays || new Set(), _calData?.entries || []);
+}
+
+function calShowDay(dateStr) {
+  const pop = document.getElementById('term-cal-daypop');
+  const entries = _calData?.entries || [];
+  const dayEntries = entries.filter(e => {
+    const d = (e.date || e.date_opened || e.created_at || '').slice(0, 10);
+    return d === dateStr;
+  });
+  if (!dayEntries.length) { pop.style.display = 'none'; return; }
+  let h = `<div style="font-weight:600;margin-bottom:4px;color:var(--text)">📊 ${dateStr}</div>`;
+  dayEntries.forEach(e => {
+    const pnl = parseFloat(e.pnl || 0);
+    h += `<div style="display:flex;justify-content:space-between;padding:2px 0">
+      <span>${e.symbol || e.trade_title || 'Trade'}</span>
+      <span style="font-weight:600;color:${pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</span>
     </div>`;
   });
-  html += '</div>';
-  container.innerHTML = html;
+  pop.innerHTML = h;
+  pop.style.display = 'block';
 }
 
-function renderSourceBreakdown(srcBreakdown, sourceAccuracy) {
-  const container = document.getElementById('news-sources');
-  let html = '<div style="margin-bottom:10px"><b style="font-size:12px;color:var(--text-dim)">Avg Sentiment by Source</b>';
-  const sources = Object.keys(srcBreakdown || {}).sort();
-  if (sources.length === 0) { html += '<div style="color:var(--text-dim);font-size:12px;padding:4px 0">No source data</div>'; }
-  else {
-    sources.forEach(s => {
-      const val = srcBreakdown[s];
-      const color = val >= 0.05 ? 'var(--green)' : val <= -0.05 ? 'var(--red)' : 'var(--yellow)';
-      const barW = 50 + (val * 50);
-      html += `<div class="factor-bar"><span class="factor-label" style="width:90px">${s}</span>
-        <div class="factor-track"><div class="factor-fill" style="width:${Math.max(0, Math.min(100, barW))}%;background:${color}"></div></div>
-        <span class="factor-score" style="color:${color}">${val >= 0 ? '+' : ''}${val.toFixed(2)}</span></div>`;
-    });
+function renderTermCalendar(dailyMap, tradingDays, allEntries) {
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Init displayed month on first call
+  if (_calMonth < 0 || _calYear < 1) {
+    const now = new Date();
+    _calYear = now.getFullYear();
+    _calMonth = now.getMonth();
   }
-  html += '</div>';
+  // Store data for re-render on nav
+  _calData = { dailyMap, tradingDays, entries: allEntries || [] };
 
-  if (sourceAccuracy && sourceAccuracy.length > 0) {
-    html += '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px"><b style="font-size:12px;color:var(--text-dim)">Source Reliability</b>';
-    html += '<table style="width:100%;font-size:11px;margin-top:6px;border-collapse:collapse">';
-    html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Source</th><th style="text-align:right;padding:4px">Articles</th><th style="text-align:right;padding:4px">Rel.</th><th style="text-align:right;padding:4px">Cred.</th></tr>';
-    sourceAccuracy.forEach(s => {
-      const credColor = s.credibility_score >= 0.8 ? 'var(--green)' : s.credibility_score >= 0.6 ? 'var(--yellow)' : 'var(--red)';
-      html += `<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">${s.source}</td><td style="text-align:right;padding:4px">${s.articles_scraped}</td><td style="text-align:right;padding:4px">${s.avg_relevance.toFixed(2)}</td><td style="text-align:right;padding:4px;color:${credColor};font-weight:600">${(s.credibility_score*100).toFixed(0)}%</td></tr>`;
-    });
-    html += '</table></div>';
+  const year = _calYear;
+  const month = _calMonth;
+  const today = new Date();
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+  const todayDate = today.getDate();
+
+  document.getElementById('term-cal-month').textContent = monthNames[month] + ' · ' + year;
+
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let html = '<tr>';
+  for (let i = 0; i < firstDow; i++) html += '<td style="padding:2px"></td>';
+
+  let monthNet = 0, monthTrades = 0, monthDays = 0;
+  let bestDay = -Infinity, worstDay = Infinity;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayPnl = dailyMap[dateStr] || 0;
+    const isTradeDay = tradingDays.has(dateStr);
+
+    if (dayPnl) {
+      monthNet += dayPnl; monthTrades++;
+      if (dayPnl > bestDay) bestDay = dayPnl;
+      if (dayPnl < worstDay) worstDay = dayPnl;
+    }
+    if (isTradeDay) monthDays++;
+
+    const isToday = isCurrentMonth && d === todayDate;
+    let cellStyle = 'padding:3px;font-size:12px;cursor:default;border-radius:4px;position:relative;';
+    let label = String(d);
+
+    if (isToday) {
+      cellStyle += 'background:var(--accent);color:#000;font-weight:700;';
+    } else if (dayPnl > 0) {
+      // Green tint for profit days
+      const intensity = Math.min(Math.abs(dayPnl) / 200, 0.5);
+      cellStyle += `background:rgba(34,197,94,${intensity});color:var(--green);font-weight:600;`;
+      label = `<span>${d}</span><span style="font-size:8px;display:block;opacity:0.7">+$${Math.abs(dayPnl).toFixed(0)}</span>`;
+      cellStyle += 'line-height:1.2;';
+    } else if (dayPnl < 0) {
+      // Red tint for loss days
+      const intensity = Math.min(Math.abs(dayPnl) / 200, 0.5);
+      cellStyle += `background:rgba(239,68,68,${intensity});color:var(--red);font-weight:600;`;
+      label = `<span>${d}</span><span style="font-size:8px;display:block;opacity:0.7">-$${Math.abs(dayPnl).toFixed(0)}</span>`;
+      cellStyle += 'line-height:1.2;';
+    } else {
+      cellStyle += 'color:var(--text-dim);';
+    }
+
+    // Clickable if trade day
+    if (isTradeDay) {
+      html += `<td style="${cellStyle}" onclick="calShowDay('${dateStr}')" title="$${dayPnl.toFixed(2)}">${label}</td>`;
+    } else {
+      html += `<td style="${cellStyle}">${label}</td>`;
+    }
+    if ((firstDow + d) % 7 === 0 && d < daysInMonth) html += '</tr><tr>';
   }
-  container.innerHTML = html;
+  html += '</tr>';
+
+  document.getElementById('term-cal-body').innerHTML = html;
+  document.getElementById('term-cal-net').textContent = (monthNet >= 0 ? '+' : '') + '$' + Math.abs(monthNet).toLocaleString(undefined, {maximumFractionDigits:0});
+  document.getElementById('term-cal-net').style.color = monthNet >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('term-cal-best').textContent = bestDay > -Infinity ? '+$' + bestDay.toFixed(0) : '--';
+  document.getElementById('term-cal-best').style.color = 'var(--green)';
+  document.getElementById('term-cal-worst').textContent = worstDay < Infinity ? '-$' + Math.abs(worstDay).toFixed(0) : '--';
+  document.getElementById('term-cal-worst').style.color = 'var(--red)';
+
+  // Hide any open day popup
+  document.getElementById('term-cal-daypop').style.display = 'none';
 }
 
-function renderCrossReferences(crossRefs) {
-  const container = document.getElementById('news-crossref');
-  if (!crossRefs || crossRefs.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);font-size:13px">No cross-source discrepancies — sources agree broadly</div>'; return; }
-  let html = '';
-  crossRefs.forEach(cr => {
-    const bgColor = cr.discrepancy_flag ? 'rgba(244,63,94,0.08)' : 'rgba(34,197,94,0.06)';
-    const icon = cr.discrepancy_flag ? '🔴' : '🟡';
-    const cc = cr.consensus === 'bullish' ? 'var(--green)' : cr.consensus === 'bearish' ? 'var(--red)' : 'var(--yellow)';
-    html += `<div style="background:${bgColor};border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span>${icon} <b>${cr.topic}</b></span>
-        <span style="color:${cc};font-weight:600;font-size:12px">${cr.consensus}</span>
-      </div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px">
-        Agreement: ${(cr.agreement_level*100).toFixed(0)}% ${cr.discrepancy_flag ? '<span style="color:var(--red);margin-left:8px">⚠️ Sources disagree</span>' : ''}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">`;
-    Object.entries(cr.source_sentiments || {}).forEach(([src, sent]) => {
-      const sc = sent >= 0.1 ? 'var(--green)' : sent <= -0.1 ? 'var(--red)' : 'var(--yellow)';
-      html += `<span style="font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.04)">${src}: <span style="color:${sc};font-weight:600">${sent>=0?'+':''}${sent.toFixed(2)}</span></span>`;
-    });
-    html += '</div></div>';
-  });
-  container.innerHTML = html;
+// ─── MT5 Diagnostic ──────────────────────────────────────
+async function diagMT5() {
+  const status = document.getElementById('sync-trades-status');
+  if (status) status.innerHTML = '<span style="color:var(--yellow)">⏳ Running diagnostic...</span>';
+  try {
+    const res = await fetch('/api/broker/diagnose');
+    const data = await res.json();
+    let lines = [];
+    for (const [k, v] of Object.entries(data)) {
+      const display = typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v);
+      lines.push(`<span style="color:var(--text-dim)">${k}:</span> ${display}`);
+    }
+    if (status) status.innerHTML = '<div style="font-size:9px;text-align:left;line-height:1.6">' + lines.join('<br>') + '</div>';
+  } catch(e) {
+    if (status) status.innerHTML = `<span style="color:var(--red)">❌ Diagnostic error: ${e.message}</span>`;
+  }
 }
+
+// ─── MT5 Trade Sync ──────────────────────────────────────
+async function syncMT5Trades(days) {
+  days = days || 90;
+  const btn = document.getElementById('btn-sync-trades');
+  const status = document.getElementById('sync-trades-status');
+  if (btn) btn.textContent = '⏳ Syncing...';
+  if (status) status.textContent = 'Importing MT5 trade history...';
+  try {
+    const res = await fetch('/api/broker/sync-trades', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({days}),
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (status) status.innerHTML = `<span style="color:var(--green)">✅ ${data.message}</span>`;
+      if (btn) btn.textContent = '⟳ Sync again today';
+    } else {
+      if (status) status.innerHTML = `<span style="color:var(--red)">❌ ${data.error || 'Sync failed'}</span>`;
+      if (btn) btn.textContent = '⟳ Retry sync';
+      // If MT5 not connected, show the sync panel
+      if (data.error && data.error.includes('not connected')) toggleSyncPanel();
+    }
+    refreshTerminal();
+  } catch(e) {
+    if (status) status.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+    if (btn) btn.textContent = '⟳ Retry sync';
+  }
+}
+
+async function quickTrade(action) {
+  const symbol = document.getElementById('qt-symbol').value;
+  const volume = parseFloat(document.getElementById('qt-volume').value) || 0.01;
+  const sl = parseFloat(document.getElementById('qt-sl').value) || 0;
+  const tp = parseFloat(document.getElementById('qt-tp').value) || 0;
+  const resEl = document.getElementById('qt-result');
+  resEl.innerHTML = '<span style="color:var(--yellow)">⏳ Placing order...</span>';
+  try {
+    const res = await fetch('/api/terminal/place-order', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({symbol, type: action, volume, sl, tp, comment: 'Yams Radar'}),
+    });
+    const data = await res.json();
+    if (data.success) {
+      resEl.innerHTML = `<span style="color:var(--green)">✅ ${data.message}</span>`;
+      refreshTerminal();
+    } else {
+      resEl.innerHTML = `<span style="color:var(--red)">❌ ${data.error || 'Order failed'}</span>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = `<span style="color:var(--red)">❌ ${e.message}</span>`;
+  }
+}
+
+// Populate quick-trade symbol dropdown
+function populateTerminalSymbols() {
+  const sel = document.getElementById('qt-symbol');
+  if (!sel || sel.options.length > 1) return;
+  const syms = [
+    'EURUSD','GBPUSD','USDJPY','USDCHF','USDCAD','AUDUSD','NZDUSD',
+    'GBPJPY','EURJPY','EURGBP','EURCHF','AUDJPY','CHFJPY','NZDJPY','GBPAUD','EURAUD',
+    'US30','SP500','NASDAQ','DAX40','FTSE100','NIKKEI225',
+    'XAUUSD','XAGUSD','XTIUSD','XBRUSD',
+    'AAPL','TSLA','GOOG','AMZN','MSFT'
+  ];
+  syms.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+}
+
+// ══════════════════════════════════════════════
+//  Broker Sync
+// ══════════════════════════════════════════════
+function toggleSyncPanel() {
+  const panel = document.getElementById('sync-panel');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (isOpen) return;
+  loadSavedBrokerConfig();  // auto-load saved config when opening
+}
+
+async function loadSavedBrokerConfig() {
+  const resEl = document.getElementById('sync-result');
+  try {
+    const res = await fetch('/api/broker/config');
+    const data = await res.json();
+    if (data.saved && data.config) {
+      document.getElementById('sync-broker-name').value = data.config.broker_name || '';
+      document.getElementById('sync-server').value = data.config.server || '';
+      document.getElementById('sync-login').value = data.config.login || '';
+      document.getElementById('sync-account-type').value = data.config.account_type || 'demo';
+      resEl.innerHTML = '<span style="color:var(--green)">✅ Saved config loaded</span>';
+    } else {
+      resEl.innerHTML = '<span style="color:var(--text-muted)">No saved config — enter your broker details</span>';
+    }
+  } catch(e) {
+    resEl.innerHTML = '<span style="color:var(--text-dim)">Could not load saved config</span>';
+  }
+}
+
+async function saveBrokerOnly() {
+  const resEl = document.getElementById('sync-result');
+  const payload = {
+    broker_name: document.getElementById('sync-broker-name').value,
+    server: document.getElementById('sync-server').value,
+    login: parseInt(document.getElementById('sync-login').value) || 0,
+    password: document.getElementById('sync-password').value,
+    account_type: document.getElementById('sync-account-type').value,
+  };
+  if (!payload.server || !payload.login) {
+    resEl.innerHTML = '<span style="color:var(--red)">⚠️ Server and Login ID required</span>';
+    return;
+  }
+  try {
+    const res = await fetch('/api/broker/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      resEl.innerHTML = '<span style="color:var(--green)">✅ Broker config saved (encrypted)</span>';
+    } else {
+      resEl.innerHTML = '<span style="color:var(--red)">❌ Save failed</span>';
+    }
+  } catch(e) {
+    resEl.innerHTML = '<span style="color:var(--red)">❌ ' + e.message + '</span>';
+  }
+}
+
+async function connectSavedBroker() {
+  const resEl = document.getElementById('sync-result');
+  const payload = {
+    broker_name: document.getElementById('sync-broker-name').value,
+    server: document.getElementById('sync-server').value,
+    login: parseInt(document.getElementById('sync-login').value) || 0,
+    password: document.getElementById('sync-password').value,
+    account_type: document.getElementById('sync-account-type').value,
+  };
+  if (!payload.server || !payload.login) {
+    resEl.innerHTML = '<span style="color:var(--red)">⚠️ Server and Login ID required</span>';
+    return;
+  }
+  resEl.innerHTML = '<span style="color:var(--yellow)">⏳ Connecting to broker...</span>';
+  try {
+    const res = await fetch('/api/broker/connect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      resEl.innerHTML = `<span style="color:var(--green)">✅ Connected! ${data.name} — $${data.balance} ${data.currency}</span>`;
+      // Save the config for next time
+      await fetch('/api/broker/config', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({...payload, password: document.getElementById('sync-password').value || ''}),
+      });
+      // Auto-sync trade history from MT5 into journal
+      await syncMT5Trades(90);
+      refreshTerminal();
+    } else {
+      resEl.innerHTML = `<span style="color:var(--red)">❌ ${data.error || 'Connection failed'}</span>`;
+    }
+  } catch(e) {
+    resEl.innerHTML = '<span style="color:var(--red)">❌ ' + e.message + '</span>';
+  }
+}
+
+async function disconnectBroker() {
+  const resEl = document.getElementById('sync-result');
+  try {
+    const res = await fetch('/api/broker/disconnect', {method: 'POST'});
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('term-status').textContent = '🔴 Disconnected';
+      document.getElementById('term-status').style.color = 'var(--red)';
+      document.getElementById('term-account-display').textContent = 'Account: --';
+      document.getElementById('term-server-display').textContent = 'Server: --';
+      document.getElementById('btn-term-disconnect').style.display = 'none';
+      // Reset all fields
+      ['term-balance','term-equity','term-margin','term-free-margin','term-profit','term-leverage','term-margin-level'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = id === 'term-margin-level' ? '0%' : id === 'term-leverage' ? '1:--' : '$0';
+      });
+      document.getElementById('term-positions').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No open positions</div>';
+      document.getElementById('term-history').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:12px">No closed trades today</div>';
+      document.getElementById('term-watch').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:10px">No market data</div>';
+      resEl.innerHTML = '<span style="color:var(--text-muted)">🔌 Disconnected</span>';
+    }
+  } catch(e) {
+    resEl.innerHTML = '<span style="color:var(--red)">❌ ' + e.message + '</span>';
+  }
+}
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/check-auth');
+    const data = await res.json();
+    if (!data.authenticated) {
+      window.location.href = '/login';
+    } else {
+      // Set user info in sidebar
+      document.getElementById('sidebar-user').style.display = 'block';
+      if (data.display_name) {
+        document.getElementById('user-name').textContent = data.display_name;
+      }
+      // Update role badge text
+      const badge = document.getElementById('user-role-badge');
+      if (badge) {
+        const role = data.role || 'user';
+        badge.textContent = role.toUpperCase();
+        badge.style.background = role === 'admin'
+          ? 'rgba(34,197,94,0.15)'
+          : 'rgba(96,165,250,0.15)';
+        badge.style.color = role === 'admin' ? 'var(--green)' : '#60a5fa';
+      }
+    }
+  } catch (e) {
+    window.location.href = '/login';
+  }
+})();
 
 // ══════════════════════════════════════════════
 //  Mobile hamburger menu

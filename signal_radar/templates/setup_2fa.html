@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yams Radar — 2FA Setup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #22c55e;
+  --accent-light: #4ade80;
+  --bg-primary: #080a0b;
+  --bg-secondary: #0d0f12;
+  --bg-card: rgba(13, 15, 18, 0.7);
+  --bg-card-hover: rgba(20, 25, 22, 0.85);
+  --border: rgba(255, 255, 255, 0.05);
+  --border-accent: rgba(34, 197, 94, 0.15);
+  --text: #e8eaed;
+  --text-dim: #9aa0a6;
+  --text-muted: #5f6368;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #facc15;
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.container { width: 100%; max-width: 440px; padding: 20px; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 28px;
+  backdrop-filter: blur(10px);
+}
+h1 { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+h1 .accent { color: var(--accent-light); }
+.subtitle { text-align: center; color: var(--text-dim); font-size: 13px; margin-bottom: 24px; }
+.steps { margin: 0 0 20px; }
+.step { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: #000;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.step-text { font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+.step-text b { color: var(--text); }
+.qr-wrap {
+  text-align: center; margin: 20px 0; padding: 16px;
+  background: white; border-radius: 12px; display: inline-block; width: 100%;
+}
+.qr-wrap img { max-width: 200px; image-rendering: pixelated; }
+.secret-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  word-break: break-all;
+  margin: 12px 0;
+  user-select: all;
+}
+.secret-label { font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 4px; }
+.manual-link { font-size: 12px; color: var(--text-dim); text-align: center; margin: 8px 0; }
+.manual-link a { color: var(--accent-light); text-decoration: none; }
+.manual-link a:hover { text-decoration: underline; }
+.verify-group { margin-top: 20px; }
+.verify-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; text-align: center; }
+.verify-group input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 24px;
+  font-family: var(--font-mono);
+  text-align: center;
+  letter-spacing: 8px;
+  outline: none;
+  transition: border 0.15s;
+}
+.verify-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+.btn {
+  width: 100%; padding: 11px; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: var(--font); transition: all 0.15s; margin-top: 10px;
+}
+.btn-accent { background: var(--accent); color: #000; }
+.btn-accent:hover { background: var(--accent-light); transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+.btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: var(--red); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.status-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; margin-bottom: 16px;
+}
+.status-enabled { background: rgba(34,197,94,0.15); color: var(--green); }
+.status-disabled { background: rgba(239,68,68,0.10); color: var(--red); }
+.success-msg {
+  text-align: center; padding: 30px 0;
+}
+.success-msg .check { font-size: 48px; margin-bottom: 12px; }
+.success-msg p { color: var(--text-dim); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card" id="setup-card">
+    <h1>🔐 <span class="accent">Two-Factor</span> Authentication</h1>
+    <div class="subtitle">Secure your Yams Radar account</div>
+
+    {% if enabled %}
+      <!-- Already enabled -->
+      <div style="text-align:center">
+        <div class="status-badge status-enabled">✅ 2FA is ENABLED</div>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px">
+          Two-factor authentication is active on your account.
+        </p>
+        <button class="btn btn-danger" onclick="toggle2FA(false)">Disable 2FA</button>
+        <a href="/" class="btn btn-ghost" style="display:block;text-decoration:none;text-align:center">Back to Dashboard</a>
+      </div>
+    {% else %}
+      <!-- Setup flow -->
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text"><b>Install an authenticator app</b><br>Use Google Authenticator, Authy, Microsoft Authenticator, or similar.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text"><b>Scan the QR code</b><br>Or manually enter the secret key below.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text"><b>Verify the code</b><br>Enter the 6-digit code from your app to confirm setup.</div>
+        </div>
+      </div>
+
+      {% if qr_uri %}
+        <div class="qr-wrap">
+          <img src="{{ qr_uri }}" alt="QR Code">
+        </div>
+      {% else %}
+        <div class="secret-label">Manual entry — add this secret to your authenticator app:</div>
+        <div class="secret-box">{{ secret }}</div>
+        <div class="manual-link">
+          <a href="{{ uri }}" target="_blank">Or tap here to open in authenticator app</a>
+        </div>
+      {% endif %}
+
+      <div class="verify-group">
+        <label>Verify by entering the 6-digit code</label>
+        <input type="text" id="verify-code" placeholder="000000" maxlength="6" inputmode="numeric"
+               autocomplete="one-time-code"
+               onkeydown="if(event.key==='Enter')enable2FA()">
+        <div id="verify-error" style="color:var(--red);font-size:12px;text-align:center;margin-top:6px;display:none"></div>
+        <button class="btn btn-accent" id="verify-btn" onclick="enable2FA()">Enable 2FA</button>
+      </div>
+
+      <a href="/" class="btn btn-ghost" style="display:block;text-decoration:none;text-align:center;margin-top:8px">Skip &amp; go to Dashboard</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function enable2FA() {
+  const code = document.getElementById('verify-code').value.trim();
+  if (code.length !== 6) {
+    document.getElementById('verify-error').textContent = 'Please enter a 6-digit code';
+    document.getElementById('verify-error').style.display = 'block';
+    return;
+  }
+
+  // First verify the code works
+  const verifyRes = await fetch('/api/verify-2fa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  });
+  const verifyData = await verifyRes.json();
+
+  if (verifyRes.status !== 200 || verifyData.status !== 'ok') {
+    document.getElementById('verify-error').textContent = 'Invalid code — please try again';
+    document.getElementById('verify-error').style.display = 'block';
+    return;
+  }
+
+  // Enable 2FA
+  await fetch('/api/toggle-2fa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enable: true })
+  });
+
+  document.getElementById('setup-card').innerHTML = `
+    <div class="success-msg">
+      <div class="check">✅</div>
+      <h1 style="margin-bottom:8px">2FA Enabled!</h1>
+      <p>Your account is now secured with two-factor authentication.</p>
+      <a href="/" class="btn btn-accent" style="display:inline-block;width:auto;padding:11px 32px;margin-top:20px;text-decoration:none">Go to Dashboard</a>
+    </div>
+  `;
+}
+
+async function toggle2FA(enable) {
+  await fetch('/api/toggle-2fa', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enable })
+  });
+  window.location.reload();
+}
+</script>
+</body>
+</html>

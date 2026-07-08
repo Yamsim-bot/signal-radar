@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yams Radar — Sign Up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #22c55e;
+  --accent-light: #4ade80;
+  --accent-dark: #16a34a;
+  --accent-darkest: rgba(5, 46, 22, 0.8);
+  --accent-glow: rgba(34, 197, 94, 0.15);
+  --bg-primary: #080a0b;
+  --bg-secondary: #0d0f12;
+  --bg-card: rgba(13, 15, 18, 0.7);
+  --bg-card-hover: rgba(20, 25, 22, 0.85);
+  --border: rgba(255, 255, 255, 0.05);
+  --border-accent: rgba(34, 197, 94, 0.15);
+  --text: #e8eaed;
+  --text-dim: #9aa0a6;
+  --text-muted: #5f6368;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #facc15;
+  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.container { width: 100%; max-width: 440px; padding: 20px; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 28px;
+  backdrop-filter: blur(10px);
+}
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.form-group { margin-bottom: 16px; }
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font);
+  outline: none;
+  transition: border 0.15s;
+}
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+input::placeholder { color: var(--text-muted); }
+.btn {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.btn-accent { background: var(--accent); color: #000; }
+.btn-accent:hover { background: var(--accent-light); transform: translateY(-1px); }
+.btn-accent:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+.error { color: var(--red); font-size: 12px; margin-top: 6px; text-align: center; display: none; }
+.success { color: var(--green); font-size: 12px; margin-top: 6px; text-align: center; display: none; }
+.footer { text-align: center; margin-top: 18px; font-size: 13px; color: var(--text-dim); }
+.footer a { color: var(--accent-light); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* QR code section (shown after signup) */
+#verify-section { display: none; text-align: center; }
+#verify-section .steps { margin-bottom: 16px; }
+.qr-wrap {
+  text-align: center; margin: 16px 0; padding: 16px;
+  background: white; border-radius: 12px; display: inline-block; width: 100%;
+}
+.qr-wrap img { max-width: 180px; image-rendering: pixelated; }
+.secret-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  word-break: break-all;
+  margin: 8px 0;
+  user-select: all;
+}
+.verify-group { margin-top: 16px; }
+.verify-group input {
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 8px;
+  font-family: var(--font-mono);
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card" id="signup-card">
+    <div class="logo">YAMS RADAR</div>
+    <div class="subtitle">Create your secure account</div>
+
+    <!-- Registration form -->
+    <div id="register-form">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" autofocus>
+      </div>
+      <div class="form-group">
+        <label>Mobile Number (optional)</label>
+        <input type="tel" id="mobile" placeholder="+639123456789" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="At least 6 characters" autocomplete="new-password"
+               onkeydown="if(event.key==='Enter')doSignup()">
+      </div>
+      <div class="error" id="signup-error"></div>
+      <button class="btn btn-accent" id="signup-btn" onclick="doSignup()">Create Account</button>
+      <div class="footer">
+        Already have an account? <a href="/login">Sign In</a>
+      </div>
+    </div>
+
+    <!-- TOTP verification section (shown after signup) -->
+    <div id="verify-section">
+      <h2 style="font-size:18px;margin-bottom:8px">🔐 <span style="color:var(--accent-light)">Two-Factor</span> Setup</h2>
+      <div class="steps" style="font-size:13px;color:var(--text-dim);margin-bottom:8px">
+        Step 1: Scan this QR code with your authenticator app
+      </div>
+      <div class="qr-wrap" id="qr-wrap">
+        <img id="qr-img" src="" alt="QR Code">
+      </div>
+      <div class="secret-label" style="font-size:11px;color:var(--text-muted);">Or enter this secret key manually:</div>
+      <div class="secret-box" id="secret-box"></div>
+
+      <div class="steps" style="font-size:13px;color:var(--text-dim);margin-bottom:8px;margin-top:12px">
+        Step 2: Enter the 6-digit code from your app
+      </div>
+      <div class="verify-group">
+        <input type="text" id="verify-code" placeholder="000000" maxlength="6" inputmode="numeric"
+               autocomplete="one-time-code"
+               onkeydown="if(event.key==='Enter')doVerifySignup()">
+        <div class="error" id="verify-error"></div>
+        <div class="success" id="verify-success"></div>
+        <button class="btn btn-accent" id="verify-btn" onclick="doVerifySignup()">Activate 2FA &amp; Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let signupEmail = '';
+
+async function doSignup() {
+  const email = document.getElementById('email').value.trim();
+  const mobile = document.getElementById('mobile').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    document.getElementById('signup-error').textContent = 'Email and password are required';
+    document.getElementById('signup-error').style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    document.getElementById('signup-error').textContent = 'Password must be at least 6 characters';
+    document.getElementById('signup-error').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('signup-btn').disabled = true;
+  document.getElementById('signup-error').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, mobile })
+    });
+    const data = await res.json();
+
+    if (res.status !== 200 || data.status !== 'ok') {
+      document.getElementById('signup-error').textContent = data.message || 'Sign up failed';
+      document.getElementById('signup-error').style.display = 'block';
+      document.getElementById('signup-btn').disabled = false;
+      return;
+    }
+
+    // Show QR code / verify section
+    signupEmail = data.email;
+    document.getElementById('register-form').style.display = 'none';
+    document.getElementById('verify-section').style.display = 'block';
+
+    if (data.qr_uri) {
+      document.getElementById('qr-img').src = data.qr_uri;
+    } else {
+      document.getElementById('qr-wrap').innerHTML = '<p style="color:var(--text-dim);font-size:13px">Could not generate QR code. Use the secret key below.</p>';
+    }
+    document.getElementById('secret-box').textContent = data.secret;
+    document.getElementById('verify-code').focus();
+  } catch (e) {
+    document.getElementById('signup-error').textContent = 'Connection error: ' + e.message;
+    document.getElementById('signup-error').style.display = 'block';
+    document.getElementById('signup-btn').disabled = false;
+  }
+}
+
+async function doVerifySignup() {
+  const code = document.getElementById('verify-code').value.trim();
+  if (code.length !== 6) {
+    document.getElementById('verify-error').textContent = 'Enter a 6-digit code';
+    document.getElementById('verify-error').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('verify-btn').disabled = true;
+  document.getElementById('verify-error').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/verify-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: signupEmail, code })
+    });
+    const data = await res.json();
+
+    if (res.status !== 200 || data.status !== 'ok') {
+      document.getElementById('verify-error').textContent = data.message || 'Invalid code. Try again.';
+      document.getElementById('verify-error').style.display = 'block';
+      document.getElementById('verify-btn').disabled = false;
+      return;
+    }
+
+    // Success — redirect to login
+    document.getElementById('signup-card').innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <h2 style="margin-bottom:8px;font-size:20px">Account Created!</h2>
+        <p style="color:var(--text-dim);font-size:14px;margin-bottom:20px">
+          Your account is now secured with two-factor authentication.
+        </p>
+        <a href="/login" class="btn btn-accent" style="display:inline-block;width:auto;padding:11px 32px;text-decoration:none">
+          Sign In
+        </a>
+      </div>
+    `;
+  } catch (e) {
+    document.getElementById('verify-error').textContent = 'Connection error: ' + e.message;
+    document.getElementById('verify-error').style.display = 'block';
+    document.getElementById('verify-btn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
