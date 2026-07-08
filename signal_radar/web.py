@@ -707,15 +707,6 @@ EXIT_REASONS = [
 ]
 
 
-@app.route('/api/instruments')
-def api_instruments():
-    """Return instrument specs for frontend P&L calculation."""
-    from .instruments import INSTRUMENTS
-    slim = {sym: {k: spec[k] for k in ('pip_factor','contract_size','currency','category') if k in spec}
-            for sym, spec in INSTRUMENTS.items()}
-    return jsonify(slim)
-
-
 @app.route('/api/journal', methods=['GET', 'POST'])
 def api_journal():
     """Trading journal CRUD."""
