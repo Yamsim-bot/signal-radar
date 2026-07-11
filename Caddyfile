@@ -1,0 +1,6 @@
+yams-radar.duckdns.org {
+    reverse_proxy localhost:5000
+    log {
+        output file C:\Users\Administrator\Caddy\logs\access.log
+    }
+}
