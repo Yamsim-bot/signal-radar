@@ -4,6 +4,7 @@ import sys, os, json, io, base64
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from functools import wraps
+from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -956,16 +957,81 @@ def index():
 @app.route('/api/news')
 @login_required
 def api_news():
-    """Serve news headlines and calendar events — uses full live sentiment."""
+    """Serve news headlines and calendar events — uses full live sentiment.
+
+    Query params:
+        from_date (str):  Filter headlines from this date YYYY-MM-DD (optional)
+        to_date (str):    Filter headlines until this date YYYY-MM-DD (optional)
+        source (str):     Filter by source name (optional, e.g. 'ForexLive')
+        limit (int):      Max headlines to return (default 25)
+    """
+    from datetime import datetime as _dt
     from .sentiment import analyze as sentiment_analyze
-    from .calendar import analyze as calendar_analyze
+    from .eco_calendar import analyze as calendar_analyze
     from .config import Config
+
+    from_date_str = request.args.get('from_date', '').strip()
+    to_date_str = request.args.get('to_date', '').strip()
+    source_filter = request.args.get('source', '').strip()
+    keyword = request.args.get('keyword', '').strip().lower()
+    limit_str = request.args.get('limit', '25').strip()
+
+    try:
+        limit = max(1, min(100, int(limit_str)))
+    except (ValueError, TypeError):
+        limit = 25
+
     sent_result = sentiment_analyze(quick=False)   # full live fetch for news tab
     cal_result = calendar_analyze()
 
-    headlines = []
-    for h in sent_result.headlines[:15]:
-        headlines.append({
+    # AI enhancement: multi-LLM consensus on live headlines
+    try:
+        from .sentiment import enhance_with_ai
+        from .data_fetcher import fetch_live_prices
+        ai_prices = fetch_live_prices()
+        enhance_with_ai(
+            sent_result,
+            live_prices=ai_prices,
+            calendar_events=cal_result.events_this_week,
+        )
+    except Exception:
+        pass  # Non-fatal — AI is a bonus
+
+    # Parse date filters
+    from_dt = None
+    to_dt = None
+    try:
+        if from_date_str:
+            from_dt = _dt.strptime(from_date_str, '%Y-%m-%d')
+        if to_date_str:
+            to_dt = _dt.strptime(to_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+    except (ValueError, TypeError):
+        pass
+
+    # Collect all matching headlines first
+    headlines_raw = []
+    for h in sent_result.headlines:
+        # Source filter
+        if source_filter and h.source.lower() != source_filter.lower():
+            continue
+
+        # Date filter
+        if from_dt or to_dt:
+            try:
+                pub = _dt.fromisoformat(h.published.replace('Z', '+00:00'))
+                if from_dt and pub < from_dt:
+                    continue
+                if to_dt and pub > to_dt:
+                    continue
+            except (ValueError, TypeError):
+                pass  # include headlines with unparseable dates
+
+        # Keyword filter
+        if keyword and keyword not in h.title.lower():
+            if not any(keyword in kw.lower() for kw in h.keywords or []):
+                continue
+
+        headlines_raw.append({
             'source': h.source,
             'title': h.title,
             'published': h.published,
@@ -973,8 +1039,28 @@ def api_news():
             'keywords': h.keywords,
         })
 
+    # Sort by published date (newest first), then truncate to limit
+    def _sort_key(h):
+        try:
+            return _dt.fromisoformat(h['published'].replace('Z', '+00:00'))
+        except:
+            return _dt.min
+    headlines_raw.sort(key=_sort_key, reverse=True)
+    # Mix sources by round-robin when timestamps are identical
+    mixed = []
+    by_source = {}
+    for h in headlines_raw:
+        by_source.setdefault(h['source'], []).append(h)
+    sources = list(by_source.keys())
+    # Round-robin: take one from each source in turn
+    while any(by_source[s] for s in sources):
+        for s in sources:
+            if by_source[s]:
+                mixed.append(by_source[s].pop(0))
+    headlines = mixed[:limit]
+
     events = []
-    for e in cal_result.events_this_week[:20]:
+    for e in cal_result.events_this_week[:30]:
         events.append({
             'time': e.time,
             'currency': e.currency,
@@ -983,6 +1069,11 @@ def api_news():
             'actual': e.actual,
             'forecast': e.forecast,
             'previous': e.previous,
+            'beat_miss': e.beat_miss,
+            'volatility': e.volatility,
+            'affected_pairs': e.affected_pairs,
+            'day_label': e.day_label,
+            'time_short': e.time_short,
         })
 
     cb_events = []
@@ -1028,9 +1119,159 @@ def api_news():
         'risk_on_count': sent_result.risk_on_count,
         'risk_off_count': sent_result.risk_off_count,
         'high_impact_count': cal_result.high_impact_count,
+        'calendar_source': cal_result.source,
         'cross_references': cross_refs,
         'source_accuracy': src_accuracy,
+        'ai_analysis': _serialize_ai_analysis(sent_result),
     })
+
+
+def _serialize_ai_analysis(sent_result) -> Optional[dict]:
+    """Serialize AI consensus analysis for the JSON API response.
+
+    Returns None when AI analysis is not available (no API keys, or not yet run).
+    """
+    ai = getattr(sent_result, 'ai_analysis', None)
+    if ai is None:
+        return None
+    return {
+        'overall_score': ai.overall_score,
+        'confidence': ai.confidence,
+        'market_sentiment': ai.market_sentiment,
+        'risk_appetite': ai.risk_appetite,
+        'key_themes': ai.key_themes[:8],
+        'explanation': ai.explanation,
+        'models_used': ai.models_used,
+        'cached': ai.cached,
+        'latency_ms': ai.latency_ms,
+    }
+
+
+@app.route('/api/calendar')
+@login_required
+def api_calendar():
+    """Economic calendar with date range — serves events + news + live rates.
+
+    Query params:
+        from (str): Start date YYYY-MM-DD (default: 2 months ago)
+        to (str):   End date YYYY-MM-DD (default: today)
+        currency (str): Filter by currency code (optional)
+        impact (str):   Filter by impact level (optional)
+    """
+    from datetime import date as date_type
+    from .eco_calendar import analyze_range, analyze as cal_analyze
+
+    # Parse query params
+    query_from = request.args.get('from', '')
+    query_to = request.args.get('to', '')
+    filter_currency = request.args.get('currency', '').upper()
+    filter_impact = request.args.get('impact', '').capitalize()
+
+    today = date_type.today()
+
+    # Default range: 2 months back to today
+    if not query_from:
+        from_d = today - timedelta(days=60)
+    else:
+        try:
+            from_d = datetime.strptime(query_from, '%Y-%m-%d').date()
+        except ValueError:
+            from_d = today - timedelta(days=60)
+
+    if not query_to:
+        to_d = today + timedelta(days=7)  # include near future
+    else:
+        try:
+            to_d = datetime.strptime(query_to, '%Y-%m-%d').date()
+        except ValueError:
+            to_d = today + timedelta(days=7)
+
+    start_str = from_d.strftime('%Y-%m-%d')
+    end_str = to_d.strftime('%Y-%m-%d')
+
+    # Fetch events
+    cal_result = analyze_range(start_str, end_str)
+    raw_events = cal_result.events_this_week
+
+    # Apply filters
+    if filter_currency:
+        raw_events = [e for e in raw_events if e.currency == filter_currency]
+    if filter_impact:
+        raw_events = [e for e in raw_events if e.impact == filter_impact]
+
+    # Group events by date
+    grouped = {}
+    for e in raw_events:
+        day = e.time[:10]
+        if day not in grouped:
+            grouped[day] = []
+        grouped[day].append({
+            'time': e.time,
+            'time_short': e.time_short,
+            'currency': e.currency,
+            'event': e.event,
+            'impact': e.impact,
+            'actual': e.actual,
+            'forecast': e.forecast,
+            'previous': e.previous,
+            'beat_miss': e.beat_miss,
+            'volatility': e.volatility,
+            'affected_pairs': e.affected_pairs,
+            'is_past': e.is_past,
+            'day_label': e.day_label,
+        })
+
+    return jsonify({
+        'from': start_str,
+        'to': end_str,
+        'total_events': len(raw_events),
+        'high_impact_count': cal_result.high_impact_count,
+        'source': cal_result.source,
+        'fundamental_score': cal_result.fundamental_score,
+        'grouped_events': grouped,
+        'cb_events': [{
+            'time': e.time,
+            'currency': e.currency,
+            'event': e.event,
+            'impact': e.impact,
+        } for e in cal_result.central_bank_events],
+    })
+
+
+@app.route('/api/live-rates')
+@login_required
+def api_live_rates():
+    """Live forex rates for major pairs — bid, change, spread."""
+    from .data_fetcher import fetch_live_prices
+    from .config import Config
+
+    # Display format (with /) → internal symbol format (no /)
+    majors_display = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF',
+                      'USD/CAD', 'AUD/USD', 'NZD/USD', 'XAU/USD']
+    # fetch_live_prices uses INSTRUMENTS keys which have no slash
+    majors_internal = [s.replace('/', '') for s in majors_display]
+
+    prices = fetch_live_prices(majors_internal)
+    cfg = Config()
+
+    # Build a lookup from internal name → displayed name
+    display_lookup = dict(zip(majors_internal, majors_display))
+
+    rates = []
+    for sym_int in majors_internal:
+        price = prices.get(sym_int)
+        sym_display = display_lookup[sym_int]
+        if price and price > 0:
+            spy = (price * 10000) if sym_int not in ('USDJPY', 'XAUUSD') else (price * 100)
+            rates.append({
+                'symbol': sym_display,
+                'bid': round(price, 5),
+                'change_6h': 0.0,
+                'change_pct_6h': 0.0,
+                'pip_factor': INSTRUMENTS.get(sym_display, {}).get('pip_factor', 0.0001),
+            })
+
+    return jsonify({'rates': rates, 'count': len(rates)})
 
 
 @app.route('/api/scan')
@@ -1063,6 +1304,7 @@ def api_scan():
             'hawkish': result.sentiment.hawkish_count,
             'risk_on': result.sentiment.risk_on_count,
             'risk_off': result.sentiment.risk_off_count,
+            'ai': _serialize_ai_analysis(result.sentiment),
         },
         'fundamental': {
             'score': result.fundamental.overall_score,
@@ -1096,6 +1338,23 @@ def api_scan():
             'nearest_support': i.explanation.nearest_support,
             'nearest_resistance': i.explanation.nearest_resistance,
             'aov_position': i.explanation.aov_position,
+            # MATE Framework fields
+            'mate_market': i.explanation.mate.market_label if i.explanation.mate else None,
+            'mate_market_detail': i.explanation.mate.market_detail if i.explanation.mate else None,
+            'mate_market_score': i.explanation.mate.market_score if i.explanation.mate else None,
+            'mate_area': i.explanation.mate.area_label if i.explanation.mate else None,
+            'mate_area_detail': i.explanation.mate.area_detail if i.explanation.mate else None,
+            'mate_area_score': i.explanation.mate.area_score if i.explanation.mate else None,
+            'mate_timing': i.explanation.mate.timing_label if i.explanation.mate else None,
+            'mate_timing_detail': i.explanation.mate.timing_detail if i.explanation.mate else None,
+            'mate_timing_score': i.explanation.mate.timing_score if i.explanation.mate else None,
+            'mate_exit_summary': i.explanation.mate.exit_plan.summary if i.explanation.mate else None,
+            'mate_exit_tp': i.explanation.mate.exit_plan.tp if i.explanation.mate else None,
+            'mate_exit_sl': i.explanation.mate.exit_plan.sl if i.explanation.mate else None,
+            'mate_exit_tp_distance': i.explanation.mate.exit_plan.tp_distance if i.explanation.mate else None,
+            'mate_exit_sl_distance': i.explanation.mate.exit_plan.sl_distance if i.explanation.mate else None,
+            'mate_quality': i.explanation.mate.overall_quality if i.explanation.mate else 'neutral',
+            'mate_drivers': i.explanation.mate.drivers if i.explanation.mate else [],
         }
         # Add factor breakdown if available
         fb = i.explanation.fundamental_breakdown
@@ -3222,6 +3481,93 @@ def api_journal_live_pnl():
 if __name__ == '__main__':
     import socket
     hostname = socket.gethostname()
+# ─── Remote Broker Agent Endpoint ───────────────────────────────────────────
+# Allows a local Python script (running on user's PC where MT5 is installed)
+# to push MT5 trade data to the radar via a shared API key.
+
+@app.route('/api/broker/remote-push', methods=['POST'])
+def api_broker_remote_push():
+    """Accept MT5 trade data pushed from a local broker agent.
+
+    The agent must provide the correct X-Api-Key header matching
+    the BROKER_REMOTE_KEY env var set on the server.
+    """
+    from .broker_sync import load_config, get_connected_user_slug
+
+    expected_key = os.environ.get('BROKER_REMOTE_KEY', '')
+    if not expected_key:
+        return jsonify({'ok': False, 'error': 'Remote sync not configured on server'}), 503
+
+    provided = request.headers.get('X-Api-Key', '')
+    if provided != expected_key:
+        return jsonify({'ok': False, 'error': 'Invalid API key'}), 401
+
+    data = request.json
+    if not data or 'action' not in data:
+        return jsonify({'ok': False, 'error': 'Missing action field'}), 400
+
+    action = data['action']
+    entries = _load_journal()
+
+    if action == 'add_trades':
+        """Add multiple MT5 trades to the journal, deduplicated by mt5_ticket."""
+        trades = data.get('trades', [])
+        existing_tickets = set()
+        for e in entries:
+            if e.get('mt5_ticket'):
+                existing_tickets.add(int(e['mt5_ticket']))
+
+        imported = 0
+        for t in trades:
+            ticket = int(t.get('ticket', 0))
+            if ticket and ticket in existing_tickets:
+                continue
+            if ticket:
+                existing_tickets.add(ticket)
+
+            entry = {
+                'symbol': t.get('symbol', '').upper(),
+                'trade_title': t.get('trade_title', f"{t.get('symbol', '')} {t.get('direction', '')} (MT5)"),
+                'trade_status': 'closed',
+                'position': t.get('direction', 'Buy'),
+                'direction': t.get('direction', 'Buy'),
+                'risk_amount': float(t.get('risk_amount', 0)),
+                'entry_price': float(t.get('entry_price', 0)),
+                'exit_price': float(t.get('exit_price', 0)),
+                'lot_size': float(t.get('lot_size', 0.01)),
+                'stop_loss': float(t.get('stop_loss', 0)),
+                'take_profit': float(t.get('take_profit', 0)),
+                'date_opened': t.get('date_opened', ''),
+                'date_closed': t.get('date_closed', ''),
+                'date': t.get('date_opened', ''),
+                'pnl': float(t.get('pnl', 0)),
+                'result': t.get('result', 'win') if float(t.get('pnl', 0)) != 0 else 'open',
+                'notes': t.get('notes', 'Imported from MT5'),
+                'mt5_ticket': ticket,
+                'id': datetime.now().timestamp() + imported / 1000,
+            }
+            entries.append(entry)
+            imported += 1
+
+        if imported:
+            _save_journal(entries)
+        return jsonify({'ok': True, 'imported': imported})
+
+    elif action == 'account_info':
+        """Update account info (balance, equity, etc.) stored in a side file."""
+        info_file = Path(__file__).parent / "remote_broker_account.json"
+        info_file.write_text(json.dumps(data.get('info', {}), indent=2))
+        return jsonify({'ok': True, 'saved': 'account_info'})
+
+    elif action == 'positions':
+        """Store current open positions (for live P&L display)."""
+        pos_file = Path(__file__).parent / "remote_broker_positions.json"
+        pos_file.write_text(json.dumps(data.get('positions', []), indent=2))
+        return jsonify({'ok': True, 'saved': 'positions'})
+
+    return jsonify({'ok': False, 'error': f'Unknown action: {action}'}), 400
+
+
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', '1') == '1'
     try:

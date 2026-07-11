@@ -50,7 +50,8 @@ class SentimentResult:
                  risk_off_count: int = 0,
                  source_breakdown: dict[str, float] = None,
                  cross_references: list[CrossReferenceEntry] = None,
-                 source_accuracy: list[SourceAccuracy] = None):
+                 source_accuracy: list[SourceAccuracy] = None,
+                 ai_analysis: 'Optional[ConsensusResult]' = None):
         self.overall_score = overall_score
         self.headlines = headlines or []
         self.trending_topics = trending_topics or []
@@ -61,12 +62,13 @@ class SentimentResult:
         self.source_breakdown = source_breakdown or {}
         self.cross_references = cross_references or []
         self.source_accuracy = source_accuracy or []
+        self.ai_analysis = ai_analysis
 
 
 # ─── RSS / Scraped Sources ──────────────────────────────────────────────
 
 RSS_FEEDS = [
-    ('ForexLive', 'https://www.forexlive.com/feed/news/'),
+    ('DailyFX', 'https://www.dailyfx.com/feeds/rss/'),
     ('FXStreet', 'https://www.fxstreet.com/rss/news'),
     ('Investing.com', 'https://www.investing.com/rss/news.rss'),
 ]
@@ -75,6 +77,7 @@ RSS_FEEDS = [
 SCRAPED_SOURCES = {
     'Finviz': 'https://finviz.com/news.ashx',
     'myFXbook': 'https://www.myfxbook.com/community/outlook',
+    'TradingView': 'https://www.tradingview.com/news/',
 }
 
 # ─── Keyword categories ─────────────────────────────────────────────────
@@ -121,11 +124,12 @@ COMMODITY_BEARISH_KEYWORDS = [
 # ─── Source credibility weights (0-1) ───────────────────────────────────
 # Based on: specificity, timeliness, editorial quality
 SOURCE_CREDIBILITY = {
-    'ForexLive': 0.90,
+    'DailyFX': 0.95,
     'FXStreet': 0.90,
     'Investing.com': 0.85,
     'Finviz': 0.85,
     'myFXbook': 0.75,
+    'TradingView': 0.90,
 }
 
 
@@ -145,8 +149,8 @@ def analyze(quick: bool = False) -> SentimentResult:
         if not headlines:
             headlines = _generate_sample_headlines()
 
-    # Score each headline with VADER
-    scores = _vader_scores([h.title for h in headlines])
+    # Score each headline with VADER + financial lexicon blend
+    scores = _blended_sentiment([h.title for h in headlines])
     for i, h in enumerate(headlines):
         h.sentiment_score = scores[i] if i < len(scores) else 0.0
         h.keywords = _extract_keywords(h.title)
@@ -252,6 +256,7 @@ def _fetch_headlines() -> list[NewsHeadline]:
                     'ForexFactory': _fetch_forexfactory_news,
                     'OPEC': _fetch_opec,
                     'myFXbook': _fetch_myfxbook,
+                    'TradingView': _fetch_tradingview,
                 }
                 scraper = scrapers.get(name)
                 if scraper:
@@ -564,7 +569,242 @@ def _fetch_myfxbook() -> list[NewsHeadline]:
     return headlines
 
 
-# ─── VADER Scoring ──────────────────────────────────────────────────────
+def _fetch_tradingview() -> list[NewsHeadline]:
+    """Scrape TradingView news page for market headlines."""
+    headlines = []
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        import re
+
+        resp = requests.get(
+            'https://www.tradingview.com/news/',
+            timeout=8,
+            headers={
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/125.0.0.0 Safari/537.36'
+                ),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+            },
+        )
+        if resp.status_code != 200:
+            return headlines
+
+        soup = BeautifulSoup(resp.text, 'html.parser')
+
+        # Try multiple selector strategies
+        found = []
+
+        # Strategy 1: TV news card items
+        for item in soup.select('[class*="news"] [class*="item"], '
+                                '[class*="card"] a, '
+                                '.tv-widget-news__item a, '
+                                'a[class*="news"]'):
+            text = item.get_text(strip=True)
+            href = item.get('href', '')
+            if text and len(text) > 15 and not text.startswith('http'):
+                found.append((text, href))
+
+        # Strategy 2: Look for JSON-LD structured data
+        if not found:
+            for script in soup.select('script[type="application/ld+json"]'):
+                try:
+                    import json as _json
+                    data = _json.loads(script.string or '{}')
+                    articles = data if isinstance(data, list) else data.get('itemListElement', [])
+                    for art in articles:
+                        a = art if isinstance(art, dict) else {}
+                        title = a.get('name', a.get('headline', ''))
+                        if title and len(str(title)) > 15:
+                            found.append((str(title), a.get('url', '')))
+                except Exception:
+                    continue
+
+        # Strategy 3: Extract from raw HTML using regex for TV headlines
+        if not found:
+            for match in re.finditer(
+                r'<[^>]*class="[^"]*tv-widget-headline[^"]*"[^>]*>([^<]+)</',
+                resp.text
+            ):
+                text = match.group(1).strip()
+                if text and len(text) > 15:
+                    found.append((text, ''))
+
+        # Strategy 4: Article headline links
+        if not found:
+            for tag in soup.select('article a, [class*="headline"] a, h2 a, h3 a'):
+                text = tag.get_text(strip=True)
+                href = tag.get('href', '')
+                if text and len(text) > 15:
+                    found.append((text, href))
+
+        # Deduplicate by title
+        seen = set()
+        for title, url in found:
+            norm = title.lower().strip()
+            if norm in seen or len(norm) < 20:
+                continue
+            seen.add(norm)
+
+            # Build absolute URL if relative
+            if url and not url.startswith('http'):
+                url = 'https://www.tradingview.com' + url
+
+            headlines.append(NewsHeadline(
+                source='TradingView',
+                title=title,
+                url=url,
+                published=datetime.now(timezone.utc).isoformat(),
+                sentiment_score=0.0,
+                keywords=[],
+                relevance=_calc_relevance(title),
+            ))
+            if len(headlines) >= 10:
+                break
+
+    except Exception:
+        pass
+    return headlines
+
+
+# ─── Financial Sentiment Scoring ─────────────────────────────────────────
+#
+# VADER alone doesn't understand financial language ("dovish", "hawkish",
+# "rate hold", "inflation tick up"). We layer a financial-market lexicon
+# on top and blend the two scores.
+#
+# Each phrase/word has a (direction, weight) pair. Direction = +1 (bullish
+# for the asset/category) or -1 (bearish). Weight = strength of the signal.
+# We also track which asset class the term relates to.
+
+FINANCIAL_BULLISH = {
+    # Central bank dovish = bullish for risk assets
+    'dovish': +0.6, 'dovish hold': +0.7, 'dovish pause': +0.7,
+    'rate cut': +0.8, 'rate cuts': +0.8, 'cut rates': +0.8,
+    'easing': +0.6, 'loosening': +0.5, 'accommodative': +0.6,
+    'stimulus': +0.7, 'expansionary': +0.5,
+    'lower rates': +0.7, 'lower interest rates': +0.7,
+    'hold steady': +0.2, 'on hold': +0.1, 'steady': +0.1,  # neutral-positive
+    # Economic strength = bullish for currency
+    'growth': +0.4, 'gdp beat': +0.6, 'gdp surprise': +0.6,
+    'expansion': +0.5, 'rebound': +0.5, 'recovery': +0.5,
+    'boom': +0.6, 'surge': +0.5, 'rally': +0.6, 'breakout': +0.6,
+    # Employment
+    'jobs growth': +0.5, 'payrolls beat': +0.6, 'unemployment falls': +0.5,
+    'claims fall': +0.4, 'hiring': +0.4, 'wage growth': +0.4,
+    # Market momentum
+    'all-time high': +0.6, 'record high': +0.6, 'new high': +0.4,
+    'bullish': +0.7, 'bull market': +0.7, 'bull run': +0.6,
+    'outperform': +0.5, 'upgrade': +0.4, 'buy signal': +0.6,
+    'positive': +0.3, 'strong': +0.3, 'higher': +0.3,
+    'upside': +0.5, 'momentum': +0.3,
+    # Commodities
+    'supply crunch': +0.4, 'supply tight': +0.4,
+    'production cut': +0.5, 'output cut': +0.4,
+    # Specific instruments
+    'risk on': +0.5, 'risk-on': +0.5,
+    # Earnings
+    'beat earnings': +0.5, 'profit beat': +0.5, 'revenue beat': +0.4,
+    # Gold specific
+    'safe haven': +0.5, 'flight to safety': +0.5,
+    # Technical
+    'golden cross': +0.5, 'breakout above': +0.5,
+}
+
+FINANCIAL_BEARISH = {
+    # Central bank hawkish = bearish for risk assets
+    'hawkish': -0.6, 'hawkish hold': -0.7, 'hawkish pause': -0.7,
+    'rate hike': -0.8, 'rate hikes': -0.8, 'hike rates': -0.8,
+    'tightening': -0.6, 'tighten': -0.5,
+    'higher rates': -0.7, 'higher interest rates': -0.7,
+    # Inflation
+    'inflation': -0.4, 'inflation rises': -0.6, 'inflation ticks up': -0.6,
+    'inflation sticky': -0.5, 'sticky inflation': -0.5,
+    'cpi beat': -0.5, 'cpi surprise up': -0.6,
+    # Economic weakness = bearish
+    'recession': -0.8, 'recession fears': -0.8, 'recessionary': -0.7,
+    'contraction': -0.6, 'slowdown': -0.5, 'slump': -0.5,
+    'decline': -0.4, 'downside': -0.5, 'stagnation': -0.5,
+    # Employment
+    'jobs miss': -0.5, 'payrolls miss': -0.6, 'unemployment rises': -0.5,
+    'claims spike': -0.4, 'layoffs': -0.5, 'firing': -0.4,
+    'wage stagnation': -0.4,
+    # Market weakness
+    'bearish': -0.7, 'bear market': -0.7, 'bear run': -0.6,
+    'crash': -0.9, 'plunge': -0.7, 'tumble': -0.6, 'slide': -0.4,
+    'sell-off': -0.6, 'selloff': -0.6, 'dump': -0.5,
+    'correction': -0.5, 'downgrade': -0.5, 'underperform': -0.5,
+    'sell signal': -0.6, 'resistance': -0.2,
+    'negative': -0.3, 'weak': -0.3, 'lower': -0.3,
+    'worst': -0.4, 'loss': -0.4, 'drop': -0.4, 'fall': -0.3,
+    'downside risk': -0.6,
+    # Geopolitical / risk-off
+    'risk off': -0.5, 'risk-off': -0.5, 'uncertainty': -0.4,
+    'geopolitical': -0.4, 'tensions': -0.4, 'sanctions': -0.5,
+    'trade war': -0.6, 'tariffs': -0.5, 'default': -0.7,
+    'bankrupt': -0.8, 'insolvent': -0.7, 'bailout': -0.5,
+    # Energy
+    'demand concerns': -0.4, 'demand weak': -0.4, 'oversupply': -0.5,
+    'supply glut': -0.5,
+    # Technical
+    'death cross': -0.6, 'breakdown': -0.5, 'break below': -0.4,
+    'cap upside': -0.3, 'resistance holds': -0.3,
+}
+
+
+def _financial_sentiment(text: str) -> float:
+    """Score a headline using the financial-market lexicon."""
+    text_lower = text.lower()
+    score = 0.0
+    count = 0
+
+    # Multi-word phrases (check first)
+    for phrase, weight in {**FINANCIAL_BULLISH, **FINANCIAL_BEARISH}.items():
+        if ' ' in phrase and phrase in text_lower:
+            score += weight
+            count += 1
+
+    # Single-word matches (avoid double-counting phrases already matched)
+    words = text_lower.split()
+    for word in words:
+        word = word.strip('.,!?()[]{}"\':;')
+        if word in FINANCIAL_BULLISH and word not in [w for w in FINANCIAL_BULLISH if ' ' in w]:
+            score += FINANCIAL_BULLISH[word]
+            count += 1
+        elif word in FINANCIAL_BEARISH and word not in [w for w in FINANCIAL_BEARISH if ' ' in w]:
+            score += FINANCIAL_BEARISH[word]
+            count += 1
+
+    if count == 0:
+        return 0.0
+    # Normalise to roughly [-1, 1] and clamp
+    avg = score / max(count, 1)
+    return max(-1.0, min(1.0, avg * 1.5))  # scale up to saturate
+
+
+def _blended_sentiment(titles: list[str]) -> list[float]:
+    """Score headlines using VADER + financial lexicon blend.
+
+    VADER handles general language. The financial lexicon catches
+    domain-specific terms VADER would score as neutral.
+    Final score = 0.4 * VADER + 0.6 * financial
+    """
+    vader_scores = _vader_scores(titles)
+    blended = []
+    for i, t in enumerate(titles):
+        fin = _financial_sentiment(t)
+        # Blend: VADER for general, financial for domain
+        # Use whichever has stronger signal (further from zero)
+        if abs(fin) > abs(vader_scores[i]) * 2:
+            blended.append(fin)
+        elif abs(vader_scores[i]) > abs(fin) * 2:
+            blended.append(vader_scores[i])
+        else:
+            blended.append(0.4 * vader_scores[i] + 0.6 * fin)
+    return blended
 
 
 def _vader_scores(titles: list[str]) -> list[float]:
@@ -804,14 +1044,14 @@ def _generate_sample_headlines() -> list[NewsHeadline]:
     """Generate sample news headlines with multi-source coverage of trusted sources."""
     now = datetime.now(timezone.utc).isoformat()
     samples = [
-        # ForexLive — trusted forex news
-        ('ForexLive', 'Fed signals patience on rate cuts as inflation remains sticky'),
-        ('ForexLive', 'EURUSD extends decline on stronger US data'),
-        ('ForexLive', 'Gold hits new all-time high above $2,400 on geopolitical tensions'),
-        ('ForexLive', 'AUDUSD rises on RBA hawkish hold, iron ore rebound'),
-        ('ForexLive', 'USDJPY tests 152 as BoJ holds steady'),
-        ('ForexLive', 'GBPUSD steady ahead of UK GDP data'),
-        ('ForexLive', 'Crude oil extends losses on demand concerns'),
+        # DailyFX — trusted forex news & analysis (replaces ForexLive)
+        ('DailyFX', 'Fed signals patience on rate cuts as inflation remains sticky'),
+        ('DailyFX', 'EURUSD extends decline on stronger US data'),
+        ('DailyFX', 'Gold holds near record highs on geopolitical tensions'),
+        ('DailyFX', 'AUDUSD rises on RBA hawkish hold, iron ore rebound'),
+        ('DailyFX', 'USDJPY tests key resistance as BoJ holds steady'),
+        ('DailyFX', 'GBPUSD steady ahead of UK GDP data'),
+        ('DailyFX', 'Crude oil extends losses on demand concerns'),
         # FXStreet — trusted forex technical/fundamental analysis
         ('FXStreet', 'EURUSD technical: key support at 1.1050 holds, bounce expected'),
         ('FXStreet', 'GBPUSD finds resistance at 1.2900 ahead of BOE testimony'),
@@ -836,9 +1076,80 @@ def _generate_sample_headlines() -> list[NewsHeadline]:
         ('myFXbook', 'EURUSD retail positioning shifts bullish above 1.1200'),
         ('myFXbook', 'GBPUSD retail traders heavily short near 1.2900 resistance'),
         ('myFXbook', 'Gold longs dominate myFXbook community outlook'),
+        # TradingView — professional chart analysis & market coverage
+        ('TradingView', 'Nasdaq 100 breaks resistance as tech leads market rally'),
+        ('TradingView', 'Brent crude consolidates above $85 as OPEC maintains outlook'),
+        ('TradingView', 'GBPUSD: key technical levels ahead of BOE decision'),
+        ('TradingView', 'S&P 500 extends winning streak on rate cut optimism'),
     ]
     return [
         NewsHeadline(source=s, title=t, url='', published=now,
                      sentiment_score=0.0, keywords=[], relevance=_calc_relevance(t))
         for s, t in samples
     ]
+
+
+# ─── AI Enhancement ───────────────────────────────────────────────────────
+#
+# Optional: replace VADER keyword scoring with multi-LLM consensus
+# (Claude + Gemini + DeepSeek + Grok) for much smarter analysis.
+# Falls back gracefully if no API keys are configured.
+
+
+def enhance_with_ai(sent_result: SentimentResult,
+                    live_prices: Optional[dict] = None,
+                    calendar_events: Optional[list] = None,
+                    cfg: 'Optional[Config]' = None) -> SentimentResult:
+    """Enhance a SentimentResult with multi-LLM consensus analysis.
+
+    Calls all available AI models in parallel with the collected headlines,
+    prices, and calendar context. The AI consensus score replaces the VADER-
+    derived overall_score when successful.
+
+    Args:
+        sent_result: Existing SentimentResult from analyze()
+        live_prices: Dict of {symbol: price} from fetch_live_prices
+        calendar_events: List of CalendarEvent from eco_calendar.analyze
+        cfg: Config object (to check use_ai_sentiment flag)
+
+    Returns:
+        The same SentimentResult (mutated in-place) with AI enhancements attached.
+        If AI is unavailable or disabled, returns unchanged.
+    """
+    # Check if AI is enabled in config
+    if cfg is not None and not getattr(cfg, 'use_ai_sentiment', True):
+        return sent_result
+
+    # Lazy import — AI analyst is optional
+    try:
+        from .ai_analyst import run_ai_consensus, ConsensusResult
+    except ImportError:
+        return sent_result  # ai_analyst module not available
+
+    if live_prices is None:
+        live_prices = {}
+    if calendar_events is None:
+        calendar_events = []
+
+    # Need at least some headlines to analyse
+    if not sent_result.headlines:
+        return sent_result
+
+    consensus = run_ai_consensus(
+        headlines=sent_result.headlines,
+        live_prices=live_prices,
+        calendar_events=calendar_events,
+    )
+
+    if consensus is not None:
+        # Override the VADER score with AI consensus
+        sent_result.overall_score = consensus.overall_score
+        sent_result.ai_analysis = consensus
+
+        # Also update the risk/dovish/hawkish counts from AI output
+        if consensus.risk_appetite == 'risk_on':
+            sent_result.risk_on_count = max(sent_result.risk_on_count, 3)
+        elif consensus.risk_appetite == 'risk_off':
+            sent_result.risk_off_count = max(sent_result.risk_off_count, 3)
+
+    return sent_result

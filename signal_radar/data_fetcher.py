@@ -204,51 +204,80 @@ def fetch_crypto_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
 
 def fetch_all_bars(bar_count: int = 200, timeframe: str = "M5",
                    symbols: Optional[list[str]] = None) -> dict[str, pd.DataFrame]:
-    """Fetch bars for all instruments — INSTANT, never blocks on network.
+    """Fetch bars for all instruments — tries Yahoo Finance first (blocking).
 
-    Returns whatever is available (cache + sample data) immediately.
-    Warms Yahoo cache in a background thread so subsequent scans load live data.
+    Priority:
+      1. Cache (instant, if fresh)
+      2. Yahoo Finance live fetch (fast, ~3s total for all via concurrent workers)
+      3. Sample data (last resort, never empty)
+
+    Returns whatever is available — real data preferred, sample fallback.
+    If Yahoo succeeds, cache is written so subsequent loads hit cache.
     """
     if symbols is None:
         symbols = get_symbols()
     result = {}
     lock = __import__('threading').Lock()
 
-    # Phase 1: collect cache + sample data (INSTANT — no network calls)
+    # Phase 1: collect cache hits (instant)
+    uncached = []
     for sym in symbols:
         spec = INSTRUMENTS.get(sym, {})
         cached = _load_cache(sym, timeframe)
         if cached is not None and len(cached) > 50:
             with lock:
                 result[sym] = cached
-        elif spec.get('crypto'):
-            # Crypto: try Binance fast, fall back to sample
-            df = fetch_crypto_bars(sym, bar_count)
-            if df is not None and len(df) > 10:
-                _save_cache(df, sym, timeframe)
-                with lock:
-                    result[sym] = df
-            else:
-                with lock:
-                    result[sym] = generate_sample_data(sym, bar_count)
         else:
-            # Non-crypto: sample data instantly
+            uncached.append(sym)
+
+    # Phase 2: for uncached symbols, try Yahoo Finance synchronously
+    if uncached:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        non_crypto = [s for s in uncached if not INSTRUMENTS.get(s, {}).get('crypto')]
+        crypto = [s for s in uncached if INSTRUMENTS.get(s, {}).get('crypto')]
+
+        # Non-crypto: Yahoo (concurrent, short timeout)
+        if non_crypto:
+            def _fetch_yahoo(sym):
+                df = fetch_yahoo_bars(sym, bar_count)
+                if df is not None and len(df) > 50:
+                    _save_cache(df, sym, timeframe)
+                    return sym, df
+                return sym, None
+
+            with ThreadPoolExecutor(max_workers=10) as pool:
+                futures = {pool.submit(_fetch_yahoo, s): s for s in non_crypto}
+                for f in as_completed(futures, timeout=20):
+                    try:
+                        sym, df = f.result()
+                        if df is not None:
+                            with lock:
+                                result[sym] = df
+                        else:
+                            with lock:
+                                result[sym] = generate_sample_data(sym, bar_count)
+                    except Exception:
+                        failed_sym = futures[f]
+                        with lock:
+                            result[failed_sym] = generate_sample_data(failed_sym, bar_count)
+
+        # Crypto: Binance
+        if crypto:
+            for sym in crypto:
+                df = fetch_crypto_bars(sym, bar_count)
+                if df is not None and len(df) > 10:
+                    _save_cache(df, sym, timeframe)
+                    with lock:
+                        result[sym] = df
+                else:
+                    with lock:
+                        result[sym] = generate_sample_data(sym, bar_count)
+
+    # Phase 3: any symbols still missing → sample data (shouldn't happen, but safe)
+    for sym in symbols:
+        if sym not in result:
             with lock:
                 result[sym] = generate_sample_data(sym, bar_count)
-
-    # Phase 2: warm Yahoo cache in background (don't block the caller)
-    def _warm_cache():
-        for sym in symbols:
-            spec = INSTRUMENTS.get(sym, {})
-            if spec.get('crypto') or _load_cache(sym, timeframe) is not None:
-                continue  # already cached or crypto
-            live = fetch_yahoo_bars(sym, bar_count)
-            if live is not None and len(live) > 10:
-                _save_cache(live, sym, timeframe)
-
-    import threading
-    warmer = threading.Thread(target=_warm_cache, daemon=True)
-    warmer.start()
 
     return result
 
@@ -317,9 +346,9 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
                 import re as _re
                 import requests as _req
                 _resp = _req.get(
-                    'https://www.kitco.com/market/',
+                    'http://www.kitco.com/price/precious-metals',
                     timeout=5,
-                    headers={'User-Agent': 'Mozilla/5.0'},
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'},
                 )
                 if _resp.status_code == 200:
                     _bids = _re.findall(r'"bid":"?([\d.]+)"?', _resp.text)
@@ -340,6 +369,7 @@ def fetch_live_prices(symbols: Optional[list] = None) -> dict[str, float]:
                 'AMZN': 'AMZN', 'MSFT': 'MSFT',
                 'US30': '^DJI', 'SP500': '^GSPC', 'NAS100': '^IXIC',
                 'DAX40': '^GDAXI', 'FTSE100': '^FTSE', 'JP225': '^N225',
+                'XAUUSD': 'GC=F', 'XAGUSD': 'SI=F',
                 'XTIUSD': 'CL=F', 'XBRUSD': 'BZ=F',
             }
 
@@ -446,13 +476,19 @@ def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
     vol = base_price * 0.002
 
     np.random.seed(hash(symbol) % 2**31)
+
+    # Impart a slight trend bias based on symbol hash so sample data shows direction
+    trend_bias = ((hash(symbol + '_trend') % 41) - 20) / 100.0  # -0.20 to +0.20
+    drift = base_price * trend_bias / bars  # per-bar drift
+
     now = datetime.now().replace(minute=0, second=0, microsecond=0)
     times = [now - timedelta(minutes=5 * i) for i in range(bars)]
     times.reverse()
 
     data = []
+    price = base_price
     for t in times:
-        o = base_price + np.random.randn() * vol * 0.5
+        o = price + np.random.randn() * vol * 0.5
         h = o + abs(np.random.randn() * vol)
         l = o - abs(np.random.randn() * vol)
         c = (o + h + l) / 3 + np.random.randn() * vol * 0.2
@@ -460,6 +496,7 @@ def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
         data.append({'open': round(o, 5), 'high': round(h, 5),
                      'low': round(l, 5), 'close': round(c, 5),
                      'volume': int(np.random.exponential(50) + 10)})
+        price += drift  # accumulate trend drift
 
     df = pd.DataFrame(data, index=pd.DatetimeIndex(times))
     return df

@@ -13,10 +13,11 @@ from .indicators import compute_all, compute_multi_tf
 from .market_structure import analyze as ms_analyze
 from .areas_of_value import analyze as aov_analyze
 from .timing import analyze as timing_analyze
-from .calendar import analyze as calendar_analyze
+from .eco_calendar import analyze as calendar_analyze
 from .sentiment import analyze as sentiment_analyze
 from .fundamental import analyze as fundamental_analyze, FundamentalBreakdown
 from .confluence import fetch_all as confluence_fetch_all, fetch_pivots
+from .mate import analyze_mate, MateResult
 
 
 @dataclass
@@ -37,8 +38,9 @@ class BiasExplanation:
     nearest_resistance: float
     aov_position: str
     confidence: int              # 0-100
-    fundamental_breakdown: Optional['FundamentalBreakdown']
     explanation: str             # plain-english why this bias
+    fundamental_breakdown: Optional['FundamentalBreakdown'] = None
+    mate: Optional['MateResult'] = None  # MATE framework analysis
 
 
 @dataclass
@@ -89,6 +91,20 @@ def scan(cfg: Config = Config()) -> RadarResult:
     fund_result = fundamental_analyze(quick=True)
     cal_result = calendar_analyze()
     sent_result = sentiment_analyze(quick=True)  # instant — sample headlines
+
+    # AI Enhancement: multi-LLM consensus replaces VADER keyword scoring
+    # Runs in parallel (~2-4s if cache cold, ~0ms if cached)
+    if cfg.use_ai_sentiment:
+        try:
+            from .sentiment import enhance_with_ai
+            enhance_with_ai(
+                sent_result,
+                live_prices=live_prices,
+                calendar_events=cal_result.events_this_week,
+                cfg=cfg,
+            )
+        except ImportError:
+            pass  # AI module not available — VADER fallback is fine
 
     # Confluence data from myFXbook, FXStreet, Finviz (quick, non-blocking)
     all_syms = get_symbols()
@@ -208,6 +224,9 @@ def _analyze_instrument(
     # Timing
     timing = timing_analyze()
 
+    # --- Mate Analysis ---
+    mate_result = analyze_mate(ms, aov, timing, df_ta, cfg)
+
     # --- Technical Score (-100 to +100) ---
     tech_score = _compute_technical_score(ms, aov, timing, df_ta, cfg)
 
@@ -242,7 +261,7 @@ def _analyze_instrument(
     bias, bias_score = _bias_from_score(blended)
 
     # --- Confidence ---
-    confidence = _confidence(ms, aov, timing, tech_score, fund_score, sent_score)
+    confidence = _confidence(ms, aov, timing, tech_score, fund_score, sent_score, sent_result)
 
     # --- Strength 1-10 ---
     strength = _signal_strength(bias, blended, confidence)
@@ -281,8 +300,9 @@ def _analyze_instrument(
             nearest_resistance=round(aov.nearest_resistance, 5),
             aov_position=aov.current_position,
             confidence=confidence,
-            fundamental_breakdown=fund_breakdown,
             explanation=explanation,
+            fundamental_breakdown=fund_breakdown,
+            mate=mate_result,
         ),
     )
 
@@ -397,19 +417,74 @@ def _compute_fundamental_score(
 
 
 def _compute_sentiment_score(symbol: str, sent_result) -> float:
-    """Map overall sentiment to an instrument-specific score."""
+    """Map overall sentiment to an instrument-specific score.
+
+    Two modes:
+      1. AI-powered (preferred) — uses multi-LLM consensus when sent_result
+         has ai_analysis attached. Smarter, context-aware, replaces VADER.
+      2. VADER fallback — keyword matching for when no AI is available.
+    """
     base = symbol[:3]
     quote = symbol[3:]
+    instr = INSTRUMENTS.get(symbol, {})
 
+    # ═══════════════════════════════════════════════════════════
+    # AI-POWERED PATH — multi-LLM consensus (Claude+Gemini+DeepSeek+Grok)
+    # ═══════════════════════════════════════════════════════════
+    ai = getattr(sent_result, 'ai_analysis', None)
+    if ai is not None:
+        score = ai.overall_score
+
+        # AI currency lean — check individual models for consensus on a currency
+        currency_leads = {}
+        for r in ai.individual_results:
+            if r.currency_lean:
+                c = r.currency_lean.upper()
+                currency_leads[c] = currency_leads.get(c, 0) + 1
+        top_lean = max(currency_leads, key=currency_leads.get) if currency_leads else None
+
+        if top_lean and currency_leads[top_lean] >= len(ai.individual_results) * 0.4:
+            if top_lean == base:
+                score += 15  # AI consensus picked this base currency -> bullish lean
+            elif top_lean == quote:
+                score -= 10  # AI consensus picked quote currency -> bearish for pair
+
+        # Risk appetite adjustments (AI-aware, better than keyword-counting)
+        high_beta = {'AUD', 'NZD', 'GBP', 'SP500', 'US30', 'NASDAQ', 'DAX40'}
+        safe_haven = {'JPY', 'CHF', 'XAU'}
+        is_high_beta = base in high_beta or symbol in high_beta
+        is_safe_haven = base in safe_haven or symbol in safe_haven
+
+        if ai.risk_appetite == 'risk_on':
+            if is_high_beta:
+                score += 12
+            elif is_safe_haven:
+                score -= 12
+        elif ai.risk_appetite == 'risk_off':
+            if is_high_beta:
+                score -= 12
+            elif is_safe_haven:
+                score += 12
+
+        # Crypto: ultra-high beta amplification
+        if instr.get('crypto'):
+            if ai.risk_appetite == 'risk_on':
+                score += 20
+            elif ai.risk_appetite == 'risk_off':
+                score -= 20
+
+        return float(max(-100, min(100, score)))
+
+    # ═══════════════════════════════════════════════════════════
+    # VADER FALLBACK PATH — keyword-based (legacy)
+    # ═══════════════════════════════════════════════════════════
     score = sent_result.overall_score
 
     # Adjust based on currency-specific keyword mentions
     all_text = ' '.join(h.title.lower() for h in sent_result.headlines)
 
     # Crypto-specific sentiment
-    instr = INSTRUMENTS.get(symbol, {})
     if instr.get('crypto'):
-        # Crypto names to search for
         crypto_names = {
             'BTCUSD': 'bitcoin', 'ETHUSD': 'ethereum', 'SOLUSD': 'solana',
             'XRPUSD': 'xrp', 'ADAUSD': 'cardano', 'DOGEUSD': 'dogecoin',
@@ -418,7 +493,6 @@ def _compute_sentiment_score(symbol: str, sent_result) -> float:
         }
         name = crypto_names.get(symbol, base.lower())
 
-        # Check for positive/negative crypto news
         crypto_bullish = any(f'{name} rally' in all_text or f'{name} surge' in all_text
                               or f'{name} jumps' in all_text or f'{name} gains' in all_text
                               for _ in [1])
@@ -431,7 +505,7 @@ def _compute_sentiment_score(symbol: str, sent_result) -> float:
         elif crypto_bearish and not crypto_bullish:
             score -= 25
 
-        # Crypto is ultra-high beta — amplified risk sentiment
+        # Amplified risk sentiment for crypto
         if sent_result.risk_on_count > sent_result.risk_off_count:
             score += 20
         elif sent_result.risk_off_count > sent_result.risk_on_count:
@@ -448,18 +522,15 @@ def _compute_sentiment_score(symbol: str, sent_result) -> float:
     elif base_negative and not base_positive:
         score -= 10
 
-    # Sent from risk sentiment
+    # Risk sentiment adjustments (keyword-counting based)
+    high_beta = {'AUD', 'NZD', 'GBP', 'SP500', 'US30', 'NASDAQ', 'DAX40'}
+    safe_haven = {'JPY', 'CHF', 'XAU'}
     if sent_result.risk_on_count > sent_result.risk_off_count:
-        # Risk-on: bullish for high-beta (AUD, NZD, stocks), bearish for safe havens (JPY, CHF, gold)
-        high_beta = {'AUD', 'NZD', 'GBP', 'SP500', 'US30', 'NASDAQ', 'DAX40'}
-        safe_haven = {'JPY', 'CHF', 'XAU'}
         if base in high_beta:
             score += 10
         elif base in safe_haven:
             score -= 10
     elif sent_result.risk_off_count > sent_result.risk_on_count:
-        high_beta = {'AUD', 'NZD', 'GBP', 'SP500', 'US30', 'NASDAQ', 'DAX40'}
-        safe_haven = {'JPY', 'CHF', 'XAU'}
         if base in high_beta:
             score -= 10
         elif base in safe_haven:
@@ -515,7 +586,7 @@ def _bias_from_score(score: float) -> tuple[str, float]:
         return 'Strong Sell', score
 
 
-def _confidence(ms, aov, timing, tech_score, fund_score, sent_score) -> int:
+def _confidence(ms, aov, timing, tech_score, fund_score, sent_score, sent_result=None) -> int:
     """Compute confidence 0-100."""
     c = 50  # base
 
@@ -540,6 +611,12 @@ def _confidence(ms, aov, timing, tech_score, fund_score, sent_score) -> int:
     # Certainty from magnitude
     avg_abs = (abs(tech_score) + abs(fund_score) + abs(sent_score)) / 3
     c += int(avg_abs / 5)
+
+    # AI bonus: when multi-LLM analysis is available, sentiment is much more reliable
+    if sent_result and getattr(sent_result, 'ai_analysis', None):
+        ai = sent_result.ai_analysis
+        c += int(ai.confidence * 0.12)  # up to +12 from AI confidence level
+        c += 5  # base bonus for using AI (more reliable than VADER)
 
     # Cap
     return min(100, max(0, c))

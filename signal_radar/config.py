@@ -11,7 +11,7 @@ CACHE_DIR.mkdir(exist_ok=True)
 @dataclass
 class Config:
     # Data fetching
-    mt5_bars: int = 60          # bars per symbol (60 M5 bars = 5h, enough for ADX/trend)
+    mt5_bars: int = 200         # bars per symbol (200 M5 bars = ~17h, covers 2+ trading sessions for ADX/trend)
     cache_expiry_hours: int = 2
     use_cache: bool = True
 
@@ -52,3 +52,11 @@ class Config:
 
     # COT report URL (CFTC)
     cot_url: str = "https://www.cftc.gov/dea/futures/deacmxsf.htm"
+
+    # ─── Multi-LLM AI Consensus ─────────────────────────────────────
+    # When enabled, replaces VADER keyword-based sentiment scoring with
+    # multi-model LLM consensus (Claude + Gemini + DeepSeek + Grok).
+    # Requires API keys in environment variables.
+    use_ai_sentiment: bool = True
+    ai_cache_ttl: int = 300          # seconds between fresh analyses (default 5 min)
+    ai_model_timeout: int = 12       # seconds per-model timeout

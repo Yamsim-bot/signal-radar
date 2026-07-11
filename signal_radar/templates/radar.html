@@ -280,6 +280,25 @@ body {
 .entry-soon { color: var(--accent-light); }
 .entry-wait { color: var(--yellow); }
 
+/* MATE chips */
+.mate-m { font-size: 10px; font-weight: 600; white-space: nowrap; }
+.mate-m.uptrend { color: var(--green); }
+.mate-m.downtrend { color: var(--red); }
+.mate-m.ranging { color: var(--yellow); }
+.mate-a { font-size: 10px; font-weight: 500; white-space: nowrap; }
+.mate-a.bullish { color: var(--green); }
+.mate-a.bearish { color: var(--red); }
+.mate-a.neutral { color: var(--text-dim); }
+.mate-t { font-size: 10px; white-space: nowrap; }
+.mate-t.prime { color: var(--green); font-weight: 600; }
+.mate-t.active { color: var(--accent-light); }
+.mate-t.quiet { color: var(--yellow); }
+.mate-t.avoid { color: var(--red); }
+.mate-e { font-size: 10px; font-weight: 500; white-space: nowrap; }
+.mate-e.favorable { color: var(--green); }
+.mate-e.neutral { color: var(--text-dim); }
+.mate-e.unfavorable { color: var(--red); }
+
 /* Detail row */
 .detail-row { display: none; }
 .detail-row.open { display: table-row; }
@@ -299,6 +318,21 @@ body {
 .detail-label { color: var(--text-dim); font-size: 11px; }
 .detail-value { font-weight: 600; font-family: var(--font-mono); font-size: 12px; }
 
+/* MATE detail grid */
+.mate-detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0;
+}
+.mate-detail-group {
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); padding: 8px 10px;
+}
+.mate-group-title { font-size: 11px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.3px; }
+.driver-chip {
+  display: inline-block; background: rgba(255,255,255,0.05); color: var(--text-dim);
+  padding: 3px 8px; border-radius: 8px; font-size: 10px; margin: 2px 3px;
+  border: 1px solid var(--border-light);
+}
+
 /* Factor bars */
 .factor-bar { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
 .factor-label { width: 80px; font-size: 11px; color: var(--text-dim); }
@@ -309,6 +343,124 @@ body {
 
 /* ═══ News Tab ═══ */
 .news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* ═══ Economic Calendar — Redesigned ═══ */
+.live-rates-bar {
+  display: flex; gap: 4px; overflow-x: auto; padding: 8px 12px;
+  background: var(--bg-secondary); border-radius: 10px;
+  margin-bottom: 10px; border: 1px solid var(--border);
+  scrollbar-width: thin; align-items: center;
+}
+.live-rate-item {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 10px; border-radius: 6px; min-width: 90px;
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: default; flex-shrink: 0;
+}
+.live-rate-item .sym { font-size: 10px; font-weight: 700; color: var(--text-dim); }
+.live-rate-item .bid { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono',monospace; }
+.live-rate-item .chg { font-size: 10px; font-family: 'JetBrains Mono',monospace; }
+.live-rate-item .chg.pos { color: var(--green); }
+.live-rate-item .chg.neg { color: var(--red); }
+.live-rate-item .chg.flat { color: var(--text-dim); }
+
+.cal-date-range {
+  padding: 10px 14px; margin-bottom: 10px;
+}
+.cal-dates {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.cal-date-input {
+  padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--bg-secondary); color: var(--text);
+  font-size: 12px; font-family: inherit;
+}
+.cal-q-btn {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--bg-secondary); color: var(--text-dim);
+  font-size: 11px; cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.cal-q-btn:hover { background: var(--accent-darkest); color: var(--accent-light); }
+.cal-q-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.cal-q-btn[data-impact].active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+.cal-main-grid {
+  display: grid; grid-template-columns: 1fr 300px; gap: 12px;
+}
+@media (max-width:900px) {
+  .cal-main-grid { grid-template-columns: 1fr; }
+}
+
+.cal-events-panel {
+  background: var(--bg-secondary); border-radius: 10px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.cal-filters {
+  display: flex; gap: 6px; padding: 8px 10px;
+  flex-wrap: wrap; align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.cal-filters select, .cal-filters input {
+  padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg-secondary); color: var(--text);
+  font-size: 11px; font-family: inherit;
+}
+
+.cal-day-group { border-bottom: 1px solid var(--border); }
+.cal-day-events.collapsed { display: none; }
+.cal-day-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--bg);
+  font-size: 12px; font-weight: 600; color: var(--text);
+  cursor: pointer; user-select: none;
+}
+.cal-day-header:hover { background: var(--bg-secondary); }
+.cal-day-header .day-date { color: var(--accent-light); }
+.cal-day-header .day-label { color: var(--text-dim); font-weight: 400; }
+.cal-day-header .day-count { margin-left: auto; font-size: 10px; color: var(--text-muted); }
+
+.cal-event-row {
+  display: grid;
+  grid-template-columns: 55px 50px 70px 1fr 60px 60px 60px 55px;
+  gap: 4px; padding: 5px 12px; font-size: 11px;
+  align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.cal-event-row:hover { background: var(--bg); }
+.cal-event-row .ev-time { color: var(--text-dim); font-size: 10px; font-family: 'JetBrains Mono',monospace; }
+.cal-event-row .ev-currency { font-weight: 700; font-size: 11px; }
+.cal-event-row .ev-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-event-row .ev-actual { text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 10px; }
+.cal-event-row .ev-forecast { text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 10px; color: var(--text-dim); }
+.cal-event-row .ev-previous { text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 10px; color: var(--text-dim); }
+.cal-event-row .ev-impact { font-size: 10px; }
+.cal-event-row .ev-status { font-size: 10px; text-align: center; }
+
+.cal-event-row .ev-vol-dot {
+  display: inline-block; width: 4px; height: 4px;
+  border-radius: 50%; margin-right: 3px;
+}
+.cal-event-row .ev-vol-dot.high { background: var(--red); }
+.cal-event-row .ev-vol-dot.medium { background: var(--yellow); }
+.cal-event-row .ev-vol-dot.low { background: var(--text-muted); }
+
+.cal-news-sidebar {
+  display: flex; flex-direction: column; gap: 0;
+}
+.cal-sentiment-chip {
+  font-size: 10px; padding: 2px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg); white-space: nowrap;
+}
+
+.cal-cb-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.cal-cb-item:last-child { border-bottom: none; }
+.cal-cb-item .cb-cur { font-weight: 700; }
+.cal-cb-item .cb-ev { color: var(--text-dim); }
+.cal-cb-item .cb-date { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono',monospace; }
 .news-full { grid-column: 1 / -1; }
 
 /* ═══ Chat ═══ */
@@ -602,12 +754,14 @@ body {
               <th>Symbol</th>
               <th>Bias</th>
               <th>Score</th>
-              <th>Strength</th>
+              <th>Str</th>
               <th>Conf</th>
               <th>Price</th>
               <th>Chg%</th>
-              <th>Trend</th>
-              <th>Entry</th>
+              <th style="font-size:10px">M ⤵️</th>
+              <th style="font-size:10px">A 🎯</th>
+              <th style="font-size:10px">T ⏰</th>
+              <th style="font-size:10px">E 🚪</th>
               <th style="width:44px;text-align:center">📊</th>
             </tr>
           </thead>
@@ -628,29 +782,47 @@ body {
     </div>
   </div>
 
-  <!-- ════ TAB 2: NEWS ════ -->
+  <!-- ════ TAB 2: ECONOMIC CALENDAR & NEWS ════ -->
   <div id="tab-news" class="tab-content">
 
-    <div class="overview" id="news-overview" style="margin-bottom:12px">
-      <div class="overview-item"><span class="overview-label">Sentiment</span><span class="overview-value" id="news-sentiment" style="color:var(--yellow)">--</span></div>
-      <div class="overview-item"><span class="overview-label">High Impact</span><span class="overview-value" id="news-high-impact">0</span></div>
-      <div class="overview-item"><span class="overview-label">Dovish</span><span class="overview-value" style="color:var(--cyan)" id="news-dovish">0</span></div>
-      <div class="overview-item"><span class="overview-label">Hawkish</span><span class="overview-value" style="color:var(--red)" id="news-hawkish">0</span></div>
-      <div class="overview-item"><span class="overview-label">Risk On</span><span class="overview-value" style="color:var(--green)" id="news-risk-on">0</span></div>
-      <div class="overview-item"><span class="overview-label">Risk Off</span><span class="overview-value" style="color:var(--red)" id="news-risk-off">0</span></div>
+    <!-- ── Live Rates Bar ── -->
+    <div class="live-rates-bar" id="live-rates-bar">
+      <div class="loading" style="padding:8px;text-align:center;font-size:11px;color:var(--text-dim)"><div class="spinner" style="width:14px;height:14px"></div> Loading rates...</div>
     </div>
 
-    <!-- ═══ Calendar Filter Bar ═══ -->
-    <div class="glass-panel" style="padding:10px 14px;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:12px;color:var(--text-dim);font-weight:600">Filter:</span>
-      <select id="cal-filter-impact" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
-        <option value="all">All Impact</option>
-        <option value="High">🔴 High</option>
-        <option value="Medium">🟡 Medium</option>
-        <option value="Low">⚪ Low</option>
-      </select>
-      <select id="cal-filter-currency" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
-        <option value="all">All Currencies</option>
+    <!-- ── Date Range Picker ── -->
+    <div class="glass-panel cal-date-range">
+      <div class="cal-dates">
+        <label style="font-size:11px;color:var(--text-dim)">From:</label>
+        <input type="date" id="cal-from" class="cal-date-input">
+        <label style="font-size:11px;color:var(--text-dim)">To:</label>
+        <input type="date" id="cal-to" class="cal-date-input">
+        <button class="cal-q-btn active" data-range="2m" onclick="setCalRange('2m')">2 Months</button>
+        <button class="cal-q-btn" data-range="1m" onclick="setCalRange('1m')">This Month</button>
+        <button class="cal-q-btn" data-range="next" onclick="setCalRange('next')">Next Month</button>
+        <button class="cal-q-btn" data-range="week" onclick="setCalRange('week')">This Week</button>
+        <button class="cal-q-btn" onclick="loadCalendar()" style="background:var(--accent);color:#000;font-weight:600">🔍 Search</button>
+        <button class="cal-q-btn" onclick="loadCalendar()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- ── Main Calendar + News Layout ── -->
+    <div class="cal-main-grid">
+
+      <!-- LEFT: Calendar Events -->
+      <div class="cal-events-panel">
+    <!-- ── Filters Bar ── -->
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg)">
+      <!-- Quick impact toggles (like FF stars) -->
+      <button class="cal-q-btn active" data-impact="all" onclick="setCalImpact('all')" style="font-size:10px">All</button>
+      <button class="cal-q-btn" data-impact="High" onclick="setCalImpact('High')" style="font-size:10px">🔴 High</button>
+      <button class="cal-q-btn" data-impact="Medium" onclick="setCalImpact('Medium')" style="font-size:10px">🟡 Medium</button>
+      <button class="cal-q-btn" data-impact="Low" onclick="setCalImpact('Low')" style="font-size:10px">⚪ Low</button>
+      <span style="width:1px;height:18px;background:var(--border);margin:0 2px"></span>
+
+      <!-- Currency filter -->
+      <select id="cal-f-currency" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
+        <option value="all">🌐 All Currencies</option>
         <option value="USD">🇺🇸 USD</option>
         <option value="EUR">🇪🇺 EUR</option>
         <option value="GBP">🇬🇧 GBP</option>
@@ -660,24 +832,147 @@ body {
         <option value="NZD">🇳🇿 NZD</option>
         <option value="CHF">🇨🇭 CHF</option>
       </select>
-      <select id="cal-filter-status" onchange="filterCalendar()" style="padding:4px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:11px;font-family:inherit">
-        <option value="all">All Status</option>
+
+      <!-- Event type -->
+      <select id="cal-f-type" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
+        <option value="all">📋 All Types</option>
+        <option value="growth">📈 Growth</option>
+        <option value="inflation">📊 Inflation</option>
+        <option value="employment">💼 Employment</option>
+        <option value="central_bank">🏦 Central Bank</option>
+        <option value="housing">🏠 Housing</option>
+        <option value="consumer">🛒 Consumer</option>
+        <option value="speech">🎤 Speeches</option>
+      </select>
+
+      <!-- Status -->
+      <select id="cal-f-status" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
+        <option value="all">📌 All Status</option>
         <option value="beat">✅ Beat</option>
         <option value="miss">❌ Miss</option>
         <option value="inline">➡️ Inline</option>
         <option value="upcoming">⏳ Upcoming</option>
       </select>
-      <span style="font-size:11px;color:var(--text-muted)" id="cal-filter-count">Showing all</span>
+
+      <span style="width:1px;height:18px;background:var(--border);margin:0 2px"></span>
+
+      <!-- Search -->
+      <input type="text" id="cal-f-search" placeholder="🔍 Search events..." oninput="filterCalendar()" onkeydown="if(event.key==='Enter')filterCalendar()" style="flex:1;min-width:100px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
+      <button onclick="filterCalendar()" style="background:var(--accent);border:none;border-radius:4px;color:#000;font-size:10px;padding:2px 10px;cursor:pointer;font-weight:600;white-space:nowrap">🔍 Search</button>
+      <span style="font-size:10px;color:var(--text-muted);white-space:nowrap" id="cal-filter-count"></span>
+
+      <!-- Settings gear -->
+      <div style="position:relative;margin-left:auto">
+        <button onclick="toggleCalSettings()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:13px;padding:2px 6px;cursor:pointer" title="Calendar settings">⚙️</button>
+        <div id="cal-settings-dropdown" style="display:none;position:absolute;right:0;top:100%;z-index:50;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+          <div style="font-size:11px;color:var(--accent-light);font-weight:600;margin-bottom:8px">⚙️ Calendar Settings</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="cal-show-past" onchange="filterCalendar()" checked> Show past events
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="cal-compact-view" onchange="filterCalendar()"> Compact view
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="cal-show-pairs" onchange="filterCalendar()" checked> Show affected pairs
+          </label>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);margin-bottom:6px">
+            <span>🕐 TZ:</span>
+            <select id="cal-timezone" onchange="filterCalendar()" style="flex:1;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text);font-size:10px;font-family:inherit">
+              <option value="UTC">UTC</option>
+              <option value="local">Local</option>
+              <option value="NY">NY (UTC-4)</option>
+              <option value="London">London (UTC+1)</option>
+              <option value="Tokyo">Tokyo (UTC+9)</option>
+            </select>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+            Source: <span id="cal-settings-source">ForexFactory RSS</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="news-grid">
-        <div id="news-calendar"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+        <!-- Events Table -->
+        <div id="calendar-events-container">
+          <div class="loading" style="padding:40px;text-align:center"><div class="spinner"></div><div style="font-size:12px;color:var(--text-dim);margin-top:8px">Loading calendar...</div></div>
+        </div>
       </div>
-      <div class="glass-panel" style="padding:14px">
-        <h3 style="font-size:14px;margin-bottom:10px;color:var(--accent-light);font-weight:600">📰 News Headlines</h3>
-        <div id="news-headlines"><div class="loading" style="padding:20px"><div class="spinner"></div></div></div>
+
+      <!-- RIGHT: News Stream Sidebar -->
+      <div class="cal-news-sidebar">
+        <!-- Market Data Snapshot (from live rates) -->
+        <div class="glass-panel" style="padding:10px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600">💹 Key Market Levels</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">Live rates from the bar above — major pairs &amp; indices</div>
+          <div id="market-snapshot" style="font-size:10px;color:var(--text-dim)"><span style="opacity:0.6">Rate data loads with the live rates bar ↑</span></div>
+        </div>
+
+        <!-- Confluence / Quick Links -->
+        <div class="glass-panel" style="padding:12px;margin-bottom:10px">
+          <div style="font-size:13px;color:var(--accent-light);font-weight:600;margin-bottom:10px">🌐 Market Research Links</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">📅</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">Forex Factory</div><div style="font-size:9px;color:var(--text-muted)">Calendar &amp; Forums</div></div>
+              </div>
+            </a>
+            <a href="https://www.finviz.com/news.ashx" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">📊</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">Finviz</div><div style="font-size:9px;color:var(--text-muted)">Screener &amp; News</div></div>
+              </div>
+            </a>
+            <a href="https://www.fxstreet.com/news" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">💱</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">FXStreet</div><div style="font-size:9px;color:var(--text-muted)">Forex News &amp; Analysis</div></div>
+              </div>
+            </a>
+            <a href="https://www.tradingview.com/news/" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">📈</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">TradingView</div><div style="font-size:9px;color:var(--text-muted)">Charts &amp; Ideas</div></div>
+              </div>
+            </a>
+            <a href="https://www.cmegroup.com/markets/" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">🏛️</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">CME Group</div><div style="font-size:9px;color:var(--text-muted)">Futures &amp; Rates</div></div>
+              </div>
+            </a>
+            <a href="https://www.myfxbook.com/community/outlook" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">📘</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">myFXbook</div><div style="font-size:9px;color:var(--text-muted)">Community Outlook</div></div>
+              </div>
+            </a>
+            <a href="https://www.opec.org/opec_web/en/data_graphs/338.htm" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">🛢️</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">OPEC</div><div style="font-size:9px;color:var(--text-muted)">Oil Market Data</div></div>
+              </div>
+            </a>
+            <a href="https://www.tradingview.com/markets/" target="_blank" rel="noopener" style="text-decoration:none">
+              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
+                <span style="font-size:16px">🌍</span>
+                <div><div style="font-size:11px;font-weight:600;color:var(--text)">All Markets</div><div style="font-size:9px;color:var(--text-muted)">Screener &amp; Heatmap</div></div>
+              </div>
+            </a>
+          </div>
+          <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:center">Click any link to open in a new tab</div>
+        </div>
+
+        <!-- Central Bank Events -->
+        <div class="glass-panel" style="margin-top:10px;padding:10px">
+          <div style="font-size:12px;color:var(--accent-light);font-weight:600;margin-bottom:8px">🏦 Upcoming CB Meetings</div>
+          <div id="cal-cb-events"><div style="font-size:11px;color:var(--text-dim)">Loading...</div></div>
+        </div>
       </div>
     </div>
+
+    <!-- Source info -->
+    <div style="margin-top:8px;font-size:10px;color:var(--text-muted);text-align:right" id="cal-source-info"></div>
 
   </div>
 
@@ -898,13 +1193,25 @@ body {
           </div>
           <div style="margin-top:8px">
             <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Entry Reason</label>
-            <textarea id="j-entry-reason" placeholder="Why did you enter? (e.g. Break of structure, retest of support)" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit;resize:vertical;min-height:50px"></textarea>
+            <select id="j-entry-reason" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit"></select>
           </div>
         </div>
 
-        <!-- PART 3: Psychology & Reflection (mood removed) -->
+        <!-- PART 3: Psychology & Reflection -->
         <div style="margin-bottom:12px">
           <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px">Part 3 — Psychology & Reflection</h4>
+          <div style="margin-top:8px;margin-bottom:10px">
+            <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px">How are you feeling? (click one)</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <span class="mood-btn" data-mood="calm" onclick="selectMood(this,'calm')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">😌 Calm</span>
+              <span class="mood-btn" data-mood="confident" onclick="selectMood(this,'confident')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">💪 Confident</span>
+              <span class="mood-btn" data-mood="focused" onclick="selectMood(this,'focused')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">🎯 Focused</span>
+              <span class="mood-btn" data-mood="anxious" onclick="selectMood(this,'anxious')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">😰 Anxious</span>
+              <span class="mood-btn" data-mood="greedy" onclick="selectMood(this,'greedy')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">🤑 Greedy</span>
+              <span class="mood-btn" data-mood="fearful" onclick="selectMood(this,'fearful')" style="cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);font-size:13px;transition:all .2s">😨 Fearful</span>
+            </div>
+            <input type="hidden" id="j-mood" value="">
+          </div>
           <div style="margin-top:8px">
             <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Reflection Tags</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -925,7 +1232,7 @@ body {
           </div>
           <div style="margin-top:8px">
             <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">Exit Reason</label>
-            <textarea id="j-exit-reason" placeholder="Why did you exit?" rows="2" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit;resize:vertical"></textarea>
+            <select id="j-exit-reason" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit"></select>
           </div>
         </div>
 
@@ -940,7 +1247,12 @@ body {
           </div>
           <div>
             <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px">P&L ($) <span id="j-pnl-preview" style="font-size:10px;color:var(--text-muted)"></span></label>
-            <input type="number" id="j-pnl" step="0.01" oninput="document.getElementById('j-pnl-preview').textContent='(manual)'" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+            <div style="display:flex;gap:4px;align-items:center">
+              <input type="number" id="j-pnl" step="0.01" oninput="document.getElementById('j-pnl-preview').textContent='(manual)'" style="flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-secondary);color:var(--text);font-size:12px;font-family:inherit">
+              <label style="font-size:10px;color:var(--text-dim);white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:2px">
+                <input type="checkbox" id="j-pnl-manual" onchange="autoCalcPnL()"> manual
+              </label>
+            </div>
           </div>
         </div>
 
@@ -1237,13 +1549,13 @@ function populateReasonDropdowns() {
 // Live P&L preview
 function autoCalcPnL() {
   const sym = document.getElementById('j-symbol').value;
-  const dir = document.getElementById('j-direction').value;
+  const dir = document.getElementById('j-position').value;
   const entry = parseFloat(document.getElementById('j-entry').value) || 0;
   const exit = parseFloat(document.getElementById('j-exit').value) || 0;
   const lot = parseFloat(document.getElementById('j-lot').value) || 0;
   const pnl = calcPnL(sym, dir, entry, exit, lot);
   const preview = document.getElementById('j-pnl-preview');
-  if (pnl && document.getElementById('j-pnl').value === '') {
+  if (pnl && !document.getElementById('j-pnl-manual').checked) {
     preview.textContent = 'auto: ' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
     preview.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
   } else {
@@ -1391,7 +1703,7 @@ function renderTable(instruments) {
   catOrder.forEach(cat => {
     const group = filtered.filter(i => i.category === cat);
     if (group.length === 0) return;
-    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="10" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
+    html += `<tr style="background:rgba(255,255,255,0.02)"><td colspan="12" style="padding:8px 12px;font-weight:700;font-size:11px;color:var(--accent-light);text-transform:uppercase;letter-spacing:0.5px">${catLabels[cat] || cat} (${group.length})</td></tr>`;
     group.forEach(i => {
       const isBull = i.bias === 'Strong Buy' || i.bias === 'Buy';
       const isBear = i.bias === 'Strong Sell' || i.bias === 'Sell';
@@ -1402,7 +1714,7 @@ function renderTable(instruments) {
       const strPct = (i.strength / 10) * 100;
       const chgCls = i.change_pct >= 0 ? 'chg-positive' : 'chg-negative';
       const chgSign = i.change_pct >= 0 ? '+' : '';
-      const entryCls = i.entry_timing === 'now' ? 'entry-now' : i.entry_timing === 'soon' ? 'entry-soon' : 'entry-wait';
+      const entryCls = i.entry_timing === 'now' ? 'prime' : i.entry_timing === 'soon' ? 'active' : 'quiet';
 
       html += `<tr onclick="toggleDetail('${i.symbol}')">
         <td><b>${i.symbol}</b></td>
@@ -1412,25 +1724,53 @@ function renderTable(instruments) {
         <td style="font-family:'JetBrains Mono',monospace">${i.confidence}%</td>
         <td style="font-size:11px;font-family:'JetBrains Mono',monospace">${i.price}</td>
         <td class="${chgCls}" style="font-family:'JetBrains Mono',monospace">${chgSign}${i.change_pct}%</td>
-        <td style="font-size:11px">${i.trend_direction}</td>
-        <td class="${entryCls}">${i.entry_timing}</td>
+        <td class="mate-m ${i.mate_market ? i.mate_market.toLowerCase().includes('down') ? 'downtrend' : i.mate_market.toLowerCase().includes('range') ? 'ranging' : 'uptrend' : ''}">${i.mate_market || '--'}</td>
+        <td class="mate-a ${i.mate_area_score > 10 ? 'bullish' : i.mate_area_score < -10 ? 'bearish' : 'neutral'}">${i.mate_area || '--'}</td>
+        <td class="mate-t ${i.entry_timing === 'now' ? 'prime' : i.entry_timing === 'soon' ? 'active' : 'quiet'}">${i.mate_timing || i.entry_timing}</td>
+        <td class="mate-e ${i.mate_quality || 'neutral'}">${i.mate_quality === 'favorable' ? '✅' : i.mate_quality === 'unfavorable' ? '❌' : '➖'}</td>
         <td style="text-align:center"><span class="chart-btn" onclick="event.stopPropagation();openChart('${i.symbol}')" title="Open TradingView">📊</span></td>
       </tr>`;
 
       const detailId = `detail-${i.symbol}`;
       html += `<tr class="detail-row" id="${detailId}">
-        <td colspan="10" class="detail-cell">
+        <td colspan="12" class="detail-cell">
           <div class="detail-inner">
             <b style="color:var(--accent-light)">Why ${i.bias}?</b><br>${i.explanation}
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-label">Technical</span><span class="detail-value" style="color:${i.technical_score>=0?'var(--green)':'var(--red)'}">${i.technical_score>0?'+':''}${i.technical_score}</span></div>
-              <div class="detail-item"><span class="detail-label">Fundamental</span><span class="detail-value" style="color:${i.fundamental_score>=0?'var(--green)':'var(--red)'}">${i.fundamental_score>0?'+':''}${i.fundamental_score}</span></div>
-              <div class="detail-item"><span class="detail-label">Sentiment</span><span class="detail-value" style="color:${i.sentiment_score>=0?'var(--green)':'var(--red)'}">${i.sentiment_score>0?'+':''}${i.sentiment_score}</span></div>
-              <div class="detail-item"><span class="detail-label">Key Support</span><span class="detail-value">${i.key_support}</span></div>
-              <div class="detail-item"><span class="detail-label">Resistance</span><span class="detail-value">${i.key_resistance}</span></div>
-              <div class="detail-item"><span class="detail-label">Trend Strength</span><span class="detail-value">${i.trend_strength}</span></div>
-              <div class="detail-item"><span class="detail-label">Session</span><span class="detail-value">${i.session_quality}</span></div>
-              <div class="detail-item"><span class="detail-label">AOV</span><span class="detail-value">${i.aov_position.replace(/_/g, ' ')}</span></div>
+            <div class="mate-detail-grid">
+
+              <div class="mate-detail-group">
+                <div class="mate-group-title" style="color:var(--green)">📌 M — Market Direction</div>
+                <div class="detail-item"><span class="detail-label">Trend</span><span class="detail-value" style="text-transform:capitalize">${i.trend_direction} (${i.trend_strength})</span></div>
+                <div class="detail-item"><span class="detail-label">Detail</span><span class="detail-value">${i.mate_market_detail || '--'}</span></div>
+                <div class="detail-item"><span class="detail-label">Score</span><span class="detail-value" style="color:${i.mate_market_score>0?'var(--green)':'var(--red)'}">${i.mate_market_score>0?'+':''}${i.mate_market_score}</span></div>
+              </div>
+
+              <div class="mate-detail-group">
+                <div class="mate-group-title" style="color:var(--accent-light)">🎯 A — Area of Value</div>
+                <div class="detail-item"><span class="detail-label">Position</span><span class="detail-value">${i.aov_position.replace(/_/g, ' ')}</span></div>
+                <div class="detail-item"><span class="detail-label">Detail</span><span class="detail-value">${i.mate_area_detail || '--'}</span></div>
+                <div class="detail-item"><span class="detail-label">Key S/R</span><span class="detail-value">S: ${i.key_support} / R: ${i.key_resistance}</span></div>
+              </div>
+
+              <div class="mate-detail-group">
+                <div class="mate-group-title" style="color:var(--yellow)">⏰ T — Timing</div>
+                <div class="detail-item"><span class="detail-label">Session</span><span class="detail-value">${i.session_quality} (${i.mate_timing_detail || '--'})</span></div>
+                <div class="detail-item"><span class="detail-label">Entry</span><span class="detail-value">${i.entry_timing}</span></div>
+              </div>
+
+              <div class="mate-detail-group">
+                <div class="mate-group-title" style="color:var(--cyan)">🚪 E — Exit Plan</div>
+                <div class="detail-item"><span class="detail-label">Summary</span><span class="detail-value" style="font-size:11px">${i.mate_exit_summary || 'No trade signal'}</span></div>
+                <div class="detail-item"><span class="detail-label">TP</span><span class="detail-value">${i.mate_exit_tp || '--'}</span></div>
+                <div class="detail-item"><span class="detail-label">SL</span><span class="detail-value">${i.mate_exit_sl || '--'}</span></div>
+              </div>
+
+            </div>
+            <div style="margin-top:10px;padding-top:6px;border-top:1px solid var(--border);font-size:11px">
+              <span style="color:var(--text-dim);font-weight:600">Drivers:</span>
+              ${i.mate_drivers && i.mate_drivers.length > 0
+                ? i.mate_drivers.map(d => `<span class="driver-chip">${d}</span>`).join(' ')
+                : '<span style="color:var(--text-dim)">No specific drivers</span>'}
             </div>`;
 
       if (i.breakdown) {
@@ -1681,11 +2021,14 @@ async function loadJournalStats() {
     document.getElementById('js-pnl').style.color = s.total_pnl >= 0 ? 'var(--green)' : 'var(--red)';
   } catch (e) {}
 }
+let _journalEntries = [];
+
 function renderJournal(entries) {
+  _journalEntries = entries;
   const container = document.getElementById('journal-entries');
   if (entries.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">No trades yet</div>'; return; }
   const reversed = [...entries].reverse();
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Title / Pair</th><th style="text-align:left;padding:6px">Pos</th><th style="text-align:left;padding:6px">Entry</th><th style="text-align:left;padding:6px">Exit</th><th style="text-align:right;padding:6px">P&amp;L</th><th style="text-align:left;padding:6px">Result</th><th style="text-align:left;padding:6px">Mood</th><th></th></tr>';
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="color:var(--text-dim);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px">Date</th><th style="text-align:left;padding:6px">Title / Pair</th><th style="text-align:left;padding:6px">Pos</th><th style="text-align:left;padding:6px">Entry</th><th style="text-align:left;padding:6px">Exit</th><th style="text-align:right;padding:6px">P&amp;L</th><th style="text-align:left;padding:6px">Result</th><th style="text-align:left;padding:6px">Mood</th><th></th><th></th></tr>';
   reversed.forEach((e, i) => {
     const idx = entries.length - 1 - i;
     const pos = e.position || e.direction || '';
@@ -1694,15 +2037,17 @@ function renderJournal(entries) {
     const moodEmoji = {calm:'😌',confident:'💪',anxious:'😰',greedy:'🤑',fearful:'😨',focused:'🎯'}[e.mood] || '';
     const tags = Array.isArray(e.reflection_tags) ? e.reflection_tags.slice(0,2).join(', ') : '';
     const statusBadge = e.trade_status === 'ongoing' ? '<span class="badge badge-yellow" style="font-size:10px">Ongoing</span>' : '';
+    const reasonLabel = r => { const m = {trend:'Trend',breakout:'Breakout',pullback:'Pullback',support:'S/R',pattern:'Pattern',indicator:'Indicator',news:'News',sentiment:'Sentiment',tp:'TP',sl:'SL',manual_profit:'Manual ✔',manual_loss:'Manual ✘',reversal:'Reversal',time:'Time'}; return m[r]||r||''; };
     html += `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:6px;font-size:11px;color:var(--text-dim)">${dateStr?dateStr.slice(5,10):''}</td>
       <td style="padding:6px"><b>${title}</b> ${statusBadge}</td>
       <td style="padding:6px;color:${pos==='Long'?'var(--green)':'var(--red)'}">${pos==='Long'?'📈':'📉'}${pos}</td>
-      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.entry_reason?e.entry_reason.slice(0,30):''}</td>
-      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${e.exit_reason?e.exit_reason.slice(0,30):''}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${reasonLabel(e.entry_reason)}</td>
+      <td style="padding:6px;font-size:11px;color:var(--text-dim)">${reasonLabel(e.exit_reason)}</td>
       <td style="padding:6px;text-align:right;font-family:JetBrains Mono;color:${(e.pnl||0)>=0?'var(--green)':'var(--red)'}">${e.pnl?(e.pnl>=0?'+':'')+'$'+e.pnl:'-'}</td>
       <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result||'open'}</span></td>
       <td style="padding:6px;font-size:14px">${moodEmoji}</td>
+      <td style="padding:6px"><button class="btn btn-sm" style="background:rgba(99,102,241,0.1);color:var(--accent-light);padding:2px 7px;font-size:11px" onclick="editJournalEntry(${idx})">✎</button></td>
       <td style="padding:6px"><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
     </tr>`;
   });
@@ -1729,11 +2074,82 @@ function toggleTradeStatus() {
   if (closedWrap) closedWrap.style.display = status === 'closed' ? 'block' : 'none';
 }
 
+let _editIdx = -1; // -1 = new entry, >=0 = editing existing
+
+function selectMood(el, mood) {
+  document.querySelectorAll('.mood-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--bg-secondary)';
+  });
+  el.style.borderColor = 'var(--accent)';
+  el.style.background = 'rgba(99,102,241,0.15)';
+  document.getElementById('j-mood').value = mood;
+}
+
+function populateFormForEdit(entry) {
+  document.getElementById('j-symbol').value = entry.symbol || '';
+  document.getElementById('j-title').value = entry.trade_title || '';
+  document.getElementById('j-trade-status').value = entry.trade_status || 'closed';
+  document.getElementById('j-position').value = entry.position || entry.direction || 'Long';
+  document.getElementById('j-risk').value = entry.risk_amount || '';
+  document.getElementById('j-lot').value = entry.lot_size || 0.01;
+  document.getElementById('j-entry').value = entry.entry_price || '';
+  document.getElementById('j-exit').value = entry.exit_price || '';
+  document.getElementById('j-sl').value = entry.stop_loss || '';
+  document.getElementById('j-tp').value = entry.take_profit || '';
+  document.getElementById('j-date-opened').value = entry.date_opened ? entry.date_opened.slice(0,16) : '';
+  document.getElementById('j-date-closed').value = entry.date_closed ? entry.date_closed.slice(0,16) : '';
+  document.getElementById('j-result').value = entry.result || 'open';
+  document.getElementById('j-pnl').value = entry.pnl || '';
+  document.getElementById('j-entry-reason').value = entry.entry_reason || '';
+  document.getElementById('j-exit-reason').value = entry.exit_reason || '';
+  document.getElementById('j-notes').value = entry.notes || '';
+  document.getElementById('j-chart-img').value = entry.chart_screenshot || '';
+  document.getElementById('j-chart-link').value = entry.chart_link || '';
+  // Mood
+  if (entry.mood) {
+    const moodBtn = document.querySelector(`.mood-btn[data-mood="${entry.mood}"]`);
+    if (moodBtn) selectMood(moodBtn, entry.mood);
+  }
+  // Reflection tags
+  j_tags = Array.isArray(entry.reflection_tags) ? [...entry.reflection_tags] : [];
+  document.querySelectorAll('.chip').forEach(c => {
+    const tag = c.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    if (tag && j_tags.includes(tag)) {
+      c.style.borderColor = 'var(--accent)';
+    } else if (c.style) {
+      c.style.borderColor = 'var(--border)';
+    }
+  });
+  document.getElementById('j-reflection-tags').value = JSON.stringify(j_tags);
+  toggleTradeStatus();
+}
+
 async function addJournalEntry() {
+  const mood = document.getElementById('j-mood').value;
+  const entry_reason = document.getElementById('j-entry-reason').value;
+  const exit_reason = document.getElementById('j-exit-reason').value;
+  const tradeStatus = document.getElementById('j-trade-status').value;
+  const result = document.getElementById('j-result').value;
+
+  // Determine if we should auto-calc P&L
+  let pnl = 0;
+  const manualMode = document.getElementById('j-pnl-manual').checked;
+  if (manualMode) {
+    pnl = parseFloat(document.getElementById('j-pnl').value) || 0;
+  } else if (tradeStatus === 'closed' || result !== 'open') {
+    const sym = document.getElementById('j-symbol').value;
+    const dir = document.getElementById('j-position').value;
+    const entry = parseFloat(document.getElementById('j-entry').value) || 0;
+    const exit = parseFloat(document.getElementById('j-exit').value) || 0;
+    const lot = parseFloat(document.getElementById('j-lot').value) || 0;
+    pnl = calcPnL(sym, dir, entry, exit, lot);
+  }
+
   const data = {
     symbol: document.getElementById('j-symbol').value,
     trade_title: document.getElementById('j-title').value || document.getElementById('j-symbol').value + ' ' + document.getElementById('j-position').value,
-    trade_status: document.getElementById('j-trade-status').value,
+    trade_status: tradeStatus,
     position: document.getElementById('j-position').value,
     risk_amount: parseFloat(document.getElementById('j-risk').value) || 0,
     lot_size: parseFloat(document.getElementById('j-lot').value) || 0.01,
@@ -1743,24 +2159,68 @@ async function addJournalEntry() {
     take_profit: parseFloat(document.getElementById('j-tp').value) || 0,
     date_opened: document.getElementById('j-date-opened').value,
     date_closed: document.getElementById('j-date-closed').value,
-    result: document.getElementById('j-result').value,
-    pnl: parseFloat(document.getElementById('j-pnl').value) || 0,
-    entry_reason: document.getElementById('j-entry-reason').value,
-    exit_reason: document.getElementById('j-exit-reason').value,
+    result: result,
+    pnl: pnl,
+    entry_reason: entry_reason,
+    exit_reason: exit_reason,
     notes: document.getElementById('j-notes').value,
+    mood: mood,
     reflection_tags: j_tags,
     chart_screenshot: document.getElementById('j-chart-img').value,
     chart_link: document.getElementById('j-chart-link').value,
   };
-  await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+
+  if (_editIdx >= 0) {
+    // Update existing entry
+    data.action = 'update';
+    data.index = _editIdx;
+    await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  } else {
+    await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  }
+  resetJournalForm();
+  loadJournal();
+}
+
+function resetJournalForm() {
   ['j-entry','j-exit','j-sl','j-tp','j-pnl','j-notes','j-chart-img','j-chart-link','j-title','j-risk'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   document.getElementById('j-pnl-preview').textContent = '';
+  document.getElementById('j-pnl-manual').checked = false;
+  document.getElementById('j-entry-reason').value = '';
+  document.getElementById('j-exit-reason').value = '';
+  document.getElementById('j-trade-status').value = 'closed';
+  document.getElementById('j-result').value = 'open';
+  // Reset mood
+  document.getElementById('j-mood').value = '';
+  document.querySelectorAll('.mood-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--bg-secondary)';
+  });
   j_tags = [];
-  loadJournal();
+  document.querySelectorAll('.chip').forEach(c => c.style.borderColor = 'var(--border)');
+  document.getElementById('j-reflection-tags').value = '[]';
+  _editIdx = -1;
+  document.querySelector('#journal-form h3').textContent = '📝 Add Trade Entry';
+  const btn = document.querySelector('#journal-form .btn-accent');
+  if (btn) btn.textContent = '➕ Add Trade Entry';
+  toggleTradeStatus();
 }
+
+function editJournalEntry(idx) {
+  const entry = _journalEntries[idx];
+  if (!entry) return;
+  _editIdx = idx;
+  // Scroll to form
+  document.querySelector('#journal-form').scrollIntoView({ behavior: 'smooth' });
+  document.querySelector('#journal-form h3').textContent = '✏️ Edit Trade Entry';
+  const btn = document.querySelector('#journal-form .btn-accent');
+  if (btn) btn.textContent = '💾 Save Changes';
+  populateFormForEdit(entry);
+}
+
 async function deleteJournalEntry(index) {
   await fetch('/api/journal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', index }) });
   loadJournal();
@@ -1786,115 +2246,353 @@ function clearChat() {
 }
 
 // ══════════════════════════════════════════════
-//  News & Calendar
+//  Economic Calendar & News (ForexFactory-style)
 // ══════════════════════════════════════════════
-async function loadNews() {
-  try {
-    const res = await fetch('/api/news');
-    const data = await res.json();
 
-    document.getElementById('news-sentiment').textContent = (data.sentiment_score >= 0 ? '+' : '') + data.sentiment_score.toFixed(1);
-    document.getElementById('news-sentiment').style.color = data.sentiment_score >= 5 ? 'var(--green)' : data.sentiment_score <= -5 ? 'var(--red)' : 'var(--yellow)';
-    document.getElementById('news-high-impact').textContent = data.high_impact_count;
-    document.getElementById('news-dovish').textContent = data.dovish_count;
-    document.getElementById('news-hawkish').textContent = data.hawkish_count;
-    document.getElementById('news-risk-on').textContent = data.risk_on_count;
-    document.getElementById('news-risk-off').textContent = data.risk_off_count;
-
-    renderNewsCalendar(data.calendar_events);
-    renderHeadlines(data.headlines);
-    // Central bank events, trending topics, source sentiment & cross-refs removed
-  } catch (e) { document.getElementById('news-calendar').innerHTML = '<div style="color:var(--red);padding:20px">Error: '+e.message+'</div>'; }
-}
-
+// ─── State ───────────────────────────────────
+let _calendarData = null;
 let _allCalendarEvents = [];
 
-function renderNewsCalendar(events) {
-  _allCalendarEvents = events || [];
-  applyCalendarFilters();
+// ─── Init ────────────────────────────────────
+async function loadNews() {
+  loadLiveRates();
+  loadCalendar();
 }
 
-function applyCalendarFilters() {
-  const container = document.getElementById('news-calendar');
-  const impactFilter = document.getElementById('cal-filter-impact').value;
-  const currencyFilter = document.getElementById('cal-filter-currency').value;
-  const statusFilter = document.getElementById('cal-filter-status').value;
+// ─── Live Rates ──────────────────────────────
+async function loadLiveRates() {
+  try {
+    const res = await fetch('/api/live-rates');
+    if (!res.ok) throw new Error('Auth');
+    const data = await res.json();
+    const bar = document.getElementById('live-rates-bar');
+    if (!data.rates || data.rates.length === 0) {
+      bar.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:8px">Rates unavailable</div>';
+      return;
+    }
+    bar.innerHTML = data.rates.map(r => {
+      const bidStr = r.bid.toFixed(5);
+      return `<div class="live-rate-item">
+        <span class="sym">${r.symbol}</span>
+        <span class="bid">${bidStr}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('live-rates-bar').innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:8px">Rates unavailable</div>';
+  }
+}
 
+// ─── Date Range Quick Buttons ────────────────
+function setCalRange(range) {
+  document.querySelectorAll('.cal-q-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.cal-q-btn[data-range="${range}"]`);
+  if (btn) btn.classList.add('active');
+
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  let from, to;
+
+  switch (range) {
+    case 'week': {
+      const dow = now.getDay();
+      const mon = new Date(now); mon.setDate(now.getDate() - ((dow + 6) % 7));
+      from = fmt(mon);
+      to = fmt(new Date(mon.getTime() + 6*86400000));
+      break;
+    }
+    case '1m':
+      from = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+      to = fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+      break;
+    case 'next': {
+      const nm = now.getMonth() + 1;
+      const ny = nm > 11 ? now.getFullYear() + 1 : now.getFullYear();
+      const nm0 = nm > 11 ? 0 : nm;
+      from = fmt(new Date(ny, nm0, 1));
+      to = fmt(new Date(ny, nm0 + 1, 0));
+      break;
+    }
+    case '2m':
+    default:
+      from = fmt(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+      to = fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+      break;
+  }
+
+  document.getElementById('cal-from').value = from;
+  document.getElementById('cal-to').value = to;
+  loadCalendar();
+}
+
+// ─── Calendar Data Fetch ─────────────────────
+async function loadCalendar() {
+  const container = document.getElementById('calendar-events-container');
+  container.innerHTML = '<div class="loading" style="padding:40px;text-align:center"><div class="spinner"></div><div style="font-size:12px;color:var(--text-dim);margin-top:8px">Loading calendar...</div></div>';
+
+  const from = document.getElementById('cal-from').value;
+  const to = document.getElementById('cal-to').value;
+  let url = '/api/calendar';
+  if (from && to) url += `?from=${from}&to=${to}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Auth error');
+    const data = await res.json();
+
+    document.getElementById('cal-source-info').textContent = `Source: ${data.source} | ${data.total_events} events`;
+    const srcEl = document.getElementById('cal-settings-source');
+    if (srcEl) srcEl.textContent = data.source === 'rss' ? 'ForexFactory RSS' : data.source === 'html' ? 'ForexFactory HTML' : 'Generated';
+    renderCBEvents(data.cb_events);
+
+    _allCalendarEvents = [];
+    for (const [day, evts] of Object.entries(data.grouped_events || {})) {
+      evts.forEach(e => _allCalendarEvents.push({...e, _day: day}));
+    }
+
+    renderCalendarTable();
+  } catch (e) {
+    container.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center">Error: ${e.message}</div>`;
+  }
+}
+
+// ─── Calendar Settings & Filters ──────────────
+let _calImpactOverride = 'all';
+
+function setCalImpact(impact) {
+  _calImpactOverride = impact;
+  document.querySelectorAll('.cal-filters [data-impact]').forEach(b => {
+    b.classList.toggle('active', b.dataset.impact === impact);
+  });
+  filterCalendar();
+}
+
+function toggleCalSettings() {
+  const dd = document.getElementById('cal-settings-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close settings dropdown on outside click
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('cal-settings-dropdown');
+  if (dd && dd.style.display === 'block' && !e.target.closest('#cal-settings-dropdown') && !e.target.closest('[onclick*="toggleCalSettings"]')) {
+    dd.style.display = 'none';
+  }
+});
+
+// ─── Render Events Table (ForexFactory-style) ──
+function renderCalendarTable() {
+  const container = document.getElementById('calendar-events-container');
+
+  // Read filters
+  const impactF = _calImpactOverride !== 'all' ? _calImpactOverride : 'all';
+  const currencyF = document.getElementById('cal-f-currency').value;
+  const statusF = document.getElementById('cal-f-status').value;
+  const typeF = document.getElementById('cal-f-type').value;
+  const searchQ = document.getElementById('cal-f-search').value.toLowerCase();
+
+  // Read settings
+  const showPast = document.getElementById('cal-show-past')?.checked ?? true;
+  const compactView = document.getElementById('cal-compact-view')?.checked ?? false;
+  const showPairs = document.getElementById('cal-show-pairs')?.checked ?? true;
+  const tzSetting = document.getElementById('cal-timezone')?.value ?? 'UTC';
+
+  // TZ offset for display
+  const tzOffsets = { 'UTC': 0, 'local': -(new Date().getTimezoneOffset()), 'NY': -240, 'London': 60, 'Tokyo': 540 };
+  const tzOff = tzOffsets[tzSetting] ?? 0;
+
+  // Format time with TZ
+  function formatTime(timeStr) {
+    const short = (timeStr||'').slice(11,16);
+    if (tzOff === 0 || tzSetting === 'UTC') return short;
+    try {
+      const d = new Date(timeStr.slice(0,10) + 'T' + short + ':00Z');
+      d.setMinutes(d.getMinutes() + tzOff);
+      return d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'UTC'});
+    } catch(e) { return short; }
+  }
+
+  // Apply filters
   let filtered = [..._allCalendarEvents];
-  if (impactFilter !== 'all') filtered = filtered.filter(e => e.impact === impactFilter);
-  if (currencyFilter !== 'all') filtered = filtered.filter(e => e.currency === currencyFilter);
+  if (impactF !== 'all') filtered = filtered.filter(e => e.impact === impactF);
+  if (currencyF !== 'all') filtered = filtered.filter(e => e.currency === currencyF);
+  if (searchQ) filtered = filtered.filter(e => (e.event||'').toLowerCase().includes(searchQ) || (e.currency||'').toLowerCase().includes(searchQ));
 
-  // Status filtering
-  if (statusFilter === 'beat') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) > parseFloat(e.forecast));
-  else if (statusFilter === 'miss') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) < parseFloat(e.forecast));
-  else if (statusFilter === 'inline') filtered = filtered.filter(e => e.actual && e.forecast && parseFloat(e.actual) === parseFloat(e.forecast));
-  else if (statusFilter === 'upcoming') filtered = filtered.filter(e => !e.actual || e.actual === '');
+  // Past events filter
+  if (!showPast) filtered = filtered.filter(e => !e.is_past);
+
+  if (statusF === 'beat') filtered = filtered.filter(e => e.beat_miss === 'beat');
+  else if (statusF === 'miss') filtered = filtered.filter(e => e.beat_miss === 'miss');
+  else if (statusF === 'inline') filtered = filtered.filter(e => e.beat_miss === 'inline');
+  else if (statusF === 'upcoming') filtered = filtered.filter(e => !e.is_past);
+
+  if (typeF !== 'all') {
+    const typeKeywords = {
+      growth: ['gdp', 'retail sales', 'industrial', 'trade', 'factory orders'],
+      inflation: ['cpi', 'inflation', 'ppi', 'price'],
+      employment: ['employment', 'unemployment', 'jobless', 'payrolls', 'claims', 'labor'],
+      central_bank: ['rate decision', 'fomc', 'ecb', 'boe', 'boj', 'rba', 'rbnz', 'boc', 'snb', 'monetary'],
+      housing: ['housing', 'building', 'home'],
+      consumer: ['consumer', 'sentiment', 'confidence', 'retail'],
+      speech: ['speech', 'testimony', 'hearing'],
+    };
+    const kws = typeKeywords[typeF] || [];
+    filtered = filtered.filter(e => kws.some(kw => (e.event||'').toLowerCase().includes(kw)));
+  }
+
+  // Update source in settings panel
+  const sourceEl = document.getElementById('cal-settings-source');
+  if (sourceEl) {
+    const srcInfo = document.getElementById('cal-source-info');
+    sourceEl.textContent = srcInfo ? srcInfo.textContent.replace('Source: ','') : 'ForexFactory RSS';
+  }
 
   document.getElementById('cal-filter-count').textContent = `Showing ${filtered.length}/${_allCalendarEvents.length}`;
 
-  if (!filtered || filtered.length === 0) {
-    container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No matching events</div>';
+  if (!filtered.length) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim);font-size:13px">No matching events</div>';
     return;
   }
 
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-  html += '<tr style="color:var(--text-dim);border-bottom:1px solid var(--border)">' +
-    '<th style="text-align:left;padding:5px">Time</th>' +
-    '<th style="text-align:left;padding:5px">Impact</th>' +
-    '<th style="text-align:left;padding:5px">Currency</th>' +
-    '<th style="text-align:left;padding:5px">Event</th>' +
-    '<th style="text-align:right;padding:5px">Actual</th>' +
-    '<th style="text-align:right;padding:5px">Forecast</th>' +
-    '<th style="text-align:right;padding:5px">Previous</th>' +
-    '<th style="text-align:left;padding:5px">Status</th></tr>';
-
+  // Group by day
+  const grouped = {};
   filtered.forEach(e => {
-    const imp = e.impact === 'High' ? 'badge-red' : e.impact === 'Medium' ? 'badge-yellow' : 'badge-gray';
-    // Determine beat/miss/inline
-    let statusBadge = '';
-    if (e.actual && e.forecast && e.actual !== '' && e.forecast !== '') {
-      const a = parseFloat(e.actual), f = parseFloat(e.forecast);
-      if (a > f) statusBadge = '<span style="color:var(--green);font-size:10px">✅ Beat</span>';
-      else if (a < f) statusBadge = '<span style="color:var(--red);font-size:10px">❌ Miss</span>';
-      else statusBadge = '<span style="color:var(--yellow);font-size:10px">➡️ Inline</span>';
-    } else {
-      statusBadge = '<span style="color:var(--text-muted);font-size:10px">⏳</span>';
-    }
-
-    html += `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:5px;color:var(--text-dim);font-size:11px">${e.time ? e.time.slice(5, 16) : ''}</td>
-      <td style="padding:5px"><span class="badge ${imp}" style="font-size:10px">${e.impact || ''}</span></td>
-      <td style="padding:5px"><b>${e.currency || ''}</b></td>
-      <td style="padding:5px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.event || ''}</td>
-      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:${e.actual ? 'var(--text)' : 'var(--text-muted)'}">${e.actual || '--'}</td>
-      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:var(--text-dim)">${e.forecast || '--'}</td>
-      <td style="padding:5px;text-align:right;font-family:JetBrains Mono;font-size:11px;color:var(--text-dim)">${e.previous || '--'}</td>
-      <td style="padding:5px">${statusBadge}</td>
-    </tr>`;
+    const day = e._day || e.time.slice(0,10);
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(e);
   });
-  html += '</table>';
+
+  // Impact stars helper
+  function impactStars(impact) {
+    if (impact === 'High') return '<span style="color:#ef4444;font-size:11px">★★★</span>';
+    if (impact === 'Medium') return '<span style="color:#facc15;font-size:11px">★★</span>';
+    return '<span style="color:#5f6670;font-size:11px">★</span>';
+  }
+
+  // Impact bar color
+  function impactBar(impact) {
+    if (impact === 'High') return '#ef4444';
+    if (impact === 'Medium') return '#facc15';
+    return '#5f6670';
+  }
+
+  // Currency flag
+  function currencyFlag(cur) {
+    const flags = {'USD':'🇺🇸','EUR':'🇪🇺','GBP':'🇬🇧','JPY':'🇯🇵','AUD':'🇦🇺','NZD':'🇳🇿','CAD':'🇨🇦','CHF':'🇨🇭'};
+    return flags[cur] || cur;
+  }
+
+  let html = '<div class="cal-table">';
+  for (const [day, evts] of Object.entries(grouped)) {
+    const d = new Date(day + 'T12:00:00');
+    const dayName = d.toLocaleDateString('en-US', {weekday: 'short'});
+    const dateStr = d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+    const isToday = day === new Date().toISOString().slice(0,10);
+    const pastClass = day < new Date().toISOString().slice(0,10) ? ' style="opacity:0.65"' : '';
+
+    // Count by impact for header
+    const highC = evts.filter(e=>e.impact==='High').length;
+    const medC = evts.filter(e=>e.impact==='Medium').length;
+    const lowC = evts.filter(e=>e.impact==='Low').length;
+
+    html += `<div class="cal-day-group"${pastClass}>`;
+    html += `<div class="cal-day-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
+      <span class="day-date">${dayName} ${dateStr}</span>
+      ${isToday ? '<span class="badge badge-red" style="font-size:9px;margin-left:4px">TODAY</span>' : ''}
+      <span class="day-label">${evts.length} events</span>
+      <span class="day-count" style="display:flex;gap:4px;align-items:center">
+        ${highC > 0 ? `<span style="color:#ef4444;font-size:10px">${'★'.repeat(Math.min(highC,3))}${highC > 3 ? ' +'+(highC-3) : ''}</span>` : ''}
+        ${medC > 0 && highC === 0 ? `<span style="color:#facc15;font-size:10px">${'★'.repeat(Math.min(medC,3))}</span>` : ''}
+        <span style="color:var(--text-muted);font-size:10px">${evts.length}</span>
+      </span>
+    </div>`;
+    html += `<div class="cal-day-events">`;
+
+    evts.forEach(e => {
+      const impColor = impactBar(e.impact);
+      const statusBadge = e.is_past
+        ? (e.beat_miss === 'beat' ? '<span style="color:var(--green);font-size:11px">✅</span>'
+          : e.beat_miss === 'miss' ? '<span style="color:var(--red);font-size:11px">❌</span>'
+          : e.beat_miss ? '<span style="color:var(--yellow);font-size:11px">➡️</span>'
+          : '<span style="color:var(--text-muted);font-size:11px">✅</span>')
+        : '<span style="color:var(--text-muted);font-size:11px">⏳</span>';
+
+      const actClr = e.actual && e.forecast
+        ? (parseFloat(e.actual) > parseFloat(e.forecast) ? 'var(--green)' :
+           parseFloat(e.actual) < parseFloat(e.forecast) ? 'var(--red)' : '')
+        : '';
+
+      // Affected pairs
+      const pairs = e.affected_pairs || [];
+      const pairHtml = showPairs && pairs.length > 0
+        ? `<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px">${pairs.slice(0,4).map(p => `<span style="font-size:8px;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.04);color:var(--text-muted);border:1px solid var(--border-light)">${p}</span>`).join('')}${pairs.length > 4 ? `<span style="font-size:8px;color:var(--text-muted)">+${pairs.length-4}</span>` : ''}</div>`
+        : '';
+
+      if (compactView) {
+        // Compact row
+        html += `<div class="cal-event-row" style="font-size:10px;padding:3px 12px;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')" title="${e.event||''}">
+          <span class="ev-time">${formatTime(e.time)}</span>
+          <span class="ev-impact" style="min-width:30px">${impactStars(e.impact)}</span>
+          <span class="ev-currency">${currencyFlag(e.currency)}</span>
+          <span class="ev-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.event||''}</span>
+          <span class="ev-actual" style="color:${actClr || 'var(--text)'};font-size:10px">${e.actual || '--'}</span>
+          <span class="ev-forecast" style="color:var(--text-dim);font-size:10px">${e.forecast || '--'}</span>
+          <span class="ev-status" style="text-align:center">${statusBadge}</span>
+        </div>`;
+        // Detail expand
+        html += `<div style="display:none;padding:4px 12px 8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px;background:rgba(0,0,0,0.15)">
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <span style="color:var(--text-dim)">Prev: <strong>${e.previous || '--'}</strong></span>
+            <span style="color:var(--text-dim)">Vol: <strong>${e.volatility||'?'}/15</strong></span>
+          </div>
+          ${pairHtml}
+        </div>`;
+      } else {
+        // Full row (ForexFactory style)
+        html += `<div class="cal-event-row" style="font-size:11px;border-left:3px solid ${impColor};padding-left:10px">
+          <span class="ev-time">${formatTime(e.time)}</span>
+          <span class="ev-impact" style="min-width:36px">${impactStars(e.impact)}</span>
+          <span class="ev-currency">${currencyFlag(e.currency)} ${e.currency}</span>
+          <span class="ev-name" title="${e.event||''}">
+            ${e.event||''}
+            ${pairHtml}
+          </span>
+          <span class="ev-actual" style="color:${actClr || 'var(--text)'}">${e.actual || '--'}</span>
+          <span class="ev-forecast">${e.forecast || '--'}</span>
+          <span class="ev-previous">${e.previous || '--'}</span>
+          <span class="ev-status" style="text-align:center">${statusBadge}</span>
+        </div>`;
+      }
+    });
+
+    html += `</div></div>`;
+  }
+  html += '</div>';
   container.innerHTML = html;
 }
 
 function filterCalendar() {
-  applyCalendarFilters();
+  renderCalendarTable();
+  // Scroll to top of events
+  const ec = document.getElementById('calendar-events-container');
+  if (ec) ec.scrollTop = 0;
 }
 
-function renderHeadlines(headlines) {
-  const container = document.getElementById('news-headlines');
-  if (!headlines || headlines.length === 0) { container.innerHTML = '<div style="color:var(--text-dim);padding:20px;text-align:center">No headlines</div>'; return; }
-  let html = '<div style="display:flex;flex-direction:column;gap:2px">';
-  headlines.forEach(h => {
-    const sc = h.sentiment > 0.1 ? 'var(--green)' : h.sentiment < -0.1 ? 'var(--red)' : 'var(--yellow)';
-    const ic = h.sentiment > 0.1 ? '📈' : h.sentiment < -0.1 ? '📉' : '➡️';
-    html += `<div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="color:${sc};min-width:50px;font-weight:600;font-family:JetBrains Mono">${ic} ${h.sentiment>0?'+':''}${h.sentiment.toFixed(2)}</span>
-      <span style="color:var(--text-dim);min-width:55px;font-size:10px">${h.source}</span>
-      <span style="flex:1">${h.title}</span>
+// ─── Central Bank Events ────────────────────────
+
+function renderCBEvents(events) {
+  const container = document.getElementById('cal-cb-events');
+  if (!events || events.length === 0) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">No upcoming CB meetings</div>';
+    return;
+  }
+  container.innerHTML = events.map(e => {
+    const isUpcoming = e.time >= new Date().toISOString().slice(0,10);
+    return `<div class="cal-cb-item" style="${isUpcoming ? '' : 'opacity:0.5'}">
+      <span class="cb-cur">${e.currency}</span>
+      <span class="cb-ev">${e.event}</span>
+      <span class="cb-date">${(e.time||'').slice(5,16)}</span>
     </div>`;
-  });
-  html += '</div>';
-  container.innerHTML = html;
+  }).join('');
 }
 
 
@@ -2569,6 +3267,8 @@ document.querySelectorAll('.nav-item').forEach(item => {
 // Auto-load
 scan();
 loadJournal();
+// Init calendar with 2-month default range
+setTimeout(() => { setCalRange('2m'); }, 100);
 loadNews();
 loadInstruments();
 populateReasonDropdowns();
