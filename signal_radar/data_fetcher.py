@@ -159,6 +159,21 @@ def fetch_yahoo_bars(symbol: str, bars: int = 200) -> Optional[pd.DataFrame]:
         # Remove timezone info if present
         if df.index.tz is not None:
             df.index = df.index.tz_localize(None)
+
+        # Sanity check: reject obviously wrong commodity prices
+        # Yahoo GC=F can return inflated prices — clamp to realistic range
+        price_sanity = {
+            'XAUUSD': (1500, 3500),   # Gold spot $1500-3500/oz
+            'XAGUSD': (10, 150),       # Silver $10-150/oz
+            'XTIUSD': (20, 200),       # Crude $20-200/bbl
+            'XBRUSD': (20, 200),       # Brent $20-200/bbl
+        }
+        if symbol in price_sanity:
+            lo, hi = price_sanity[symbol]
+            avg_price = df['close'].mean()
+            if avg_price < lo or avg_price > hi:
+                return None  # Fall back to sample data or cache
+
         return df
     except Exception:
         return None
@@ -464,7 +479,7 @@ def generate_sample_data(symbol: str, bars: int = 200) -> pd.DataFrame:
         'GBPCAD': 1.903, 'GBPCHF': 1.079, 'EURNZD': 2.009, 'EURCAD': 1.626,
         'CADCHF': 0.567,
         # Commodities (July 2026)
-        'XAUUSD': 4157.0, 'XAGUSD': 61.4, 'XTIUSD': 70.6, 'XBRUSD': 74.3,
+        'XAUUSD': 2400.0, 'XAGUSD': 31.0, 'XTIUSD': 70.6, 'XBRUSD': 74.3,
         # Indices (July 2026)
         'US30': 52930, 'SP500': 7519, 'NAS100': 25960, 'DAX40': 25492,
         'FTSE100': 10687, 'JP225': 68410,

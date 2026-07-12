@@ -189,7 +189,7 @@ INSTRUMENTS = {
     },
     # ═══════ METALS & CFDs ═══════
     'XAUUSD': {
-        'category': 'commodity', 'pip_factor': 0.10, 'contract_size': 100,
+        'category': 'commodity', 'pip_factor': 0.01, 'contract_size': 100,
         'digits': 2, 'sessions': {'London': (8, 17), 'NY': (13, 22)},
         'typical_spread': 2.0, 'margin_pct': 1.0,
         'description': 'Gold spot vs USD', 'currency': 'USD',

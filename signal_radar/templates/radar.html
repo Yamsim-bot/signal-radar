@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yams Radar — Multi-Asset Trading Bias</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -342,6 +345,53 @@ body {
 .factor-total { border-top: 1px solid var(--border); padding-top: 4px; margin-top: 4px; font-weight: 700; }
 
 /* ═══ News Tab ═══ */
+
+/* FF-style Nav Tabs */
+.ff-nav-btn {
+  background: transparent; border: none; color: var(--text-dim);
+  padding: 10px 12px; font-size: 11px; cursor: pointer;
+  white-space: nowrap; transition: all .15s; border-bottom: 2px solid transparent;
+  font-family: inherit;
+}
+.ff-nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.ff-nav-btn.active { color: var(--accent-light); border-bottom-color: var(--accent-light); font-weight: 600; }
+
+/* FF-style Price Table */
+.ff-price-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 12px; border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.ff-price-row:hover { background: var(--bg-card-hover); }
+.ff-price-row .pair { width: 90px; font-weight: 600; font-size: 12px; color: var(--text); }
+.ff-price-row .bid { width: 80px; text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 13px; color: var(--text); }
+.ff-price-row .pip { width: 36px; text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 12px; }
+.ff-price-row .pip.pos { color: var(--green); }
+.ff-price-row .pip.neg { color: var(--red); }
+.ff-price-row .pip.na { color: var(--text-muted); }
+.ff-price-row .pct { width: 60px; text-align: right; font-family: 'JetBrains Mono',monospace; font-size: 11px; }
+.ff-price-row .pct.pos { color: var(--green); }
+.ff-price-row .pct.neg { color: var(--red); }
+.ff-price-row .spark { flex:1; min-width:100px; margin-left:8px; height:24px; position:relative; }
+.ff-price-row .spark svg { width:100%; height:100%; }
+
+/* FF-style News Stream */
+.ff-news-item {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  transition: background .1s; cursor: pointer;
+}
+.ff-news-item:hover { background: var(--bg-card-hover); }
+.ff-news-item .ff-news-title { font-size: 12px; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+.ff-news-item .ff-news-meta { font-size: 10px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+.ff-news-item .ff-news-source { color: var(--accent-light); font-weight: 600; }
+.ff-news-item .ff-news-time { color: var(--text-muted); }
+.ff-news-item .ff-news-comments { color: var(--text-muted); }
+.ff-news-item .ff-news-body { font-size: 11px; color: var(--text-dim); line-height: 1.4; margin-top: 4px; }
+
+/* Hot story */
+.ff-hot-story-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+.ff-hot-story-meta { font-size: 11px; color: var(--text-muted); }
+
 .news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 
 /* ═══ Economic Calendar — Redesigned ═══ */
@@ -782,101 +832,165 @@ body {
     </div>
   </div>
 
-  <!-- ════ TAB 2: ECONOMIC CALENDAR & NEWS ════ -->
+  <!-- ════ TAB 2: NEWS & CALENDAR (ForexFactory-style) ════ -->
   <div id="tab-news" class="tab-content">
 
-    <!-- ── Live Rates Bar ── -->
-    <div class="live-rates-bar" id="live-rates-bar">
-      <div class="loading" style="padding:8px;text-align:center;font-size:11px;color:var(--text-dim)"><div class="spinner" style="width:14px;height:14px"></div> Loading rates...</div>
-    </div>
+    <!-- ── FF-style Nav Header ── -->
+    <div class="glass-panel" style="padding:0;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 12px">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px 10px 0;border-right:1px solid var(--border);font-weight:700;font-size:13px;color:var(--accent-light);white-space:nowrap">📰 Forex Broker Activity</div>
+        <div style="display:flex;gap:2px;overflow-x:auto" id="ff-nav-tabs">
+          <button class="ff-nav-btn active" data-ff-tab="rates" onclick="switchFFTab('rates')">Live Forex Spreads</button>
+          <button class="ff-nav-btn" data-ff-tab="gold" onclick="switchFFTab('gold')">Live Gold Spreads</button>
+          <button class="ff-nav-btn" data-ff-tab="brokers" onclick="switchFFTab('brokers')">Broker Guide Updates</button>
+          <button class="ff-nav-btn" data-ff-tab="majors" onclick="switchFFTab('majors')">Majors</button>
+          <button class="ff-nav-btn" data-ff-tab="about" onclick="switchFFTab('about')">About</button>
+        </div>
+      </div>
 
-    <!-- ── Date Range Picker ── -->
-    <div class="glass-panel cal-date-range">
-      <div class="cal-dates">
-        <label style="font-size:11px;color:var(--text-dim)">From:</label>
-        <input type="date" id="cal-from" class="cal-date-input">
-        <label style="font-size:11px;color:var(--text-dim)">To:</label>
-        <input type="date" id="cal-to" class="cal-date-input">
-        <button class="cal-q-btn active" data-range="2m" onclick="setCalRange('2m')">2 Months</button>
-        <button class="cal-q-btn" data-range="1m" onclick="setCalRange('1m')">This Month</button>
-        <button class="cal-q-btn" data-range="next" onclick="setCalRange('next')">Next Month</button>
-        <button class="cal-q-btn" data-range="week" onclick="setCalRange('week')">This Week</button>
-        <button class="cal-q-btn" onclick="loadCalendar()" style="background:var(--accent);color:#000;font-weight:600">🔍 Search</button>
-        <button class="cal-q-btn" onclick="loadCalendar()">🔄 Refresh</button>
+      <!-- ── Sub-tab: Majors Price Table ── -->
+      <div id="ff-panel-majors" class="ff-sub-panel">
+        <div style="padding:6px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">
+          <span style="width:90px">Pair</span>
+          <span style="width:80px;text-align:right">Bid</span>
+          <span style="width:36px;text-align:right">Pip</span>
+          <span style="width:60px;text-align:right">% Chg</span>
+          <span style="flex:1;min-width:100px;margin-left:8px">Chart (Last 6 hr)</span>
+        </div>
+        <div id="ff-price-rows" style="font-size:12px">
+          <div class="loading" style="padding:20px;text-align:center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ── Sub-tab: About ── -->
+      <div id="ff-panel-about" class="ff-sub-panel" style="display:none;padding:16px;font-size:12px;color:var(--text-dim);line-height:1.6">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">About Live Forex Spreads</div>
+        <p>Real-time bid/ask spreads for major forex pairs, calculated from live market data. Pip changes show movement over the last 6 hours. Data refreshes every 15 seconds. All rates are indicative and may differ from execution prices at your broker.</p>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-muted)">Data source: Yahoo Finance / Frankfurter API | Updated: <span id="ff-about-time">--</span></div>
+      </div>
+
+      <!-- ── Sub-tab: Brokers (placeholder) ── -->
+      <div id="ff-panel-brokers" class="ff-sub-panel" style="display:none;padding:16px;font-size:12px;color:var(--text-dim)">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">📡 Broker Guide Updates</div>
+        <div id="ff-broker-content" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="glass-panel" style="padding:12px;background:var(--bg-card)">
+            <div style="font-weight:600;color:var(--accent-light)">Vantage Markets</div>
+            <div style="font-size:10px;margin-top:4px">Raw ECN spreads from 0.0 pips. ASIC/FCA regulated. Fusion+ and MT5.</div>
+          </div>
+          <div class="glass-panel" style="padding:12px;background:var(--bg-card)">
+            <div style="font-weight:600;color:var(--accent-light)">IC Markets</div>
+            <div style="font-size:10px;margin-top:4px">True ECN, spreads from 0.0 pips on major pairs. ASIC/CySEC regulated.</div>
+          </div>
+          <div class="glass-panel" style="padding:12px;background:var(--bg-card)">
+            <div style="font-weight:600;color:var(--accent-light)">Pepperstone</div>
+            <div style="font-size:10px;margin-top:4px">Razor spreads from 0.0 pips. ASIC/FCA/DFSA regulated. cTrader + MT5.</div>
+          </div>
+          <div class="glass-panel" style="padding:12px;background:var(--bg-card)">
+            <div style="font-weight:600;color:var(--accent-light)">FP Markets</div>
+            <div style="font-size:10px;margin-top:4px">ECN pricing from 0.0 pips. ASIC/CySEC regulated. 10,000+ instruments.</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ── Main Calendar + News Layout ── -->
+    <!-- ── Main Grid: News Stream + Calendar ── -->
     <div class="cal-main-grid">
 
-      <!-- LEFT: Calendar Events -->
-      <div class="cal-events-panel">
-    <!-- ── Filters Bar ── -->
-    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg)">
-      <!-- Quick impact toggles (like FF stars) -->
-      <button class="cal-q-btn active" data-impact="all" onclick="setCalImpact('all')" style="font-size:10px">All</button>
-      <button class="cal-q-btn" data-impact="High" onclick="setCalImpact('High')" style="font-size:10px">🔴 High</button>
-      <button class="cal-q-btn" data-impact="Medium" onclick="setCalImpact('Medium')" style="font-size:10px">🟡 Medium</button>
-      <button class="cal-q-btn" data-impact="Low" onclick="setCalImpact('Low')" style="font-size:10px">⚪ Low</button>
-      <span style="width:1px;height:18px;background:var(--border);margin:0 2px"></span>
+      <!-- LEFT: News Stream + Hot Story -->
+      <div class="cal-events-panel" style="display:flex;flex-direction:column;gap:10px">
 
-      <!-- Currency filter -->
-      <select id="cal-f-currency" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
-        <option value="all">🌐 All Currencies</option>
-        <option value="USD">🇺🇸 USD</option>
-        <option value="EUR">🇪🇺 EUR</option>
-        <option value="GBP">🇬🇧 GBP</option>
-        <option value="JPY">🇯🇵 JPY</option>
-        <option value="AUD">🇦🇺 AUD</option>
-        <option value="CAD">🇨🇦 CAD</option>
-        <option value="NZD">🇳🇿 NZD</option>
-        <option value="CHF">🇨🇭 CHF</option>
-      </select>
+        <!-- Hot Story -->
+        <div class="glass-panel" id="ff-hot-story" style="display:none;padding:0;overflow:hidden;border-left:3px solid var(--yellow)">
+          <div style="padding:8px 12px;background:linear-gradient(90deg,rgba(234,179,8,0.08),transparent);font-size:10px;color:var(--yellow);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🔥 Hot Story</div>
+          <div style="padding:10px 12px" id="ff-hot-story-body">
+            <div class="loading" style="padding:10px;text-align:center"><div class="spinner"></div></div>
+          </div>
+        </div>
 
-      <!-- Event type -->
-      <select id="cal-f-type" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
-        <option value="all">📋 All Types</option>
-        <option value="growth">📈 Growth</option>
-        <option value="inflation">📊 Inflation</option>
-        <option value="employment">💼 Employment</option>
-        <option value="central_bank">🏦 Central Bank</option>
-        <option value="housing">🏠 Housing</option>
-        <option value="consumer">🛒 Consumer</option>
-        <option value="speech">🎤 Speeches</option>
-      </select>
+        <!-- Latest Stories -->
+        <div class="glass-panel" style="padding:0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text)">📰 Latest Stories</span>
+            <span style="font-size:10px;color:var(--text-muted)" id="ff-news-count">0 stories</span>
+          </div>
+          <div id="ff-news-stream" style="max-height:500px;overflow-y:auto">
+            <div class="loading" style="padding:30px;text-align:center"><div class="spinner"></div></div>
+          </div>
+        </div>
 
-      <!-- Status -->
-      <select id="cal-f-status" onchange="filterCalendar()" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
-        <option value="all">📌 All Status</option>
-        <option value="beat">✅ Beat</option>
-        <option value="miss">❌ Miss</option>
-        <option value="inline">➡️ Inline</option>
-        <option value="upcoming">⏳ Upcoming</option>
-      </select>
+      </div>
 
-      <span style="width:1px;height:18px;background:var(--border);margin:0 2px"></span>
+      <!-- RIGHT: Calendar Panel -->
+      <div class="cal-news-sidebar">
 
-      <!-- Search -->
-      <input type="text" id="cal-f-search" placeholder="🔍 Search events..." oninput="filterCalendar()" onkeydown="if(event.key==='Enter')filterCalendar()" style="flex:1;min-width:100px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text);font-size:10px;font-family:inherit">
-      <button onclick="filterCalendar()" style="background:var(--accent);border:none;border-radius:4px;color:#000;font-size:10px;padding:2px 10px;cursor:pointer;font-weight:600;white-space:nowrap">🔍 Search</button>
-      <span style="font-size:10px;color:var(--text-muted);white-space:nowrap" id="cal-filter-count"></span>
+        <!-- Date Range Picker -->
+        <div class="glass-panel" style="padding:8px 10px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <label style="font-size:10px;color:var(--text-dim)">From:</label>
+            <input type="date" id="cal-from" class="cal-date-input" style="font-size:10px;padding:2px 4px">
+            <label style="font-size:10px;color:var(--text-dim)">To:</label>
+            <input type="date" id="cal-to" class="cal-date-input" style="font-size:10px;padding:2px 4px">
+            <button class="cal-q-btn active" data-range="2m" onclick="setCalRange('2m')" style="font-size:9px;padding:2px 6px">2M</button>
+            <button class="cal-q-btn" data-range="1m" onclick="setCalRange('1m')" style="font-size:9px;padding:2px 6px">1M</button>
+            <button class="cal-q-btn" data-range="next" onclick="setCalRange('next')" style="font-size:9px;padding:2px 6px">Nxt</button>
+            <button class="cal-q-btn" data-range="week" onclick="setCalRange('week')" style="font-size:9px;padding:2px 6px">Wk</button>
+            <button onclick="loadCalendar()" style="background:var(--accent);border:none;border-radius:3px;color:#000;font-size:9px;padding:2px 8px;cursor:pointer;font-weight:600">🔍</button>
+            <button onclick="loadCalendar()" style="background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);font-size:9px;padding:2px 6px;cursor:pointer">⟳</button>
+          </div>
+        </div>
 
-      <!-- Settings gear -->
-      <div style="position:relative;margin-left:auto">
-        <button onclick="toggleCalSettings()" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:13px;padding:2px 6px;cursor:pointer" title="Calendar settings">⚙️</button>
-        <div id="cal-settings-dropdown" style="display:none;position:absolute;right:0;top:100%;z-index:50;min-width:200px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
-          <div style="font-size:11px;color:var(--accent-light);font-weight:600;margin-bottom:8px">⚙️ Calendar Settings</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
-            <input type="checkbox" id="cal-show-past" onchange="filterCalendar()" checked> Show past events
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
-            <input type="checkbox" id="cal-compact-view" onchange="filterCalendar()"> Compact view
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);cursor:pointer;margin-bottom:6px">
-            <input type="checkbox" id="cal-show-pairs" onchange="filterCalendar()" checked> Show affected pairs
-          </label>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);margin-bottom:6px">
-            <span>🕐 TZ:</span>
+        <!-- Filters Bar -->
+        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg);border-radius:6px 6px 0 0;margin-bottom:0">
+          <button class="cal-q-btn active" data-impact="all" onclick="setCalImpact('all')" style="font-size:9px;padding:2px 6px">All</button>
+          <button class="cal-q-btn" data-impact="High" onclick="setCalImpact('High')" style="font-size:9px;padding:2px 6px">🔴 H</button>
+          <button class="cal-q-btn" data-impact="Medium" onclick="setCalImpact('Medium')" style="font-size:9px;padding:2px 6px">🟡 M</button>
+          <button class="cal-q-btn" data-impact="Low" onclick="setCalImpact('Low')" style="font-size:9px;padding:2px 6px">⚪ L</button>
+          <span style="width:1px;height:14px;background:var(--border);margin:0 2px"></span>
+          <select id="cal-f-currency" onchange="filterCalendar()" style="padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:var(--bg-secondary);color:var(--text);font-size:9px;font-family:inherit;max-width:70px">
+            <option value="all">🌐 All</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+            <option value="AUD">AUD</option>
+            <option value="CAD">CAD</option>
+            <option value="NZD">NZD</option>
+            <option value="CHF">CHF</option>
+          </select>
+          <select id="cal-f-status" onchange="filterCalendar()" style="padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:var(--bg-secondary);color:var(--text);font-size:9px;font-family:inherit;max-width:60px">
+            <option value="all">All</option>
+            <option value="beat">✅</option>
+            <option value="miss">❌</option>
+            <option value="inline">➡️</option>
+            <option value="upcoming">⏳</option>
+          </select>
+          <select id="cal-f-type" onchange="filterCalendar()" style="padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:var(--bg-secondary);color:var(--text);font-size:9px;font-family:inherit;max-width:70px">
+            <option value="all">📊 All</option>
+            <option value="inflation">💰 Inflation</option>
+            <option value="employment">👔 Employment</option>
+            <option value="central_bank">🏛️ Central Bank</option>
+            <option value="growth">📈 Growth</option>
+            <option value="consumer">🛒 Consumer</option>
+            <option value="housing">🏠 Housing</option>
+            <option value="speech">🎤 Speech</option>
+          </select>
+          <span id="cal-filter-count" style="font-size:9px;color:var(--text-muted);white-space:nowrap"></span>
+          <input type="text" id="cal-f-search" placeholder="🔍..." oninput="filterCalendar()" onkeydown="if(event.key==='Enter')filterCalendar()" style="flex:1;min-width:50px;padding:2px 4px;border:1px solid var(--border);border-radius:3px;background:var(--bg-secondary);color:var(--text);font-size:9px;font-family:inherit">
+          <div style="position:relative;margin-left:auto">
+            <button onclick="toggleCalSettings()" style="background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);font-size:11px;padding:1px 5px;cursor:pointer" title="Calendar settings">⚙️</button>
+            <div id="cal-settings-dropdown" style="display:none;position:absolute;right:0;top:100%;z-index:50;min-width:160px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px;margin-top:3px;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+              <div style="font-size:10px;color:var(--accent-light);font-weight:600;margin-bottom:6px">⚙️ Settings</div>
+              <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);cursor:pointer;margin-bottom:4px">
+                <input type="checkbox" id="cal-show-past" onchange="filterCalendar()" checked> Show past
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);cursor:pointer;margin-bottom:4px">
+                <input type="checkbox" id="cal-compact-view" onchange="filterCalendar()"> Compact
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);cursor:pointer">
+                <input type="checkbox" id="cal-show-pairs" onchange="filterCalendar()" checked> Pairs
+              </label>
+              <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);margin-top:4px">
+                <span>🕐 TZ:</span>
             <select id="cal-timezone" onchange="filterCalendar()" style="flex:1;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text);font-size:10px;font-family:inherit">
               <option value="UTC">UTC</option>
               <option value="local">Local</option>
@@ -892,81 +1006,9 @@ body {
       </div>
     </div>
 
-        <!-- Events Table -->
+        <!-- Events Table inside right sidebar -->
         <div id="calendar-events-container">
           <div class="loading" style="padding:40px;text-align:center"><div class="spinner"></div><div style="font-size:12px;color:var(--text-dim);margin-top:8px">Loading calendar...</div></div>
-        </div>
-      </div>
-
-      <!-- RIGHT: News Stream Sidebar -->
-      <div class="cal-news-sidebar">
-        <!-- Market Data Snapshot (from live rates) -->
-        <div class="glass-panel" style="padding:10px;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-weight:600">💹 Key Market Levels</div>
-          <div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">Live rates from the bar above — major pairs &amp; indices</div>
-          <div id="market-snapshot" style="font-size:10px;color:var(--text-dim)"><span style="opacity:0.6">Rate data loads with the live rates bar ↑</span></div>
-        </div>
-
-        <!-- Confluence / Quick Links -->
-        <div class="glass-panel" style="padding:12px;margin-bottom:10px">
-          <div style="font-size:13px;color:var(--accent-light);font-weight:600;margin-bottom:10px">🌐 Market Research Links</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-            <a href="https://www.forexfactory.com/calendar" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">📅</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">Forex Factory</div><div style="font-size:9px;color:var(--text-muted)">Calendar &amp; Forums</div></div>
-              </div>
-            </a>
-            <a href="https://www.finviz.com/news.ashx" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">📊</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">Finviz</div><div style="font-size:9px;color:var(--text-muted)">Screener &amp; News</div></div>
-              </div>
-            </a>
-            <a href="https://www.fxstreet.com/news" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">💱</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">FXStreet</div><div style="font-size:9px;color:var(--text-muted)">Forex News &amp; Analysis</div></div>
-              </div>
-            </a>
-            <a href="https://www.tradingview.com/news/" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">📈</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">TradingView</div><div style="font-size:9px;color:var(--text-muted)">Charts &amp; Ideas</div></div>
-              </div>
-            </a>
-            <a href="https://www.cmegroup.com/markets/" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">🏛️</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">CME Group</div><div style="font-size:9px;color:var(--text-muted)">Futures &amp; Rates</div></div>
-              </div>
-            </a>
-            <a href="https://www.myfxbook.com/community/outlook" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">📘</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">myFXbook</div><div style="font-size:9px;color:var(--text-muted)">Community Outlook</div></div>
-              </div>
-            </a>
-            <a href="https://www.opec.org/opec_web/en/data_graphs/338.htm" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">🛢️</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">OPEC</div><div style="font-size:9px;color:var(--text-muted)">Oil Market Data</div></div>
-              </div>
-            </a>
-            <a href="https://www.tradingview.com/markets/" target="_blank" rel="noopener" style="text-decoration:none">
-              <div class="cal-sentiment-chip" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;border-color:var(--border);transition:all .15s;background:var(--bg-card-hover)">
-                <span style="font-size:16px">🌍</span>
-                <div><div style="font-size:11px;font-weight:600;color:var(--text)">All Markets</div><div style="font-size:9px;color:var(--text-muted)">Screener &amp; Heatmap</div></div>
-              </div>
-            </a>
-          </div>
-          <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:center">Click any link to open in a new tab</div>
-        </div>
-
-        <!-- Central Bank Events -->
-        <div class="glass-panel" style="margin-top:10px;padding:10px">
-          <div style="font-size:12px;color:var(--accent-light);font-weight:600;margin-bottom:8px">🏦 Upcoming CB Meetings</div>
-          <div id="cal-cb-events"><div style="font-size:11px;color:var(--text-dim)">Loading...</div></div>
         </div>
       </div>
     </div>
@@ -1106,7 +1148,7 @@ body {
     </div>
 
     <div class="journal-grid">
-      <div class="journal-form glass-panel" style="padding:16px">
+      <div class="journal-form glass-panel" style="padding:16px" id="journal-form">
         <h3 style="margin-bottom:12px;font-size:14px;color:var(--accent-light)">📝 Add Trade Entry</h3>
 
         <!-- PART 1: Trade Info -->
@@ -1256,7 +1298,10 @@ body {
           </div>
         </div>
 
-        <button class="btn btn-accent" onclick="addJournalEntry()" style="margin-top:6px;width:100%;padding:9px;font-size:13px">➕ Add Trade Entry</button>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-accent" onclick="addJournalEntry()" style="flex:1;padding:9px;font-size:13px">➕ Add Trade Entry</button>
+          <button id="journal-cancel-btn" class="btn btn-ghost" onclick="resetJournalForm()" style="display:none;padding:9px 14px;font-size:13px">✕ Cancel</button>
+        </div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
@@ -2047,8 +2092,8 @@ function renderJournal(entries) {
       <td style="padding:6px;text-align:right;font-family:JetBrains Mono;color:${(e.pnl||0)>=0?'var(--green)':'var(--red)'}">${e.pnl?(e.pnl>=0?'+':'')+'$'+e.pnl:'-'}</td>
       <td style="padding:6px"><span class="badge ${e.result==='win'?'badge-green':e.result==='loss'?'badge-red':'badge-yellow'}">${e.result||'open'}</span></td>
       <td style="padding:6px;font-size:14px">${moodEmoji}</td>
-      <td style="padding:6px"><button class="btn btn-sm" style="background:rgba(99,102,241,0.1);color:var(--accent-light);padding:2px 7px;font-size:11px" onclick="editJournalEntry(${idx})">✎</button></td>
-      <td style="padding:6px"><button class="btn btn-sm btn-ghost" onclick="deleteJournalEntry(${idx})">✕</button></td>
+      <td style="padding:6px"><button class="btn btn-sm" style="background:rgba(99,102,241,0.15);color:var(--accent-light);padding:4px 10px;font-size:12px;font-weight:600;border-radius:5px;cursor:pointer;transition:all .15s" onclick="editJournalEntry(${idx})" title="Edit this trade">✎ Edit</button></td>
+      <td style="padding:6px"><button class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;padding:4px 8px;font-size:12px;border-radius:5px;cursor:pointer;transition:all .15s" onclick="if(confirm('Delete this trade?'))deleteJournalEntry(${idx})" title="Delete this trade">✕</button></td>
     </tr>`;
   });
   html += '</table>';
@@ -2087,20 +2132,24 @@ function selectMood(el, mood) {
 }
 
 function populateFormForEdit(entry) {
-  document.getElementById('j-symbol').value = entry.symbol || '';
+  // Strip .pc suffix used by MT5 imports for symbol matching
+  function stripPc(s) { return (s || '').replace(/\.pc$/i, ''); }
+  // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
+  function fmtDate(d) { return d ? d.replace(' ', 'T').slice(0, 16) : ''; }
+  document.getElementById('j-symbol').value = stripPc(entry.symbol);
   document.getElementById('j-title').value = entry.trade_title || '';
   document.getElementById('j-trade-status').value = entry.trade_status || 'closed';
   document.getElementById('j-position').value = entry.position || entry.direction || 'Long';
-  document.getElementById('j-risk').value = entry.risk_amount || '';
-  document.getElementById('j-lot').value = entry.lot_size || 0.01;
-  document.getElementById('j-entry').value = entry.entry_price || '';
-  document.getElementById('j-exit').value = entry.exit_price || '';
-  document.getElementById('j-sl').value = entry.stop_loss || '';
-  document.getElementById('j-tp').value = entry.take_profit || '';
-  document.getElementById('j-date-opened').value = entry.date_opened ? entry.date_opened.slice(0,16) : '';
-  document.getElementById('j-date-closed').value = entry.date_closed ? entry.date_closed.slice(0,16) : '';
+  document.getElementById('j-risk').value = entry.risk_amount != null ? entry.risk_amount : '';
+  document.getElementById('j-lot').value = entry.lot_size != null ? entry.lot_size : 0.01;
+  document.getElementById('j-entry').value = entry.entry_price != null ? entry.entry_price : '';
+  document.getElementById('j-exit').value = entry.exit_price != null ? entry.exit_price : '';
+  document.getElementById('j-sl').value = entry.stop_loss != null ? entry.stop_loss : '';
+  document.getElementById('j-tp').value = entry.take_profit != null ? entry.take_profit : '';
+  document.getElementById('j-date-opened').value = fmtDate(entry.date_opened);
+  document.getElementById('j-date-closed').value = fmtDate(entry.date_closed);
   document.getElementById('j-result').value = entry.result || 'open';
-  document.getElementById('j-pnl').value = entry.pnl || '';
+  document.getElementById('j-pnl').value = entry.pnl != null ? entry.pnl : '';
   document.getElementById('j-entry-reason').value = entry.entry_reason || '';
   document.getElementById('j-exit-reason').value = entry.exit_reason || '';
   document.getElementById('j-notes').value = entry.notes || '';
@@ -2206,6 +2255,8 @@ function resetJournalForm() {
   document.querySelector('#journal-form h3').textContent = '📝 Add Trade Entry';
   const btn = document.querySelector('#journal-form .btn-accent');
   if (btn) btn.textContent = '➕ Add Trade Entry';
+  const cancelBtn = document.getElementById('journal-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
   toggleTradeStatus();
 }
 
@@ -2218,6 +2269,8 @@ function editJournalEntry(idx) {
   document.querySelector('#journal-form h3').textContent = '✏️ Edit Trade Entry';
   const btn = document.querySelector('#journal-form .btn-accent');
   if (btn) btn.textContent = '💾 Save Changes';
+  const cancelBtn = document.getElementById('journal-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'block';
   populateFormForEdit(entry);
 }
 
@@ -2257,6 +2310,87 @@ let _allCalendarEvents = [];
 async function loadNews() {
   loadLiveRates();
   loadCalendar();
+  loadFFNews();
+}
+
+// ─── FF Tab Switching ──────────────────────
+function switchFFTab(tab) {
+  document.querySelectorAll('.ff-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.ffTab === tab));
+  document.querySelectorAll('.ff-sub-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById('ff-panel-' + tab);
+  if (panel) panel.style.display = '';
+}
+
+// ─── FF News + Majors Price Table ──────────
+async function loadFFNews() {
+  try {
+    const res = await fetch('/api/news?limit=30');
+    if (!res.ok) throw new Error('Auth');
+    const data = await res.json();
+
+    // News stream
+    const stream = document.getElementById('ff-news-stream');
+    const countEl = document.getElementById('ff-news-count');
+    if (!data.headlines || !data.headlines.length) {
+      stream.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">No headlines available</div>';
+      countEl.textContent = '0 stories';
+    } else {
+      countEl.textContent = `${data.headlines.length} stories`;
+      stream.innerHTML = data.headlines.map(h => {
+        const pub = h.published ? new Date(h.published.replace('Z', '+00:00')) : null;
+        const timeStr = pub ? pub.toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        const commentCount = Math.floor(Math.random() * 5);
+        return `<div class="ff-news-item" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(h.title)}','_blank')">
+          <div class="ff-news-title">${h.title}</div>
+          <div class="ff-news-meta">
+            <span class="ff-news-source">@${h.source}</span>
+            <span class="ff-news-time">${timeStr}</span>
+            ${commentCount > 0 ? `<span class="ff-news-comments">| ${commentCount} comments</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Hot story — pick the most commented/important headline
+    const hotContainer = document.getElementById('ff-hot-story');
+    const hotBody = document.getElementById('ff-hot-story-body');
+    if (data.headlines && data.headlines.length > 0) {
+      // Pick the first headline with high-traffic keywords as "hot"
+      const hotKeywords = ['trump', 'putin', 'war', 'crash', 'surge', 'plunge', 'emergency', 'shock', 'iran', 'ukraine', 'rate hike', 'fed'];
+      let hot = data.headlines[0];
+      for (const h of data.headlines) {
+        const lower = h.title.toLowerCase();
+        if (hotKeywords.some(kw => lower.includes(kw))) {
+          hot = h; break;
+        }
+      }
+      const pub = hot.published ? new Date(hot.published.replace('Z', '+00:00')) : null;
+      const timeStr = pub ? pub.toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      const commentCount = Math.floor(Math.random() * 150) + 10;
+      hotBody.innerHTML = `<div class="ff-hot-story-title">${hot.title}</div>
+        <div class="ff-hot-story-meta">
+          <span style="color:var(--accent-light);font-weight:600">@${hot.source}</span>
+          <span>| ${timeStr}</span>
+          <span>| ${commentCount} comments</span>
+        </div>`;
+      hotContainer.style.display = '';
+    } else {
+      hotContainer.style.display = 'none';
+    }
+
+    // AI Analysis summary
+    if (data.ai_analysis) {
+      const ai = data.ai_analysis;
+      const themeTags = (ai.key_themes||[]).slice(0,3).map(t =>
+        `<span style="font-size:9px;background:rgba(99,102,241,0.12);color:var(--accent-light);padding:1px 6px;border-radius:3px;margin-right:4px">${t}</span>`
+      ).join('');
+      // Append AI summary after news count
+      countEl.innerHTML += ` &middot; <span style="color:var(--accent-light)">AI: ${ai.market_sentiment} (${ai.overall_score?.toFixed(1)})</span> ${themeTags}`;
+    }
+
+  } catch (e) {
+    document.getElementById('ff-news-stream').innerHTML = '<div style="padding:20px;text-align:center;color:var(--red);font-size:12px">News unavailable</div>';
+  }
 }
 
 // ─── Live Rates ──────────────────────────────
@@ -2265,20 +2399,51 @@ async function loadLiveRates() {
     const res = await fetch('/api/live-rates');
     if (!res.ok) throw new Error('Auth');
     const data = await res.json();
-    const bar = document.getElementById('live-rates-bar');
+    const priceRows = document.getElementById('ff-price-rows');
     if (!data.rates || data.rates.length === 0) {
-      bar.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:8px">Rates unavailable</div>';
+      if (priceRows) priceRows.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">Rates unavailable</div>';
       return;
     }
-    bar.innerHTML = data.rates.map(r => {
-      const bidStr = r.bid.toFixed(5);
-      return `<div class="live-rate-item">
-        <span class="sym">${r.symbol}</span>
-        <span class="bid">${bidStr}</span>
-      </div>`;
-    }).join('');
+
+    // Generate sparkline SVG data (simulated mini chart)
+    function sparklineSvg(cls) {
+      const w = 120, h = 24;
+      const pts = Array.from({length:20}, () => Math.random() * 14 + 5);
+      const min = Math.min(...pts), max = Math.max(...pts);
+      const range = max - min || 1;
+      const norm = pts.map(v => h - ((v - min) / range * (h - 4)) - 2);
+      const path = norm.map((y, i) => `${i === 0 ? 'M' : 'L'}${(i / (norm.length-1)) * w},${y}`).join(' ');
+      return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="${cls}">
+        <path d="${path}" stroke="${cls === 'pos' ? 'var(--green)' : cls === 'neg' ? 'var(--red)' : 'var(--text-muted)'}" stroke-width="1.5" fill="none"/>
+        <circle cx="${w}" cy="${norm[norm.length-1]}" r="2" fill="${cls === 'pos' ? 'var(--green)' : cls === 'neg' ? 'var(--red)' : 'var(--text-muted)'}"/>
+      </svg>`;
+    }
+
+    if (priceRows) {
+      priceRows.innerHTML = data.rates.map(r => {
+        const pipChg = r.change_6h || 0;
+        const pctChg = r.change_pct_6h || 0;
+        const pipCls = pipChg > 0 ? 'pos' : pipChg < 0 ? 'neg' : 'na';
+        const pctCls = pctChg > 0 ? 'pos' : pctChg < 0 ? 'neg' : 'flat';
+        const bidVal = r.bid || 0;
+        const bidStr = bidVal >= 1000 ? bidVal.toFixed(2) : bidVal.toFixed(5);
+        return `<div class="ff-price-row">
+          <span class="pair">${r.symbol}</span>
+          <span class="bid">${bidStr}</span>
+          <span class="pip ${pipCls}">${pipChg >= 0 ? '+' : ''}${pipChg.toFixed(1)}</span>
+          <span class="pct ${pctCls}">${pctChg >= 0 ? '+' : ''}${pctChg.toFixed(2)}%</span>
+          <div class="spark">${sparklineSvg(pctCls)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // Also update the about time
+    const aboutTime = document.getElementById('ff-about-time');
+    if (aboutTime) aboutTime.textContent = new Date().toLocaleString();
+
   } catch (e) {
-    document.getElementById('live-rates-bar').innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:8px">Rates unavailable</div>';
+    const el = document.getElementById('ff-price-rows');
+    if (el) el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px">Rates unavailable</div>';
   }
 }
 

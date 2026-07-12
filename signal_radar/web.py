@@ -3106,7 +3106,7 @@ def api_calculator_price(symbol):
     base_price = {
         'EURUSD': 1.08500, 'GBPUSD': 1.28500, 'USDJPY': 150.500, 'USDCHF': 0.88500,
         'USDCAD': 1.36500, 'AUDUSD': 0.67500, 'NZDUSD': 0.61500,
-        'GBPJPY': 192.500, 'EURJPY': 162.500, 'XAUUSD': 2350.00,
+        'GBPJPY': 192.500, 'EURJPY': 162.500, 'XAUUSD': 2400.00,
         'US30': 39000, 'SP500': 5400, 'NAS100': 19500,
         'BTCUSD': 58000, 'ETHUSD': 3100,
     }.get(symbol, 100.0)
