@@ -3086,8 +3086,14 @@ def api_instruments():
 @app.route('/api/calculator/price/<symbol>')
 @login_required
 def api_calculator_price(symbol):
-    """Get latest price for a symbol from radar data."""
+    """Get latest price for a symbol from radar data.
+    Prefers live spot price for precious metals (Kitco), then Yahoo bars."""
     symbol = symbol.upper()
+    from .data_fetcher import fetch_live_prices
+    live = fetch_live_prices([symbol])
+    if live and symbol in live and live[symbol] > 0:
+        p = round(live[symbol], 5)
+        return jsonify({'symbol': symbol, 'bid': p, 'ask': p, 'spread': 0, 'price': p})
     from .data_fetcher import fetch_bars
     df = fetch_bars(symbol, bars=3, timeframe="M5")
     if df is not None and len(df) > 0:
