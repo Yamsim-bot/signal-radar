@@ -358,8 +358,8 @@ body {
 
 /* FF-style Price Table */
 .ff-price-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 6px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 10px; border-bottom: 1px solid var(--border);
   transition: background .1s;
 }
 .ff-price-row:hover { background: var(--bg-card-hover); }
@@ -377,12 +377,12 @@ body {
 
 /* FF-style News Stream */
 .ff-news-item {
-  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  padding: 5px 10px; border-bottom: 1px solid var(--border);
   transition: background .1s; cursor: pointer;
 }
 .ff-news-item:hover { background: var(--bg-card-hover); }
-.ff-news-item .ff-news-title { font-size: 12px; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
-.ff-news-item .ff-news-meta { font-size: 10px; color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+.ff-news-item .ff-news-title { font-size: 11px; color: var(--text); line-height: 1.3; margin-bottom: 2px; }
+.ff-news-item .ff-news-meta { font-size: 9px; color: var(--text-muted); display: flex; gap: 6px; align-items: center; }
 .ff-news-item .ff-news-source { color: var(--accent-light); font-weight: 600; }
 .ff-news-item .ff-news-time { color: var(--text-muted); }
 .ff-news-item .ff-news-comments { color: var(--text-muted); }
@@ -436,7 +436,7 @@ body {
 .cal-q-btn[data-impact].active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
 
 .cal-main-grid {
-  display: grid; grid-template-columns: 1fr 300px; gap: 12px;
+  display: grid; grid-template-columns: 1fr 360px; gap: 8px;
 }
 @media (max-width:900px) {
   .cal-main-grid { grid-template-columns: 1fr; }
@@ -459,7 +459,13 @@ body {
 }
 
 .cal-day-group { border-bottom: 1px solid var(--border); }
+.cal-day-group:last-child { border-bottom: none; }
 .cal-day-events.collapsed { display: none; }
+.cal-day-header { padding: 5px 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 10px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+.cal-day-header:hover { background: rgba(255,255,255,0.03); }
+.cal-event-row { display: grid; grid-template-columns: 50px 26px 60px 60px 60px 60px 60px 60px 30px; gap: 2px; padding: 3px 6px; font-size: 10px; align-items: center; border-bottom: 1px solid var(--border-subtle); }
+.cal-event-row:last-child { border-bottom: none; }
+.cal-event-row:hover { background: rgba(255,255,255,0.02); }
 .cal-day-header {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 12px; background: var(--bg);
@@ -837,8 +843,8 @@ body {
 
     <!-- ── FF-style Nav Header ── -->
     <div class="glass-panel" style="padding:0;margin-bottom:10px;overflow:hidden">
-      <div style="display:flex;align-items:center;background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 12px">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 16px 10px 0;border-right:1px solid var(--border);font-weight:700;font-size:13px;color:var(--accent-light);white-space:nowrap">📰 Forex Broker Activity</div>
+      <div style="display:flex;align-items:center;background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 8px">
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px 6px 0;border-right:1px solid var(--border);font-weight:700;font-size:12px;color:var(--accent-light);white-space:nowrap">📰 Forex Broker Activity</div>
         <div style="display:flex;gap:2px;overflow-x:auto" id="ff-nav-tabs">
           <button class="ff-nav-btn active" data-ff-tab="rates" onclick="switchFFTab('rates')">Live Forex Spreads</button>
           <button class="ff-nav-btn" data-ff-tab="gold" onclick="switchFFTab('gold')">Live Gold Spreads</button>
@@ -850,7 +856,7 @@ body {
 
       <!-- ── Sub-tab: Majors Price Table ── -->
       <div id="ff-panel-majors" class="ff-sub-panel">
-        <div style="padding:6px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">
+        <div style="padding:4px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px">
           <span style="width:90px">Pair</span>
           <span style="width:80px;text-align:right">Bid</span>
           <span style="width:36px;text-align:right">Pip</span>
@@ -897,23 +903,23 @@ body {
     <div class="cal-main-grid">
 
       <!-- LEFT: News Stream + Hot Story -->
-      <div class="cal-events-panel" style="display:flex;flex-direction:column;gap:10px">
+      <div class="cal-events-panel" style="display:flex;flex-direction:column;gap:6px">
 
         <!-- Hot Story -->
         <div class="glass-panel" id="ff-hot-story" style="display:none;padding:0;overflow:hidden;border-left:3px solid var(--yellow)">
-          <div style="padding:8px 12px;background:linear-gradient(90deg,rgba(234,179,8,0.08),transparent);font-size:10px;color:var(--yellow);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🔥 Hot Story</div>
-          <div style="padding:10px 12px" id="ff-hot-story-body">
+          <div style="padding:5px 10px;background:linear-gradient(90deg,rgba(234,179,8,0.08),transparent);font-size:10px;color:var(--yellow);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🔥 Hot Story</div>
+          <div style="padding:6px 10px" id="ff-hot-story-body">
             <div class="loading" style="padding:10px;text-align:center"><div class="spinner"></div></div>
           </div>
         </div>
 
         <!-- Latest Stories -->
         <div class="glass-panel" style="padding:0;overflow:hidden">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border-bottom:1px solid var(--border)">
-            <span style="font-size:12px;font-weight:600;color:var(--text)">📰 Latest Stories</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:600;color:var(--text)">📰 Latest Stories</span>
             <span style="font-size:10px;color:var(--text-muted)" id="ff-news-count">0 stories</span>
           </div>
-          <div id="ff-news-stream" style="max-height:500px;overflow-y:auto">
+          <div id="ff-news-stream" style="overflow-y:auto">
             <div class="loading" style="padding:30px;text-align:center"><div class="spinner"></div></div>
           </div>
         </div>
@@ -924,8 +930,8 @@ body {
       <div class="cal-news-sidebar">
 
         <!-- Date Range Picker -->
-        <div class="glass-panel" style="padding:8px 10px;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div class="glass-panel" style="padding:5px 8px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
             <label style="font-size:10px;color:var(--text-dim)">From:</label>
             <input type="date" id="cal-from" class="cal-date-input" style="font-size:10px;padding:2px 4px">
             <label style="font-size:10px;color:var(--text-dim)">To:</label>
@@ -940,7 +946,7 @@ body {
         </div>
 
         <!-- Filters Bar -->
-        <div style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg);border-radius:6px 6px 0 0;margin-bottom:0">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;padding:4px 6px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg);border-radius:6px 6px 0 0;margin-bottom:0">
           <button class="cal-q-btn active" data-impact="all" onclick="setCalImpact('all')" style="font-size:9px;padding:2px 6px">All</button>
           <button class="cal-q-btn" data-impact="High" onclick="setCalImpact('High')" style="font-size:9px;padding:2px 6px">🔴 H</button>
           <button class="cal-q-btn" data-impact="Medium" onclick="setCalImpact('Medium')" style="font-size:9px;padding:2px 6px">🟡 M</button>
@@ -1007,9 +1013,9 @@ body {
     </div>
 
         <!-- Central Bank Meetings -->
-        <div class="glass-panel" style="padding:6px 10px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center">
-          <span style="font-size:10px;font-weight:600;color:var(--accent-light)">🏛️ CB Meetings</span>
-          <div id="cal-cb-events" style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:10px">
+        <div class="glass-panel" style="padding:4px 8px;margin-bottom:5px;display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center">
+          <span style="font-size:9px;font-weight:600;color:var(--accent-light);white-space:nowrap">🏛️ CB Meetings</span>
+          <div id="cal-cb-events" style="display:flex;flex-wrap:wrap;gap:2px 8px;font-size:9px">
             <span style="color:var(--text-dim)">Loading...</span>
           </div>
         </div>
@@ -2668,14 +2674,13 @@ function renderCalendarTable() {
     const lowC = evts.filter(e=>e.impact==='Low').length;
 
     html += `<div class="cal-day-group"${pastClass}>`;
-    html += `<div class="cal-day-header" onclick="this.nextElementSibling.classList.toggle('collapsed')">
-      <span class="day-date">${dayName} ${dateStr}</span>
-      ${isToday ? '<span class="badge badge-red" style="font-size:9px;margin-left:4px">TODAY</span>' : ''}
-      <span class="day-label">${evts.length} events</span>
-      <span class="day-count" style="display:flex;gap:4px;align-items:center">
-        ${highC > 0 ? `<span style="color:#ef4444;font-size:10px">${'★'.repeat(Math.min(highC,3))}${highC > 3 ? ' +'+(highC-3) : ''}</span>` : ''}
-        ${medC > 0 && highC === 0 ? `<span style="color:#facc15;font-size:10px">${'★'.repeat(Math.min(medC,3))}</span>` : ''}
-        <span style="color:var(--text-muted);font-size:10px">${evts.length}</span>
+    html += `<div class="cal-day-header">
+      <span class="day-date" style="font-weight:600">${dayName} ${dateStr}</span>
+      ${isToday ? '<span class="badge badge-red" style="font-size:8px;padding:1px 4px">TODAY</span>' : ''}
+      <span class="day-label" style="font-size:10px;color:var(--text-dim)">${evts.length} events</span>
+      <span style="margin-left:auto;display:flex;gap:3px;align-items:center;font-size:10px">
+        ${highC > 0 ? `<span style="color:#ef4444">${'★'.repeat(Math.min(highC,3))}</span>` : ''}
+        ${medC > 0 && highC === 0 ? `<span style="color:#facc15">${'★'.repeat(Math.min(medC,3))}</span>` : ''}
       </span>
     </div>`;
     html += `<div class="cal-day-events">`;
@@ -2702,18 +2707,19 @@ function renderCalendarTable() {
 
       if (compactView) {
         // Compact row
-        html += `<div class="cal-event-row" style="font-size:10px;padding:3px 12px;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')" title="${e.event||''}">
-          <span class="ev-time">${formatTime(e.time)}</span>
-          <span class="ev-impact" style="min-width:30px">${impactStars(e.impact)}</span>
-          <span class="ev-currency">${currencyFlag(e.currency)}</span>
-          <span class="ev-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.event||''}</span>
-          <span class="ev-actual" style="color:${actClr || 'var(--text)'};font-size:10px">${e.actual || '--'}</span>
-          <span class="ev-forecast" style="color:var(--text-dim);font-size:10px">${e.forecast || '--'}</span>
+        html += `<div class="cal-event-row" onclick="this.nextElementSibling.classList.toggle('open')" title="${e.event||''}">
+          <span class="ev-time" style="font-size:9px">${formatTime(e.time)}</span>
+          <span class="ev-impact">${impactStars(e.impact)}</span>
+          <span class="ev-currency" style="font-size:9px">${currencyFlag(e.currency)}</span>
+          <span class="ev-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px">${e.event||''}</span>
+          <span class="ev-actual" style="color:${actClr || 'var(--text)'};font-size:9px">${e.actual || '--'}</span>
+          <span class="ev-forecast" style="color:var(--text-dim);font-size:9px">${e.forecast || '--'}</span>
+          <span class="ev-previous" style="font-size:9px">${e.previous || '--'}</span>
           <span class="ev-status" style="text-align:center">${statusBadge}</span>
         </div>`;
         // Detail expand
-        html += `<div style="display:none;padding:4px 12px 8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10px;background:rgba(0,0,0,0.15)">
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
+        html += `<div style="display:none;padding:3px 10px 5px 10px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:9px;background:rgba(0,0,0,0.15)">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="color:var(--text-dim)">Prev: <strong>${e.previous || '--'}</strong></span>
             <span style="color:var(--text-dim)">Vol: <strong>${e.volatility||'?'}/15</strong></span>
           </div>
@@ -2721,19 +2727,21 @@ function renderCalendarTable() {
         </div>`;
       } else {
         // Full row (ForexFactory style)
-        html += `<div class="cal-event-row" style="font-size:11px;border-left:3px solid ${impColor};padding-left:10px">
-          <span class="ev-time">${formatTime(e.time)}</span>
-          <span class="ev-impact" style="min-width:36px">${impactStars(e.impact)}</span>
-          <span class="ev-currency">${currencyFlag(e.currency)} ${e.currency}</span>
-          <span class="ev-name" title="${e.event||''}">
+        html += `<div class="cal-event-row" style="border-left:3px solid ${impColor}">
+          <span class="ev-time" style="font-size:9px">${formatTime(e.time)}</span>
+          <span class="ev-impact">${impactStars(e.impact)}</span>
+          <span class="ev-currency" style="font-size:9px">${currencyFlag(e.currency)} ${e.currency}</span>
+          <span class="ev-name" style="font-size:9px" title="${e.event||''}">
             ${e.event||''}
-            ${pairHtml}
           </span>
-          <span class="ev-actual" style="color:${actClr || 'var(--text)'}">${e.actual || '--'}</span>
-          <span class="ev-forecast">${e.forecast || '--'}</span>
-          <span class="ev-previous">${e.previous || '--'}</span>
+          <span class="ev-actual" style="color:${actClr || 'var(--text)'};font-size:9px">${e.actual || '--'}</span>
+          <span class="ev-forecast" style="font-size:9px">${e.forecast || '--'}</span>
+          <span class="ev-previous" style="font-size:9px">${e.previous || '--'}</span>
           <span class="ev-status" style="text-align:center">${statusBadge}</span>
         </div>`;
+        if (pairHtml) {
+          html += `<div style="padding:1px 10px 3px 10px;font-size:8px;border-bottom:1px solid var(--border-subtle)">${pairHtml}</div>`;
+        }
       }
     });
 
