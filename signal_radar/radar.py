@@ -83,7 +83,18 @@ def scan(cfg: Config = Config()) -> RadarResult:
     for sym, price in live_prices.items():
         if sym in all_data and price and price > 0:
             try:
-                all_data[sym].loc[all_data[sym].index[-1], 'close'] = price
+                df = all_data[sym]
+                old_close = float(df['close'].iloc[-1])
+                # If live price differs from bar close by >15%, the bars are from a
+                # stale/inconsistent source (e.g. GC=F futures vs Kitco spot gold).
+                # Scale the entire OHLC series proportionally so TA indicators are consistent.
+                if old_close > 0 and abs(price - old_close) / old_close > 0.15:
+                    scale = price / old_close
+                    for col in ['open', 'high', 'low', 'close']:
+                        if col in df.columns:
+                            df[col] = df[col] * scale
+                else:
+                    df.loc[df.index[-1], 'close'] = price
             except (KeyError, IndexError):
                 pass  # Non-fatal — keep sample close
 
