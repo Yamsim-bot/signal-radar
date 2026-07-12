@@ -1006,6 +1006,14 @@ body {
       </div>
     </div>
 
+        <!-- Central Bank Meetings -->
+        <div class="glass-panel" style="padding:6px 10px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center">
+          <span style="font-size:10px;font-weight:600;color:var(--accent-light)">🏛️ CB Meetings</span>
+          <div id="cal-cb-events" style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:10px">
+            <span style="color:var(--text-dim)">Loading...</span>
+          </div>
+        </div>
+
         <!-- Events Table inside right sidebar -->
         <div id="calendar-events-container">
           <div class="loading" style="padding:40px;text-align:center"><div class="spinner"></div><div style="font-size:12px;color:var(--text-dim);margin-top:8px">Loading calendar...</div></div>
@@ -2746,6 +2754,7 @@ function filterCalendar() {
 
 function renderCBEvents(events) {
   const container = document.getElementById('cal-cb-events');
+  if (!container) return;
   if (!events || events.length === 0) {
     container.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">No upcoming CB meetings</div>';
     return;
