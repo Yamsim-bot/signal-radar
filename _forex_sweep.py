@@ -1,19 +1,13 @@
 """
 Forex-optimized V2.1 sweep: find the best confluence config for day trading forex
-Tests 80+ configs across 6 major pairs, targeting 15-20 trades with high WR
-Key changes from gold A+:
-  - Lower conf_min (3-5) since forex moves are smaller
-  - More relaxed RSI (30-40 / 60-70) since forex rarely hits 20/75
-  - Lower R:R (1.0-1.5) for tighter scalp targets
-  - Wider SL (0.5-1.0 ATR) since forex needs room
-  - TP at BB middle for faster exits
+OPTIMIZED: swing cache precomputed once per pair, reused across all configs
 """
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
-import sys, json, pandas as pd, numpy as np, os, itertools
+import sys, json, pandas as pd, numpy as np, os
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-print("=== Forex-Optimized V2.1 Sweep ===")
+print("=== Forex-Optimized V2.1 Sweep (fast) ===")
 mt5.initialize()
 now = datetime.now()
 start = now - timedelta(days=210)
@@ -41,36 +35,39 @@ def is_rej_bear(r):
     b=r["open"]-r["close"];w=r["high"]-r["open"]
     return w>=0.1*r["atr"] and (b<=0 or w/b>=0.2) and b>=0.18*r["atr"]
 
-def run_bt(m5, m15, conf_min, sl_m, rsi_b, rsi_s, min_rr, max_sl, tp_mode="bb"):
-    """tp_mode: 'bb'=opposite BB, 'bbmid'=BB middle, 'atr'=1.5*ATR"""
-    a_open=m5["open"].values;a_close=m5["close"].values;a_high=m5["high"].values;a_low=m5["low"].values
-    a_atr=m5["atr"].values;a_rsi=m5["rsi"].values;a_bb_u=m5["bb_u"].values;a_bb_l=m5["bb_l"].values;a_bb_m=m5["bb_m"].values
-    a_rej_bull=m5["rej_bull"].values;a_rej_bear=m5["rej_bear"].values
-    m5_times=m5.index;m15_times=m15.index
-    m5_to_m15=m15_times.get_indexer(m5_times,method="pad")
-
+def precompute_swings(m15):
+    """Precompute swing point cache for all M15 bars — done ONCE per pair"""
     sw_cache = {}
-    for mi in range(len(m15)):
-        slc_start=max(0,mi-50)
-        slc_h=m15["high"].iloc[slc_start:mi+1]
-        slc_l=m15["low"].iloc[slc_start:mi+1]
-        if len(slc_h)<10: continue
-        lb=2;sh_vals=[];sla_vals=[]
-        for k in range(lb,len(slc_h)-lb):
-            ok_h=True
-            for j in range(1,lb+1):
-                if slc_h.iloc[k]<=slc_h.iloc[k-j] or slc_h.iloc[k]<=slc_h.iloc[k+j]: ok_h=False;break
-            if ok_h: sh_vals.append(slc_h.iloc[k])
-            ok_l=True
-            for j in range(1,lb+1):
-                if slc_l.iloc[k]>=slc_l.iloc[k-j] or slc_l.iloc[k]>=slc_l.iloc[k+j]: ok_l=False;break
-            if ok_l: sla_vals.append(slc_l.iloc[k])
-        sw_cache[mi]=(sh_vals[-6:],sla_vals[-6:])
+    h_arr = m15["high"].values
+    l_arr = m15["low"].values
+    n = len(m15)
+    lb = 2
+    for mi in range(n):
+        slc_start = max(0, mi-50)
+        sh_vals = []; sla_vals = []
+        for k in range(slc_start+lb, mi+1-lb):
+            ok_h = True
+            for j in range(1, lb+1):
+                if h_arr[k] <= h_arr[k-j] or h_arr[k] <= h_arr[k+j]:
+                    ok_h = False; break
+            if ok_h: sh_vals.append(h_arr[k])
+            ok_l = True
+            for j in range(1, lb+1):
+                if l_arr[k] >= l_arr[k-j] or l_arr[k] >= l_arr[k+j]:
+                    ok_l = False; break
+            if ok_l: sla_vals.append(l_arr[k])
+        sw_cache[mi] = (sh_vals[-6:], sla_vals[-6:])
+    return sw_cache
 
+def run_bt_fast(a_open, a_close, a_high, a_low, a_atr, a_rsi, a_bb_u, a_bb_l, a_bb_m,
+                a_rej_bull, a_rej_bear, m5_times, m5_to_m15, m15_atr, m15_ema20, m15_ema50, m15_ema200,
+                sw_cache, conf_min, sl_m, rsi_b, rsi_s, min_rr, max_sl, tp_mode):
+    """Fast backtest using precomputed numpy arrays and swing cache"""
+    n = len(a_close)
     trades=[];open_pos=[];bal=1000;td=0;day=None;dstart=1000
     paused=False;lclose=None;sl_today=0
 
-    for i in range(len(a_close)):
+    for i in range(n):
         if np.isnan(a_atr[i]) or np.isnan(a_bb_l[i]) or a_atr[i]<=0:
             keep=[]
             for t in open_pos:
@@ -137,11 +134,11 @@ def run_bt(m5, m15, conf_min, sl_m, rsi_b, rsi_s, min_rr, max_sl, tp_mode="bb"):
 
         mi=m5_to_m15[i]
         if mi<0: continue
-        a15=m15["atr"].values[mi] if 0<=mi<len(m15) else a_atr[i]
+        a15=m15_atr[mi] if 0<=mi<len(m15_atr) else a_atr[i]
         cb,cs=0,0
         sh_v=[];sla_v=[]
-        if 0<=mi<len(m15):
-            e20=m15["ema20"].values[mi];e50=m15["ema50"].values[mi];e200=m15["ema200"].values[mi]
+        if 0<=mi<len(m15_ema20):
+            e20=m15_ema20[mi];e50=m15_ema50[mi];e200=m15_ema200[mi]
             if e20>e50: cb+=2
             else: cs+=2
             if e50>e200: cb+=1
@@ -230,46 +227,44 @@ def run_bt(m5, m15, conf_min, sl_m, rsi_b, rsi_s, min_rr, max_sl, tp_mode="bb"):
             "buy":int(len(df[df["side"]=="BUY"])),"sell":int(len(df[df["side"]=="SELL"]))}
 
 # ===== FOREX-FRIENDLY CONFIGS =====
-# Format: (name, conf_min, sl_m, rsi_b, rsi_s, min_rr, max_sl, tp_mode)
 configs = []
-
-# Group 1: Relaxed confluence (3-4) with various RSI/R:R
-for conf in [3, 4, 5]:
-    for rsi_b, rsi_s in [(35,65), (30,70), (40,60)]:
+# Group 1: Low confluence + relaxed RSI/R:R
+for conf in [3, 4]:
+    for rsi_b, rsi_s in [(40,60), (35,65), (30,70)]:
+        for rr in [1.0, 1.2]:
+            for sl in [0.5, 0.8]:
+                for tp in ["bbmid", "atr"]:
+                    configs.append((f"c{conf}_r{rsi_b}{rsi_s}_rr{rr}_sl{sl}_{tp}", conf, sl, rsi_b, rsi_s, rr, 99, tp))
+# Group 2: Mid confluence
+for conf in [5]:
+    for rsi_b, rsi_s in [(35,65), (30,70), (25,75)]:
         for rr in [1.0, 1.2, 1.5]:
             for sl in [0.5, 0.8]:
-                for tp in ["bbmid", "bb", "atr"]:
+                for tp in ["bbmid", "atr", "bb"]:
                     configs.append((f"c{conf}_r{rsi_b}{rsi_s}_rr{rr}_sl{sl}_{tp}", conf, sl, rsi_b, rsi_s, rr, 99, tp))
+# Group 3: With max_sl control
+for conf in [4, 5]:
+    for rsi_b, rsi_s in [(35,65), (30,70)]:
+        for rr in [1.0, 1.2]:
+            for sl in [0.5, 0.8]:
+                for ms in [5, 10]:
+                    configs.append((f"c{conf}_r{rsi_b}{rsi_s}_rr{rr}_sl{sl}_ms{ms}", conf, sl, rsi_b, rsi_s, rr, ms, "bbmid"))
 
-# Group 2: Moderate confluence (5) with tighter controls
-for rsi_b, rsi_s in [(30,70), (35,65)]:
-    for rr in [1.0, 1.2, 1.5]:
-        for sl in [0.5, 0.8, 1.0]:
-            for max_sl in [5, 10]:
-                for tp in ["bbmid", "atr"]:
-                    configs.append((f"c5_r{rsi_b}{rsi_s}_rr{rr}_sl{sl}_ms{max_sl}_{tp}", 5, sl, rsi_b, rsi_s, rr, max_sl, tp))
+print(f"Testing {len(configs)} configs on {len(pairs)} pairs")
 
-# Group 3: Gold A+ for reference
-configs.append(("gold_A+_strict", 6, 0.3, 20, 75, 2.0, 6, "bb"))
-configs.append(("gold_A+_balanced", 5, 0.4, 20, 75, 1.5, 6, "bb"))
-
-print(f"Testing {len(configs)} configs on {len(pairs)} pairs = {len(configs)*len(pairs)} backtests")
-
-# Load pair data once
+# Load pair data + precompute swings ONCE
 pair_data = {}
 for pair in pairs:
-    print(f"Loading {pair}...", end=" ")
+    print(f"Loading {pair}...", end=" ", flush=True)
     rates = mt5.copy_rates_range(pair, mt5.TIMEFRAME_M5, start, now)
     if rates is None or len(rates) < 500:
-        print(f"SKIP ({len(rates) if rates is not None else 0} bars)")
-        continue
+        print(f"SKIP"); continue
     m5 = pd.DataFrame(rates)
     m5["time"] = pd.to_datetime(m5["time"], unit="s")
     m5.set_index("time", inplace=True)
     rates15 = mt5.copy_rates_range(pair, mt5.TIMEFRAME_M15, start, now)
     if rates15 is None or len(rates15) < 200:
-        print("SKIP (no M15)")
-        continue
+        print("SKIP (no M15)"); continue
     m15 = pd.DataFrame(rates15)
     m15["time"] = pd.to_datetime(m15["time"], unit="s")
     m15.set_index("time", inplace=True)
@@ -283,59 +278,78 @@ for pair in pairs:
     m15["ema200"]=ema(m15["close"],200)
     m5["rej_bull"]=m5.apply(is_rej_bull,axis=1)
     m5["rej_bear"]=m5.apply(is_rej_bear,axis=1)
-    pair_data[pair]=(m5,m15)
-    print(f"OK ({len(m5)} M5 bars)")
+
+    print("computing swings...", end=" ", flush=True)
+    sw = precompute_swings(m15)
+
+    # Pre-extract numpy arrays
+    data = {
+        "a_open": m5["open"].values, "a_close": m5["close"].values,
+        "a_high": m5["high"].values, "a_low": m5["low"].values,
+        "a_atr": m5["atr"].values, "a_rsi": m5["rsi"].values,
+        "a_bb_u": m5["bb_u"].values, "a_bb_l": m5["bb_l"].values,
+        "a_bb_m": m5["bb_m"].values,
+        "a_rej_bull": m5["rej_bull"].values, "a_rej_bear": m5["rej_bear"].values,
+        "m5_times": m5.index,
+        "m5_to_m15": m15.index.get_indexer(m5.index, method="pad"),
+        "m15_atr": m15["atr"].values, "m15_ema20": m15["ema20"].values,
+        "m15_ema50": m15["ema50"].values, "m15_ema200": m15["ema200"].values,
+        "sw_cache": sw
+    }
+    pair_data[pair] = data
+    print(f"OK ({len(m5)} bars)")
 
 mt5.shutdown()
-print(f"\nLoaded {len(pair_data)} pairs. Running sweep...\n")
+print(f"\nLoaded {len(pair_data)} pairs. Running {len(configs)*len(pair_data)} backtests...\n")
 
-# Run sweep
-all_results = {}
+# Run sweep — swing cache reused across all configs
+all_results = []
 for ci, cfg in enumerate(configs):
     name,cnf,sl,rb,rs,rr,ms,tp = cfg
-    for pair, (m5,m15) in pair_data.items():
-        r = run_bt(m5, m15, cnf, sl, rb, rs, rr, ms, tp)
+    for pair, d in pair_data.items():
+        r = run_bt_fast(d["a_open"],d["a_close"],d["a_high"],d["a_low"],d["a_atr"],d["a_rsi"],
+                       d["a_bb_u"],d["a_bb_l"],d["a_bb_m"],d["a_rej_bull"],d["a_rej_bear"],
+                       d["m5_times"],d["m5_to_m15"],d["m15_atr"],d["m15_ema20"],d["m15_ema50"],
+                       d["m15_ema200"],d["sw_cache"], cnf, sl, rb, rs, rr, ms, tp)
         if r:
-            key = f"{pair}|{name}"
-            all_results[key] = {"pair":pair,"config":name,"conf":cnf,"sl":sl,"rsi_b":rb,"rsi_s":rs,"rr":rr,"max_sl":ms,"tp":tp,**r}
-    if (ci+1) % 20 == 0:
-        print(f"  {ci+1}/{len(configs)} configs done...")
+            all_results.append({"pair":pair,"config":name,"conf":cnf,"sl":sl,"rsi_b":rb,"rsi_s":rs,"rr":rr,"max_sl":ms,"tp":tp,**r})
+    if (ci+1) % 10 == 0:
+        print(f"  {ci+1}/{len(configs)} configs done ({len(all_results)} results so far)")
 
-# Score and rank: target 15-20 trades, high WR, positive return, low DD
+# Score and rank
 print(f"\nTotal results: {len(all_results)}")
 
-# Best per pair
 print(f"\n{'='*130}")
-print("=== BEST CONFIG PER PAIR (targeting 10-25 trades, WR>50%, Ret>0) ===")
+print("=== BEST CONFIG PER PAIR (8+ trades, WR>50%, Ret>0%) ===")
 print(f"{'='*130}")
 
 for pair in pairs:
-    pair_recs = [v for v in all_results.values() if v["pair"]==pair and v["trades"]>=8 and v["wr"]>=50 and v["ret"]>0]
-    pair_recs.sort(key=lambda x: (-x["ret"], x["dd"]))
-    print(f"\n--- {pair} (top 5 profitable configs with 8+ trades) ---")
-    print(f"{'Config':<35} {'T':>3} {'WR%':>5} {'Ret%':>7} {'DD%':>5} {'PF':>5} {'Conf':>4} {'SL':>4} {'RSI':>7} {'RR':>4} {'TP':<5}")
-    print("-"*105)
-    for r in pair_recs[:5]:
-        print(f"{r['config']:<35} {r['trades']:>3} {r['wr']:>5.1f} {r['ret']:>+6.2f} {r['dd']:>5.1f} {r['pf']:>5.2f} {r['conf']:>4} {r['sl']:>4.1f} {r['rsi_b']:>3}/{r['rsi_s']:<3} {r['rr']:>4.1f} {r['tp']:<5}")
+    pr = [v for v in all_results if v["pair"]==pair and v["trades"]>=8 and v["wr"]>=50 and v["ret"]>0]
+    pr.sort(key=lambda x: (-x["ret"], x["dd"]))
+    print(f"\n--- {pair} ---")
+    print(f"{'Config':<35} {'T':>3} {'WR%':>5} {'Ret%':>7} {'DD%':>5} {'PF':>5} {'B':>3} {'S':>3}")
+    print("-"*80)
+    for r in pr[:5]:
+        print(f"{r['config']:<35} {r['trades']:>3} {r['wr']:>5.1f} {r['ret']:>+6.2f} {r['dd']:>5.1f} {r['pf']:>5.2f} {r['buy']:>3} {r['sell']:>3}")
 
-# Overall top 20
+# Overall top 20 (weighted: ret*0.4 + wr*0.3 - dd*0.3)
 print(f"\n{'='*130}")
-print("=== TOP 20 OVERALL (weighted score: ret*0.4 + wr*0.3 - dd*0.3, min 8 trades) ===")
+print("=== TOP 20 OVERALL SCORE (min 8 trades) ===")
 print(f"{'='*130}")
-scored = [v for v in all_results.values() if v["trades"]>=8]
+scored = [v for v in all_results if v["trades"]>=8]
 for v in scored:
     v["score"] = v["ret"]*0.4 + v["wr"]*0.3 - v["dd"]*0.3
 scored.sort(key=lambda x: -x["score"])
-print(f"{'#':>3} {'Pair':<8} {'Config':<35} {'T':>3} {'WR%':>5} {'Ret%':>7} {'DD%':>5} {'PF':>5} {'Score':>6}")
+print(f"{'#':>3} {'Pair':<8} {'Config':<35} {'T':>3} {'WR%':>5} {'Ret%':>7} {'DD%':>5} {'PF':>5} {'Score':>7}")
 print("-"*95)
 for i,r in enumerate(scored[:20]):
-    print(f"{i+1:>3} {r['pair']:<8} {r['config']:<35} {r['trades']:>3} {r['wr']:>5.1f} {r['ret']:>+6.2f} {r['dd']:>5.1f} {r['pf']:>5.2f} {r['score']:>+6.1f}")
+    print(f"{i+1:>3} {r['pair']:<8} {r['config']:<35} {r['trades']:>3} {r['wr']:>5.1f} {r['ret']:>+6.2f} {r['dd']:>5.1f} {r['pf']:>5.2f} {r['score']:>+7.1f}")
 
-# Best pair+config combos
+# Most tradeable (10+ trades, WR>55%, Ret>5%)
 print(f"\n{'='*130}")
-print("=== TOP 10 MOST TRADEABLE (highest trades with WR>55% AND Ret>5%) ===")
+print("=== TOP 10 MOST TRADEABLE (10+ trades, WR>55%, Ret>5%) ===")
 print(f"{'='*130}")
-tradeable = [v for v in all_results.values() if v["trades"]>=10 and v["wr"]>=55 and v["ret"]>5]
+tradeable = [v for v in all_results if v["trades"]>=10 and v["wr"]>=55 and v["ret"]>5]
 tradeable.sort(key=lambda x: (-x["trades"], -x["ret"]))
 print(f"{'#':>3} {'Pair':<8} {'Config':<35} {'T':>3} {'WR%':>5} {'Ret%':>7} {'DD%':>5} {'PF':>5}")
 print("-"*85)
@@ -344,7 +358,7 @@ for i,r in enumerate(tradeable[:10]):
 
 outdir = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(outdir,"forex_sweep_results.json"),"w") as f:
-    json.dump(list(all_results.values()), f, indent=2, default=str)
+    json.dump(all_results, f, indent=2, default=str)
 
-print(f"\nFull results saved to forex_sweep_results.json")
+print(f"\nResults saved to forex_sweep_results.json")
 print("DONE")
