@@ -1057,7 +1057,15 @@ void DetectSweep()
                 DoubleToString(wickBelow / atr, 1) + "xATR). Close=" +
                 DoubleToString(rates[1].close, _Digits));
       }
+      else if(DebugMode && TimeCurrent() % 120 < 2)
+         LogMsg("SWEEP BUY NEAR-MISS: wick below OK (" + DoubleToString(wickBelow/atr, 1) +
+                "xATR) but close=" + DoubleToString(rates[1].close, _Digits) +
+                " NOT inside (asianLo=" + DoubleToString(g_asianLow, _Digits) + ")");
    }
+   else if(DebugMode && wickBelow > 0 && TimeCurrent() % 300 < 2)
+      LogMsg("SWEEP SCAN: wickBelow=" + DoubleToString(wickBelow, _Digits) +
+             " (" + DoubleToString(wickBelow/atr, 1) + "xATR)" +
+             " min=" + DoubleToString(SweepMinWickATR, 1) + " max=" + DoubleToString(SweepMaxWickATR, 1));
 
    // Bearish sweep: price swept above Asian High
    if(wickAbove >= SweepMinWickATR * atr && wickAbove <= SweepMaxWickATR * atr)
@@ -1071,7 +1079,15 @@ void DetectSweep()
                 DoubleToString(wickAbove / atr, 1) + "xATR). Close=" +
                 DoubleToString(rates[1].close, _Digits));
       }
+      else if(DebugMode && TimeCurrent() % 120 < 2)
+         LogMsg("SWEEP SELL NEAR-MISS: wick above OK (" + DoubleToString(wickAbove/atr, 1) +
+                "xATR) but close=" + DoubleToString(rates[1].close, _Digits) +
+                " NOT inside (asianHi=" + DoubleToString(g_asianHigh, _Digits) + ")");
    }
+   else if(DebugMode && wickAbove > 0 && TimeCurrent() % 300 < 2)
+      LogMsg("SWEEP SCAN: wickAbove=" + DoubleToString(wickAbove, _Digits) +
+             " (" + DoubleToString(wickAbove/atr, 1) + "xATR)" +
+             " min=" + DoubleToString(SweepMinWickATR, 1) + " max=" + DoubleToString(SweepMaxWickATR, 1));
 }
 
 //+------------------------------------------------------------------+
@@ -1152,6 +1168,18 @@ void CheckAsianSweepEntry()
          double slPts = slDist / _Point;
          double lot = CalcRiskLot(slPts);
 
+         if(DebugMode)
+            LogMsg("SWEEP BUY SIGNAL: bid=" + DoubleToString(bid, _Digits) +
+                   " ask=" + DoubleToString(ask, _Digits) +
+                   " sweepLow=" + DoubleToString(sweepLow, _Digits) +
+                   " SL=" + DoubleToString(sl, _Digits) +
+                   " TP=" + DoubleToString(tp, _Digits) +
+                   " SLdist=" + DoubleToString(slDist, _Digits) +
+                   " R:R=" + DoubleToString(slDist > 0 ? (tp - ask) / slDist : 0, 2) +
+                   " lot=" + DoubleToString(lot, 2) +
+                   " asianHi=" + DoubleToString(g_asianHigh, _Digits) +
+                   " asianLo=" + DoubleToString(g_asianLow, _Digits));
+
          if(lot >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
          {
             if(OpenOrder(ORDER_TYPE_BUY, lot, ask, sl, tp,
@@ -1161,14 +1189,22 @@ void CheckAsianSweepEntry()
                g_sweepDetected_Buy = false;
                g_daily.tradeCount++;
                TrackZone(g_asianLow);
+               LogMsg("SWEEP BUY FILLED: Lot=" + DoubleToString(lot, 2) +
+                      " SL=" + DoubleToString(sl, _Digits) +
+                      " TP=" + DoubleToString(tp, _Digits));
             }
          }
+         else
+            LogMsg("SWEEP BUY REJECTED: lot=" + DoubleToString(lot, 2) +
+                   " < min=" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN), 2));
       }
       else
       {
          if(DebugMode && TimeCurrent() % 60 < 2)
-            LogMsg("SWEEP BUY ready but filters: rej=" + (string)rejection +
-                   " trend=" + (string)trendOk);
+            LogMsg("SWEEP BUY WAITING: rejection=" + (string)rejection +
+                   " trendOk=" + (string)trendOk +
+                   " htfBull=" + (string)g_htfBull +
+                   " htfBear=" + (string)g_htfBear);
       }
    }
 
@@ -1194,6 +1230,18 @@ void CheckAsianSweepEntry()
          double slPts = slDist / _Point;
          double lot = CalcRiskLot(slPts);
 
+         if(DebugMode)
+            LogMsg("SWEEP SELL SIGNAL: bid=" + DoubleToString(bid, _Digits) +
+                   " ask=" + DoubleToString(ask, _Digits) +
+                   " sweepHigh=" + DoubleToString(sweepHigh, _Digits) +
+                   " SL=" + DoubleToString(sl, _Digits) +
+                   " TP=" + DoubleToString(tp, _Digits) +
+                   " SLdist=" + DoubleToString(slDist, _Digits) +
+                   " R:R=" + DoubleToString(slDist > 0 ? (sl - bid) / slDist : 0, 2) +
+                   " lot=" + DoubleToString(lot, 2) +
+                   " asianHi=" + DoubleToString(g_asianHigh, _Digits) +
+                   " asianLo=" + DoubleToString(g_asianLow, _Digits));
+
          if(lot >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
          {
             if(OpenOrder(ORDER_TYPE_SELL, lot, bid, sl, tp,
@@ -1203,14 +1251,22 @@ void CheckAsianSweepEntry()
                g_sweepDetected_Sell = false;
                g_daily.tradeCount++;
                TrackZone(g_asianHigh);
+               LogMsg("SWEEP SELL FILLED: Lot=" + DoubleToString(lot, 2) +
+                      " SL=" + DoubleToString(sl, _Digits) +
+                      " TP=" + DoubleToString(tp, _Digits));
             }
          }
+         else
+            LogMsg("SWEEP SELL REJECTED: lot=" + DoubleToString(lot, 2) +
+                   " < min=" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN), 2));
       }
       else
       {
          if(DebugMode && TimeCurrent() % 60 < 2)
-            LogMsg("SWEEP SELL ready but filters: rej=" + (string)rejection +
-                   " trend=" + (string)trendOk);
+            LogMsg("SWEEP SELL WAITING: rejection=" + (string)rejection +
+                   " trendOk=" + (string)trendOk +
+                   " htfBull=" + (string)g_htfBull +
+                   " htfBear=" + (string)g_htfBear);
       }
    }
 }
@@ -1231,6 +1287,15 @@ void CheckHTFPullbackEntry()
                     Swing_ClusterPts, Swing_MaxAge, Swing_MinStrength);
    DetectFVGs(PERIOD_M5, 200, FVG_MinSizeATR, g_atrM5);
 
+   // Debug: log zone summary
+   if(DebugMode && TimeCurrent() % 300 < 2)
+      LogMsg("HTF PULLBACK SCAN: bid=" + DoubleToString(bid, _Digits) +
+             " Demand=" + IntegerToString(g_swingBullishTotal) +
+             " Supply=" + IntegerToString(g_swingBearishTotal) +
+             " BullFVG=" + IntegerToString(g_fvgBullishTotal) +
+             " BearFVG=" + IntegerToString(g_fvgBearishTotal) +
+             " H4=" + (g_htfBull ? "BULL" : g_htfBear ? "BEAR" : "?"));
+
    //--- BUY: HTF bullish + pullback into demand zone or bullish FVG
    if(g_htfBull)
    {
@@ -1239,6 +1304,16 @@ void CheckHTFPullbackEntry()
       bool inDemand = GetNearestDemandZone(bid, ZoneProximityATR, g_atrM15, demandZone);
       bool inFVG = GetNearestBullFVG(bid, ZoneProximityATR, g_atrM5, bullFVG);
 
+      if(DebugMode && (inDemand || inFVG) && TimeCurrent() % 60 < 2)
+         LogMsg("HTF BUY ZONE HIT: inDemand=" + (string)inDemand +
+                (inDemand ? " [str=" + DoubleToString(demandZone.strength, 1) +
+                 " hi=" + DoubleToString(demandZone.priceHigh, _Digits) +
+                 " lo=" + DoubleToString(demandZone.priceLow, _Digits) + "]" : "") +
+                " inFVG=" + (string)inFVG +
+                (inFVG ? " [size=" + DoubleToString(bullFVG.sizeATR, 1) + "ATR" +
+                 " hi=" + DoubleToString(bullFVG.priceHigh, _Digits) +
+                 " lo=" + DoubleToString(bullFVG.priceLow, _Digits) + "]" : ""));
+
       if((inDemand || inFVG) && !RequireZoneReject || CheckRejectionBull())
       {
          double zoneLow, zoneHigh;
@@ -1246,7 +1321,12 @@ void CheckHTFPullbackEntry()
          {
             zoneLow = demandZone.priceLow;
             zoneHigh = demandZone.priceHigh;
-            if(demandZone.strength < MinZoneStrength) return;
+            if(demandZone.strength < MinZoneStrength)
+            {
+               if(DebugMode) LogMsg("HTF BUY REJECTED: zone strength " +
+                  DoubleToString(demandZone.strength, 1) + " < min " + DoubleToString(MinZoneStrength, 1));
+               return;
+            }
          }
          else
          {
@@ -1256,7 +1336,11 @@ void CheckHTFPullbackEntry()
 
          // Don't re-enter same zone
          double zoneMid = (zoneLow + zoneHigh) / 2.0;
-         if(AlreadyTradedZone(zoneMid)) return;
+         if(AlreadyTradedZone(zoneMid))
+         {
+            if(DebugMode) LogMsg("HTF BUY REJECTED: zone already traded [mid=" + DoubleToString(zoneMid, _Digits) + "]");
+            return;
+         }
 
          double sl = zoneLow - SL_BufferATR * g_atrM15;
          double slDist = ask - sl;
@@ -1266,6 +1350,14 @@ void CheckHTFPullbackEntry()
          double slPts = slDist / _Point;
          double lot = CalcRiskLot(slPts);
 
+         if(DebugMode)
+            LogMsg("HTF BUY SIGNAL: ask=" + DoubleToString(ask, _Digits) +
+                   " zone=[" + DoubleToString(zoneLow, _Digits) + "-" + DoubleToString(zoneHigh, _Digits) + "]" +
+                   " SL=" + DoubleToString(sl, _Digits) +
+                   " TP=" + DoubleToString(tp, _Digits) +
+                   " R:R=" + DoubleToString(slDist > 0 ? (tp - ask) / slDist : 0, 2) +
+                   " lot=" + DoubleToString(lot, 2));
+
          if(lot >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
          {
             if(OpenOrder(ORDER_TYPE_BUY, lot, ask, sl, tp,
@@ -1273,8 +1365,14 @@ void CheckHTFPullbackEntry()
             {
                g_daily.tradeCount++;
                TrackZone(zoneMid);
+               LogMsg("HTF BUY FILLED: Lot=" + DoubleToString(lot, 2) +
+                      " SL=" + DoubleToString(sl, _Digits) +
+                      " TP=" + DoubleToString(tp, _Digits));
             }
          }
+         else
+            LogMsg("HTF BUY REJECTED: lot=" + DoubleToString(lot, 2) +
+                   " < min=" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN), 2));
       }
    }
 
@@ -1286,6 +1384,16 @@ void CheckHTFPullbackEntry()
       bool inSupply = GetNearestSupplyZone(bid, ZoneProximityATR, g_atrM15, supplyZone);
       bool inFVG = GetNearestBearFVG(bid, ZoneProximityATR, g_atrM5, bearFVG);
 
+      if(DebugMode && (inSupply || inFVG) && TimeCurrent() % 60 < 2)
+         LogMsg("HTF SELL ZONE HIT: inSupply=" + (string)inSupply +
+                (inSupply ? " [str=" + DoubleToString(supplyZone.strength, 1) +
+                 " hi=" + DoubleToString(supplyZone.priceHigh, _Digits) +
+                 " lo=" + DoubleToString(supplyZone.priceLow, _Digits) + "]" : "") +
+                " inFVG=" + (string)inFVG +
+                (inFVG ? " [size=" + DoubleToString(bearFVG.sizeATR, 1) + "ATR" +
+                 " hi=" + DoubleToString(bearFVG.priceHigh, _Digits) +
+                 " lo=" + DoubleToString(bearFVG.priceLow, _Digits) + "]" : ""));
+
       if((inSupply || inFVG) && !RequireZoneReject || CheckRejectionBear())
       {
          double zoneLow, zoneHigh;
@@ -1293,7 +1401,12 @@ void CheckHTFPullbackEntry()
          {
             zoneLow = supplyZone.priceLow;
             zoneHigh = supplyZone.priceHigh;
-            if(supplyZone.strength < MinZoneStrength) return;
+            if(supplyZone.strength < MinZoneStrength)
+            {
+               if(DebugMode) LogMsg("HTF SELL REJECTED: zone strength " +
+                  DoubleToString(supplyZone.strength, 1) + " < min " + DoubleToString(MinZoneStrength, 1));
+               return;
+            }
          }
          else
          {
@@ -1302,7 +1415,11 @@ void CheckHTFPullbackEntry()
          }
 
          double zoneMid = (zoneLow + zoneHigh) / 2.0;
-         if(AlreadyTradedZone(zoneMid)) return;
+         if(AlreadyTradedZone(zoneMid))
+         {
+            if(DebugMode) LogMsg("HTF SELL REJECTED: zone already traded [mid=" + DoubleToString(zoneMid, _Digits) + "]");
+            return;
+         }
 
          double sl = zoneHigh + SL_BufferATR * g_atrM15;
          double slDist = sl - bid;
@@ -1312,6 +1429,14 @@ void CheckHTFPullbackEntry()
          double slPts = slDist / _Point;
          double lot = CalcRiskLot(slPts);
 
+         if(DebugMode)
+            LogMsg("HTF SELL SIGNAL: bid=" + DoubleToString(bid, _Digits) +
+                   " zone=[" + DoubleToString(zoneLow, _Digits) + "-" + DoubleToString(zoneHigh, _Digits) + "]" +
+                   " SL=" + DoubleToString(sl, _Digits) +
+                   " TP=" + DoubleToString(tp, _Digits) +
+                   " R:R=" + DoubleToString(slDist > 0 ? (sl - bid) / slDist : 0, 2) +
+                   " lot=" + DoubleToString(lot, 2));
+
          if(lot >= SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
          {
             if(OpenOrder(ORDER_TYPE_SELL, lot, bid, sl, tp,
@@ -1319,8 +1444,14 @@ void CheckHTFPullbackEntry()
             {
                g_daily.tradeCount++;
                TrackZone(zoneMid);
+               LogMsg("HTF SELL FILLED: Lot=" + DoubleToString(lot, 2) +
+                      " SL=" + DoubleToString(sl, _Digits) +
+                      " TP=" + DoubleToString(tp, _Digits));
             }
          }
+         else
+            LogMsg("HTF SELL REJECTED: lot=" + DoubleToString(lot, 2) +
+                   " < min=" + DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN), 2));
       }
    }
 }
@@ -1434,11 +1565,42 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 //| OnTick                                                           |
 //+------------------------------------------------------------------+
+//--- Debug heartbeat timer (log every 5 min)
+datetime g_lastHeartbeat = 0;
+int      g_lastTrendState = 0; // 0=neutral, 1=bull, -1=bear
+
 void OnTick()
 {
    ResetDaily();
    ResetZoneTracker();
    TrackCloses();
+
+   // === HEARTBEAT: Log full state every 5 minutes ===
+   if(DebugMode && TimeCurrent() - g_lastHeartbeat >= 300)
+   {
+      g_lastHeartbeat = TimeCurrent();
+      double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+      double eq  = AccountInfoDouble(ACCOUNT_EQUITY);
+      double dd  = (g_daily.startBal > 0) ? (g_daily.startBal - eq) / g_daily.startBal * 100.0 : 0;
+      double spread = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+      string hb = "HEARTBEAT | Bal=$" + DoubleToString(bal, 2) +
+                  " Eq=$" + DoubleToString(eq, 2) +
+                  " DD=" + DoubleToString(dd, 1) + "%" +
+                  " | Trades today: " + IntegerToString(g_daily.tradeCount) +
+                  " | Open: " + IntegerToString(CountPositions()) +
+                  " | Spread: " + DoubleToString(spread, 0) + "pts" +
+                  " | ATR M15=" + DoubleToString(g_atrM15, 1) +
+                  " M5=" + DoubleToString(g_atrM5, 1);
+      if(g_asianValid)
+         hb += " | Asian: " + DoubleToString(g_asianLow, _Digits) + "-" + DoubleToString(g_asianHigh, _Digits) +
+               " (W=" + DoubleToString(g_asianWidth, _Digits) + ")";
+      hb += " | H4: " + (g_htfBull ? "BULL" : g_htfBear ? "BEAR" : "NEUTRAL");
+      hb += " | " + GetSessionStatus();
+      hb += " | Zones: " + IntegerToString(g_swingBullishTotal) + "D/" + IntegerToString(g_swingBearishTotal) + "S";
+      if(g_fvgBullishTotal + g_fvgBearishTotal > 0)
+         hb += " FVGs: " + IntegerToString(g_fvgBullishTotal) + "B/" + IntegerToString(g_fvgBearishTotal) + "Bear";
+      LogMsg(hb);
+   }
 
    // Emergency stop
    if(g_daily.stopped) { CloseAllPositions(); UpdateComment(); return; }
@@ -1447,12 +1609,39 @@ void OnTick()
    if(CountPositions() >= MaxPositions) { UpdateComment(); return; }
 
    // Can we trade?
-   if(!CanTrade()) { UpdateComment(); return; }
+   if(!CanTrade())
+   {
+      if(DebugMode && TimeCurrent() % 120 < 2) // log reason every ~2 min
+      {
+         string reason = "";
+         double dd = (g_daily.startBal > 0) ?
+                     (g_daily.startBal - AccountInfoDouble(ACCOUNT_EQUITY)) / g_daily.startBal * 100.0 : 0;
+         if(g_daily.stopped) reason = "DD_STOPPED";
+         else if(g_daily.tradeCount >= MaxDailyTrades) reason = "MAX_TRADES(" + IntegerToString(g_daily.tradeCount) + ")";
+         else if(dd >= MaxDailyLossPct) reason = "DD_LIMIT(" + DoubleToString(dd,1) + "%)";
+         double spread = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+         if(spread > MaxSpreadPts) reason = "SPREAD(" + DoubleToString(spread,0) + "pts)";
+         if(g_lastTradeCloseTime > 0)
+         {
+            int mins = (int)((TimeCurrent() - g_lastTradeCloseTime) / 60);
+            if(mins < CooldownMinutes) reason = "COOLDOWN(" + IntegerToString(mins) + "/" + IntegerToString(CooldownMinutes) + "m)";
+         }
+         if(reason == "") reason = "UNKNOWN";
+         LogMsg("CANTRADE BLOCKED: " + reason);
+      }
+      UpdateComment();
+      return;
+   }
 
    // Update ATR
    g_atrM15 = CalcATR(14, PERIOD_M15);
    g_atrM5  = CalcATR(14, PERIOD_M5);
-   if(g_atrM15 <= 0 || g_atrM5 <= 0) { UpdateComment(); return; }
+   if(g_atrM15 <= 0 || g_atrM5 <= 0)
+   {
+      if(DebugMode) LogMsg("ATR INVALID: M15=" + DoubleToString(g_atrM15, 2) + " M5=" + DoubleToString(g_atrM5, 2));
+      UpdateComment();
+      return;
+   }
 
    // Detect/re-detect Asian range
    DetectAsianRange();
@@ -1461,12 +1650,29 @@ void OnTick()
    static datetime lastTrendUpdate = 0;
    if(TimeCurrent() - lastTrendUpdate >= 300)
    {
+      bool prevBull = g_htfBull, prevBear = g_htfBear;
       UpdateHTFBias();
+      if(DebugMode && (g_htfBull != prevBull || g_htfBear != prevBear))
+         LogMsg("H4 TREND CHANGED: " + (prevBull ? "BULL" : prevBear ? "BEAR" : "NEUTRAL") +
+                " → " + (g_htfBull ? "BULL" : g_htfBear ? "BEAR" : "NEUTRAL"));
       lastTrendUpdate = TimeCurrent();
    }
 
    // Detect sweep
    DetectSweep();
+
+   // Debug: log session state periodically
+   if(DebugMode && TimeCurrent() % 300 < 2)
+   {
+      int h = GMTHour();
+      LogMsg("SESSION CHECK: GMT " + IntegerToString(h) + ":" + StringFormat("%02d", GMTMin()) +
+             " | TradingWindow=" + (IsTradingWindow() ? "YES" : "NO") +
+             " | TradingDay=" + (IsTradingDay() ? "YES" : "NO") +
+             " | LondonSweep=" + (IsLondonSweepWindow() ? "YES" : "NO") +
+             " | Overlap=" + (IsOverlapWindow() ? "YES" : "NO") +
+             " | SweepBuy=" + (g_sweepDetected_Buy ? "READY" : "no") +
+             " | SweepSell=" + (g_sweepDetected_Sell ? "READY" : "no"));
+   }
 
    // Check session and trade
    if(IsTradingWindow() && IsTradingDay())
@@ -1482,6 +1688,10 @@ void OnTick()
       // Also allow sweep entries during overlap if detected earlier
       if(IsOverlapWindow() && UseAsianSweep)
          CheckAsianSweepEntry();
+   }
+   else if(DebugMode && TimeCurrent() % 600 < 2)
+   {
+      LogMsg("OUTSIDE SESSION: No entry checks. " + GetSessionStatus());
    }
 
    UpdateComment();
