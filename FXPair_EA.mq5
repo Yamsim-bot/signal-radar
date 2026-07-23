@@ -112,6 +112,9 @@ input bool     TradeWednesday      = true;
 input bool     TradeThursday       = true;
 input bool     TradeFriday         = true;
 
+//--- Debug
+input bool     DebugMode           = true;         // Enable debug logging (Expert tab)
+
 //+------------------------------------------------------------------+
 //| Global variables                                                   |
 //+------------------------------------------------------------------+
@@ -294,14 +297,48 @@ void OnTick()
    int confBuy = CalcConfluenceBuy();
    int confSell = CalcConfluenceSell();
 
+   //--- Debug: log indicator state
+   if(DebugMode)
+   {
+      double rsi = CalcRSI(TF_Entry, RSI_Period);
+      double bbU = CalcBB(TF_Entry, BB_Period, BB_StdDev, 1);
+      double bbM = CalcBB(TF_Entry, BB_Period, BB_StdDev, 0);
+      double bbL = CalcBB(TF_Entry, BB_Period, BB_StdDev, 2);
+      double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      double sp = (ask - bid) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+
+      double maF[1], maS[1], maT[1];
+      ArraySetAsSeries(maF, true); ArraySetAsSeries(maS, true); ArraySetAsSeries(maT, true);
+      CopyBuffer(g_maFastM15, 0, 0, 1, maF);
+      CopyBuffer(g_maSlowM15, 0, 0, 1, maS);
+      CopyBuffer(g_maTrendM15, 0, 0, 1, maT);
+
+      Print("FXPair SCAN | BID=", DoubleToString(bid,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " ATR_M5=", DoubleToString(g_atrEntry,5),
+            " ATR_M15=", DoubleToString(g_atrM15,5),
+            " RSI=", DoubleToString(rsi,1),
+            " BB=[", DoubleToString(bbL,5), " | ", DoubleToString(bbM,5), " | ", DoubleToString(bbU,5), "]",
+            " | M15_EMA=", DoubleToString(maF[0],5), "/", DoubleToString(maS[0],5), "/", DoubleToString(maT[0],5),
+            " | SwingsH=", ArraySize(g_swingHighs), " L=", ArraySize(g_swingLows),
+            " | SP=", DoubleToString(sp,0), "pts",
+            " | CONF_BUY=", confBuy, " CONF_SELL=", confSell);
+   }
+
    //--- Entry decision
    if(confBuy >= ConfluenceMinScore && confBuy > confSell)
    {
+      if(DebugMode) Print("FXPair ENTRY SIGNAL: BUY conf=", confBuy, ">", confSell, " (min=", ConfluenceMinScore, ")");
       CheckBuyEntry(confBuy, confSell);
    }
    else if(confSell >= ConfluenceMinScore && confSell > confBuy)
    {
+      if(DebugMode) Print("FXPair ENTRY SIGNAL: SELL conf=", confSell, ">", confBuy, " (min=", ConfluenceMinScore, ")");
       CheckSellEntry(confBuy, confSell);
+   }
+   else if(DebugMode && (confBuy >= 3 || confSell >= 3))
+   {
+      Print("FXPair NEAR-MISS: confBuy=", confBuy, " confSell=", confSell, " (below min=", ConfluenceMinScore, ")");
    }
 }
 
@@ -321,14 +358,26 @@ void CheckBuyEntry(int confBuy, int confSell)
    //--- BB lower touch
    double bbLower = CalcBB(TF_Entry, BB_Period, BB_StdDev, 2);
    if(bbLower <= 0) return;
-   if(m5_low[0] > bbLower * (1.0 + BB_TouchTolPct / 100.0)) return;
+   if(m5_low[0] > bbLower * (1.0 + BB_TouchTolPct / 100.0))
+   {
+      if(DebugMode) Print("FXPair BUY REJECTED: no BB lower touch (low=", DoubleToString(m5_low[0],5), " bbL=", DoubleToString(bbLower,5), ")");
+      return;
+   }
 
    //--- RSI
    double rsi = CalcRSI(TF_Entry, RSI_Period);
-   if(rsi <= 0 || rsi > RSI_Buy_Max) return;
+   if(rsi <= 0 || rsi > RSI_Buy_Max)
+   {
+      if(DebugMode) Print("FXPair BUY REJECTED: RSI=", DoubleToString(rsi,1), " > max=", DoubleToString(RSI_Buy_Max,0));
+      return;
+   }
 
    //--- Rejection candle
-   if(!HasBullishRejection(m5_open, m5_high, m5_low, m5_close)) return;
+   if(!HasBullishRejection(m5_open, m5_high, m5_low, m5_close))
+   {
+      if(DebugMode) Print("FXPair BUY REJECTED: no bullish rejection candle");
+      return;
+   }
 
    //--- SL
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
@@ -345,7 +394,11 @@ void CheckBuyEntry(int confBuy, int confSell)
 
    //--- RR check
    double rr = (tpPrice - ask) / (ask - slPrice);
-   if(rr < Min_RR) return;
+   if(rr < Min_RR)
+   {
+      if(DebugMode) Print("FXPair BUY REJECTED: RR=", DoubleToString(rr,2), " < min=", DoubleToString(Min_RR,2), " SL=", DoubleToString(slPrice,5), " TP=", DoubleToString(tpPrice,5));
+      return;
+   }
 
    //--- Lot
    double lot = CalcLotSize(ask - slPrice);
@@ -369,10 +422,15 @@ void CheckBuyEntry(int confBuy, int confSell)
    if(OrderSend(req, res))
    {
       g_tradesToday++;
+      Print("FXPair BUY EXECUTED: price=", DoubleToString(ask,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " SL=", DoubleToString(slPrice,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " TP=", DoubleToString(tpPrice,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " lot=", DoubleToString(lot,2), " RR=", DoubleToString(rr,2),
+            " conf=", confBuy, "/", confSell);
       LogTrade("BUY", ask, slPrice, tpPrice, lot, confBuy, confSell, "CONFLUENCE", "OK");
    }
    else
-      Print("BUY order failed: ", res.retcode, " ", res.comment);
+      Print("FXPair BUY FAILED: ", res.retcode, " ", res.comment);
 }
 
 //+------------------------------------------------------------------+
@@ -391,14 +449,26 @@ void CheckSellEntry(int confBuy, int confSell)
    //--- BB upper touch
    double bbUpper = CalcBB(TF_Entry, BB_Period, BB_StdDev, 1);
    if(bbUpper <= 0) return;
-   if(m5_high[0] < bbUpper * (1.0 - BB_TouchTolPct / 100.0)) return;
+   if(m5_high[0] < bbUpper * (1.0 - BB_TouchTolPct / 100.0))
+   {
+      if(DebugMode) Print("FXPair SELL REJECTED: no BB upper touch (high=", DoubleToString(m5_high[0],5), " bbU=", DoubleToString(bbUpper,5), ")");
+      return;
+   }
 
    //--- RSI
    double rsi = CalcRSI(TF_Entry, RSI_Period);
-   if(rsi <= 0 || rsi < RSI_Sell_Min) return;
+   if(rsi <= 0 || rsi < RSI_Sell_Min)
+   {
+      if(DebugMode) Print("FXPair SELL REJECTED: RSI=", DoubleToString(rsi,1), " < min=", DoubleToString(RSI_Sell_Min,0));
+      return;
+   }
 
    //--- Rejection candle
-   if(!HasBearishRejection(m5_open, m5_high, m5_low, m5_close)) return;
+   if(!HasBearishRejection(m5_open, m5_high, m5_low, m5_close))
+   {
+      if(DebugMode) Print("FXPair SELL REJECTED: no bearish rejection candle");
+      return;
+   }
 
    //--- SL
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -415,7 +485,11 @@ void CheckSellEntry(int confBuy, int confSell)
 
    //--- RR check
    double rr = (bid - tpPrice) / (slPrice - bid);
-   if(rr < Min_RR) return;
+   if(rr < Min_RR)
+   {
+      if(DebugMode) Print("FXPair SELL REJECTED: RR=", DoubleToString(rr,2), " < min=", DoubleToString(Min_RR,2), " SL=", DoubleToString(slPrice,5), " TP=", DoubleToString(tpPrice,5));
+      return;
+   }
 
    //--- Lot
    double lot = CalcLotSize(slPrice - bid);
@@ -439,10 +513,15 @@ void CheckSellEntry(int confBuy, int confSell)
    if(OrderSend(req, res))
    {
       g_tradesToday++;
+      Print("FXPair SELL EXECUTED: price=", DoubleToString(bid,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " SL=", DoubleToString(slPrice,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " TP=", DoubleToString(tpPrice,(int)SymbolInfoInteger(_Symbol,SYMBOL_DIGITS)),
+            " lot=", DoubleToString(lot,2), " RR=", DoubleToString(rr,2),
+            " conf=", confBuy, "/", confSell);
       LogTrade("SELL", bid, slPrice, tpPrice, lot, confBuy, confSell, "CONFLUENCE", "OK");
    }
    else
-      Print("SELL order failed: ", res.retcode, " ", res.comment);
+      Print("FXPair SELL FAILED: ", res.retcode, " ", res.comment);
 }
 
 //+==================================================================+
@@ -452,6 +531,7 @@ void CheckSellEntry(int confBuy, int confSell)
 int CalcConfluenceBuy()
 {
    int score = 0;
+   string dbg = "";
 
    //--- 1. M15 EMA20 > EMA50 = +2
    double maFast[1], maSlow[1];
@@ -459,7 +539,8 @@ int CalcConfluenceBuy()
    if(CopyBuffer(g_maFastM15, 0, 0, 1, maFast) > 0 &&
       CopyBuffer(g_maSlowM15, 0, 0, 1, maSlow) > 0)
    {
-      if(maFast[0] > maSlow[0]) score += 2;
+      if(maFast[0] > maSlow[0]) { score += 2; dbg += "EMA20>50(+2) "; }
+      else dbg += "EMA20<50(0) ";
    }
 
    //--- 2. M15 EMA50 > EMA200 = +1
@@ -467,30 +548,33 @@ int CalcConfluenceBuy()
    ArraySetAsSeries(maTrend, true);
    if(CopyBuffer(g_maTrendM15, 0, 0, 1, maTrend) > 0)
    {
-      if(maSlow[0] > maTrend[0]) score += 1;
+      if(maSlow[0] > maTrend[0]) { score += 1; dbg += "EMA50>200(+1) "; }
+      else dbg += "EMA50<200(0) ";
    }
 
    //--- 3. Market structure bullish (HH/HL) = +2
-   if(IsBullMarketStructure()) score += 2;
+   if(IsBullMarketStructure()) { score += 2; dbg += "BullStruct(+2) "; }
 
    //--- 4. Break & retest bullish = +2
-   if(CheckBullBreakRetest()) score += 2;
+   if(CheckBullBreakRetest()) { score += 2; dbg += "BullRetest(+2) "; }
 
    //--- 5. At S&R support level = +1
-   if(AtSupportLevel()) score += 1;
+   if(AtSupportLevel()) { score += 1; dbg += "Support(+1) "; }
 
    //--- 6. Bullish engulfing = +2
-   if(DetectBullishEngulfing()) score += 2;
+   if(DetectBullishEngulfing()) { score += 2; dbg += "Engulf(+2) "; }
 
-   //--- 7. Engulfing reversal (current bearish candle engulfed by previous) = +2
-   if(DetectBullEngulfReversal()) score += 2;
+   //--- 7. Engulfing reversal = +2
+   if(DetectBullEngulfReversal()) { score += 2; dbg += "Reversal(+2) "; }
 
+   if(DebugMode) Print("FXPair CONF_BUY=", score, " | ", dbg);
    return score;
 }
 
 int CalcConfluenceSell()
 {
    int score = 0;
+   string dbg = "";
 
    //--- 1. M15 EMA20 < EMA50 = +2
    double maFast[1], maSlow[1];
@@ -498,7 +582,8 @@ int CalcConfluenceSell()
    if(CopyBuffer(g_maFastM15, 0, 0, 1, maFast) > 0 &&
       CopyBuffer(g_maSlowM15, 0, 0, 1, maSlow) > 0)
    {
-      if(maFast[0] < maSlow[0]) score += 2;
+      if(maFast[0] < maSlow[0]) { score += 2; dbg += "EMA20<50(+2) "; }
+      else dbg += "EMA20>50(0) ";
    }
 
    //--- 2. M15 EMA50 < EMA200 = +1
@@ -506,24 +591,26 @@ int CalcConfluenceSell()
    ArraySetAsSeries(maTrend, true);
    if(CopyBuffer(g_maTrendM15, 0, 0, 1, maTrend) > 0)
    {
-      if(maSlow[0] < maTrend[0]) score += 1;
+      if(maSlow[0] < maTrend[0]) { score += 1; dbg += "EMA50<200(+1) "; }
+      else dbg += "EMA50>200(0) ";
    }
 
    //--- 3. Market structure bearish (LH/LL) = +2
-   if(IsBearMarketStructure()) score += 2;
+   if(IsBearMarketStructure()) { score += 2; dbg += "BearStruct(+2) "; }
 
    //--- 4. Break & retest bearish = +2
-   if(CheckBearBreakRetest()) score += 2;
+   if(CheckBearBreakRetest()) { score += 2; dbg += "BearRetest(+2) "; }
 
    //--- 5. At S&R resistance level = +1
-   if(AtResistanceLevel()) score += 1;
+   if(AtResistanceLevel()) { score += 1; dbg += "Resist(+1) "; }
 
    //--- 6. Bearish engulfing = +2
-   if(DetectBearishEngulfing()) score += 2;
+   if(DetectBearishEngulfing()) { score += 2; dbg += "Engulf(+2) "; }
 
    //--- 7. Bearish engulfing reversal = +2
-   if(DetectBearEngulfReversal()) score += 2;
+   if(DetectBearEngulfReversal()) { score += 2; dbg += "Reversal(+2) "; }
 
+   if(DebugMode) Print("FXPair CONF_SELL=", score, " | ", dbg);
    return score;
 }
 
